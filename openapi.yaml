@@ -1,0 +1,320 @@
+openapi: 3.0.0
+info:
+  title: MobyPark API
+  version: 1.0.0
+  description: API documentatie voor MobyPark – beheert users, vehicles, parking-lots, reservations, payments en sessions.
+servers:
+  - url: http://localhost:8000
+
+paths:
+
+  /profile:
+    get:
+      summary: Haal profielgegevens van de ingelogde gebruiker op
+      responses:
+        "200":
+          description: Gebruikersprofiel
+    put:
+      summary: Update profiel
+      responses:
+        "200":
+          description: Profiel geüpdatet
+
+  /logout:
+    get:
+      summary: Log uit
+      responses:
+        "200":
+          description: Succesvol uitloggen
+
+  /register:
+    post:
+      summary: Nieuwe gebruiker registreren
+      responses:
+        "201":
+          description: Gebruiker aangemaakt
+
+  /login:
+    post:
+      summary: Inloggen
+      responses:
+        "200":
+          description: Succesvol ingelogd
+
+  /vehicle/register:
+    post:
+      summary: Nieuw voertuig registreren
+      responses:
+        "201":
+          description: Voertuig aangemaakt
+
+  /vehicle/delete/{vid}:
+    delete:
+      summary: Verwijder voertuig
+      parameters:
+        - name: vid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Voertuig verwijderd
+
+  /vehicles:
+    get:
+      summary: Haal alle voertuigen op
+      responses:
+        "200":
+          description: Lijst van voertuigen
+    post:
+      summary: Voeg een nieuw voertuig toe
+      responses:
+        "201":
+          description: Voertuig aangemaakt
+    put:
+      summary: Update voertuig
+      responses:
+        "200":
+          description: Voertuig geüpdatet
+
+  /vehicles/{vid}/entry:
+    post:
+      summary: Registreer voertuig entry
+      parameters:
+        - name: vid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Entry geregistreerd
+
+  /vehicles/{vid}/reservations:
+    get:
+      summary: Haal alle reservations van een voertuig
+      parameters:
+        - name: vid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Reservations van voertuig
+
+  /vehicles/{vid}/history:
+    get:
+      summary: Haal geschiedenis van een voertuig
+      parameters:
+        - name: vid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Geschiedenis van voertuig
+
+  /vehicles/{user}:
+    get:
+      summary: Haal voertuigen van een gebruiker
+      parameters:
+        - name: user
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Voertuigen van gebruiker
+
+  /parking-lots:
+    get:
+      summary: Haal alle parkeerplaatsen op
+      responses:
+        "200":
+          description: Lijst van parking-lots
+    post:
+      summary: Nieuwe parkeerplaats aanmaken
+      responses:
+        "201":
+          description: Parking-lot aangemaakt
+
+  /parking-lots/{lid}:
+    get:
+      summary: Haal specifieke parkeerplaats op
+      parameters:
+        - name: lid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Details van parkeerplaats
+    put:
+      summary: Update parkeerplaats
+      parameters:
+        - name: lid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Parking-lot geüpdatet
+    delete:
+      summary: Verwijder parkeerplaats
+      parameters:
+        - name: lid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Parking-lot verwijderd
+
+  /parking-lots/{lid}/sessions:
+    get:
+      summary: Haal alle sessions voor een parkeerplaats op
+      parameters:
+        - name: lid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Lijst van sessions
+
+  /parking-lots/{lid}/sessions/{sid}:
+    get:
+      summary: Haal specifieke session op
+      parameters:
+        - name: lid
+          in: path
+          required: true
+          schema: { type: string }
+        - name: sid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Details van session
+    delete:
+      summary: Verwijder session
+      parameters:
+        - name: lid
+          in: path
+          required: true
+          schema: { type: string }
+        - name: sid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Session verwijderd
+
+  /parking-lots/{lid}/sessions/start:
+    post:
+      summary: Start een session op een parkeerplaats
+      parameters:
+        - name: lid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Session gestart
+
+  /parking-lots/{lid}/sessions/stop:
+    post:
+      summary: Stop een session op een parkeerplaats
+      parameters:
+        - name: lid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Session gestopt
+
+  /reservations:
+    post:
+      summary: Nieuwe reservation aanmaken
+      responses:
+        "201":
+          description: Reservation aangemaakt
+    put:
+      summary: Update reservation
+      responses:
+        "200":
+          description: Reservation geüpdatet
+    delete:
+      summary: Verwijder reservation
+      responses:
+        "200":
+          description: Reservation verwijderd
+
+  /reservations/{rid}:
+    get:
+      summary: Haal specifieke reservation op
+      parameters:
+        - name: rid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Reservation details
+
+  /payments:
+    get:
+      summary: Haal alle betalingen op
+      responses:
+        "200":
+          description: Lijst van payments
+    post:
+      summary: Nieuwe betaling aanmaken
+      responses:
+        "201":
+          description: Betaling aangemaakt
+    put:
+      summary: Update betaling
+      responses:
+        "200":
+          description: Betaling geüpdatet
+
+  /payments/{user}:
+    get:
+      summary: Haal betalingen van een gebruiker
+      parameters:
+        - name: user
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Betalingen van de gebruiker
+
+  /payments/refund:
+    post:
+      summary: Terugbetaling uitvoeren
+      responses:
+        "200":
+          description: Terugbetaling voltooid
+
+  /billing:
+    get:
+      summary: Haal alle facturen op
+      responses:
+        "200":
+          description: Lijst van billing records
+
+  /billing/{user}:
+    get:
+      summary: Haal facturen van een specifieke gebruiker
+      parameters:
+        - name: user
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Facturen van gebruiker
