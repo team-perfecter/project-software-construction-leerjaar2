@@ -36,32 +36,43 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 
         elif self.path == "/login":
-            data  = json.loads(self.rfile.read(int(self.headers.get("Content-Length", -1))))
+            data = json.loads(self.rfile.read(int(self.headers.get("Content-Length", -1))))
             username = data.get("username")
             password = data.get("password")
+
             if not username or not password:
                 self.send_response(400)
                 self.send_header("Content-type", "application/json")
                 self.end_headers()
                 self.wfile.write(b"Missing credentials")
                 return
+
             hashed_password = hashlib.md5(password.encode()).hexdigest()
             users = load_json('data/users.json')
+
             for user in users:
-                if user.get("username") == username and user.get("password") == hashed_password:
-                    token = str(uuid.uuid4())
-                    add_session(token, user)
-                    self.send_response(200)
-                    self.send_header("Content-type", "application/json")
-                    self.end_headers()
-                    self.wfile.write(json.dumps({"message": "User logged in", "session_token": token}).encode('utf-8'))
-                    return
-                else:
-                    self.send_response(401)
-                    self.send_header("Content-type", "application/json")
-                    self.end_headers()
-                    self.wfile.write(b"Invalid credentials")
-                    return
+                if user.get("username") == username:
+                    if user.get("password") == hashed_password:
+                        # login geslaagd
+                        token = str(uuid.uuid4())
+                        add_session(token, user)
+                        self.send_response(200)
+                        self.send_header("Content-type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps({
+                            "message": "User logged in",
+                            "session_token": token
+                        }).encode('utf-8'))
+                        return
+                    else:
+                        # username gevonden maar wachtwoord fout
+                        self.send_response(401)
+                        self.send_header("Content-type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(b"Invalid password")
+                        return
+
+            # username niet gevonden
             self.send_response(401)
             self.send_header("Content-type", "application/json")
             self.end_headers()
