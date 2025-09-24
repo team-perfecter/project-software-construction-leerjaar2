@@ -6,15 +6,29 @@ info:
 servers:
   - url: http://localhost:8000
 
+tags:
+  - name: Auth
+    description: Endpoints voor authenticatie en gebruikersbeheer
+  - name: Vehicles
+    description: Endpoints voor voertuigbeheer
+  - name: Parking Lots
+    description: Endpoints voor parkeerplaatsbeheer
+  - name: Reservations
+    description: Endpoints voor reserveringen
+  - name: Payments
+    description: Endpoints voor betalingen en facturering
+
 paths:
 
   /profile:
     get:
+      tags: [Auth]
       summary: Haal profielgegevens van de ingelogde gebruiker op
       responses:
         "200":
           description: Gebruikersprofiel
     put:
+      tags: [Auth]
       summary: Update profiel
       responses:
         "200":
@@ -22,6 +36,7 @@ paths:
 
   /logout:
     get:
+      tags: [Auth]
       summary: Log uit
       responses:
         "200":
@@ -29,6 +44,7 @@ paths:
 
   /register:
     post:
+      tags: [Auth]
       summary: Nieuwe gebruiker registreren
       responses:
         "201":
@@ -36,6 +52,7 @@ paths:
 
   /login:
     post:
+      tags: [Auth]
       summary: Inloggen
       responses:
         "200":
@@ -43,6 +60,7 @@ paths:
 
   /vehicle/register:
     post:
+      tags: [Vehicles]
       summary: Nieuw voertuig registreren
       responses:
         "201":
@@ -50,6 +68,7 @@ paths:
 
   /vehicle/delete/{vid}:
     delete:
+      tags: [Vehicles]
       summary: Verwijder voertuig
       parameters:
         - name: vid
@@ -62,16 +81,19 @@ paths:
 
   /vehicles:
     get:
+      tags: [Vehicles]
       summary: Haal alle voertuigen op
       responses:
         "200":
           description: Lijst van voertuigen
     post:
+      tags: [Vehicles]
       summary: Voeg een nieuw voertuig toe
       responses:
         "201":
           description: Voertuig aangemaakt
     put:
+      tags: [Vehicles]
       summary: Update voertuig
       responses:
         "200":
@@ -79,6 +101,7 @@ paths:
 
   /vehicles/{vid}/entry:
     post:
+      tags: [Vehicles]
       summary: Registreer voertuig entry
       parameters:
         - name: vid
@@ -91,6 +114,7 @@ paths:
 
   /vehicles/{vid}/reservations:
     get:
+      tags: [Vehicles]
       summary: Haal alle reservations van een voertuig
       parameters:
         - name: vid
@@ -103,6 +127,7 @@ paths:
 
   /vehicles/{vid}/history:
     get:
+      tags: [Vehicles]
       summary: Haal geschiedenis van een voertuig
       parameters:
         - name: vid
@@ -115,6 +140,7 @@ paths:
 
   /vehicles/{user}:
     get:
+      tags: [Vehicles]
       summary: Haal voertuigen van een gebruiker
       parameters:
         - name: user
@@ -127,11 +153,13 @@ paths:
 
   /parking-lots:
     get:
+      tags: [Parking Lots]
       summary: Haal alle parkeerplaatsen op
       responses:
         "200":
           description: Lijst van parking-lots
     post:
+      tags: [Parking Lots]
       summary: Nieuwe parkeerplaats aanmaken
       responses:
         "201":
@@ -139,6 +167,7 @@ paths:
 
   /parking-lots/{lid}:
     get:
+      tags: [Parking Lots]
       summary: Haal specifieke parkeerplaats op
       parameters:
         - name: lid
@@ -149,6 +178,7 @@ paths:
         "200":
           description: Details van parkeerplaats
     put:
+      tags: [Parking Lots]
       summary: Update parkeerplaats
       parameters:
         - name: lid
@@ -159,6 +189,7 @@ paths:
         "200":
           description: Parking-lot geüpdatet
     delete:
+      tags: [Parking Lots]
       summary: Verwijder parkeerplaats
       parameters:
         - name: lid
@@ -171,6 +202,7 @@ paths:
 
   /parking-lots/{lid}/sessions:
     get:
+      tags: [Parking Lots]
       summary: Haal alle sessions voor een parkeerplaats op
       parameters:
         - name: lid
@@ -183,6 +215,7 @@ paths:
 
   /parking-lots/{lid}/sessions/{sid}:
     get:
+      tags: [Parking Lots]
       summary: Haal specifieke session op
       parameters:
         - name: lid
@@ -197,6 +230,7 @@ paths:
         "200":
           description: Details van session
     delete:
+      tags: [Parking Lots]
       summary: Verwijder session
       parameters:
         - name: lid
@@ -213,6 +247,7 @@ paths:
 
   /parking-lots/{lid}/sessions/start:
     post:
+      tags: [Parking Lots]
       summary: Start een session op een parkeerplaats
       parameters:
         - name: lid
@@ -225,6 +260,7 @@ paths:
 
   /parking-lots/{lid}/sessions/stop:
     post:
+      tags: [Parking Lots]
       summary: Stop een session op een parkeerplaats
       parameters:
         - name: lid
@@ -237,16 +273,19 @@ paths:
 
   /reservations:
     post:
+      tags: [Reservations]
       summary: Nieuwe reservation aanmaken
       responses:
         "201":
           description: Reservation aangemaakt
     put:
+      tags: [Reservations]
       summary: Update reservation
       responses:
         "200":
           description: Reservation geüpdatet
     delete:
+      tags: [Reservations]
       summary: Verwijder reservation
       responses:
         "200":
@@ -254,6 +293,7 @@ paths:
 
   /reservations/{rid}:
     get:
+      tags: [Reservations]
       summary: Haal specifieke reservation op
       parameters:
         - name: rid
@@ -266,16 +306,19 @@ paths:
 
   /payments:
     get:
+      tags: [Payments]
       summary: Haal alle betalingen op
       responses:
         "200":
           description: Lijst van payments
     post:
+      tags: [Payments]
       summary: Nieuwe betaling aanmaken
       responses:
         "201":
           description: Betaling aangemaakt
     put:
+      tags: [Payments]
       summary: Update betaling
       responses:
         "200":
@@ -283,6 +326,7 @@ paths:
 
   /payments/{user}:
     get:
+      tags: [Payments]
       summary: Haal betalingen van een gebruiker
       parameters:
         - name: user
@@ -295,6 +339,7 @@ paths:
 
   /payments/refund:
     post:
+      tags: [Payments]
       summary: Terugbetaling uitvoeren
       responses:
         "200":
@@ -302,6 +347,7 @@ paths:
 
   /billing:
     get:
+      tags: [Payments]
       summary: Haal alle facturen op
       responses:
         "200":
@@ -309,6 +355,7 @@ paths:
 
   /billing/{user}:
     get:
+      tags: [Payments]
       summary: Haal facturen van een specifieke gebruiker
       parameters:
         - name: user
