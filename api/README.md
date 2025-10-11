@@ -5,4 +5,6 @@ In order to run the dockerfile, go to the folder that contains the docker compos
 
 docker compose up --build
 
-then, go to http://localhost:8000/test to access the api
+Then, go to http://localhost:8000/test to access the api.
+
+http://localhost:8000/crash simulates a crash. The api should restart automatically.
