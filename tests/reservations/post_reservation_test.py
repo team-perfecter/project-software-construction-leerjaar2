@@ -4,7 +4,7 @@ import json
 from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
-from ../../app import app
+from ../../server import app
 
 '''
 reservations will be in a seperate class. the input of this class will be the authorization token of the user.
@@ -52,10 +52,25 @@ class Vehicle:
     year: int
     created_at: date
 
+@dataclass
+class Session:
+    id: int
+    parking_lot_id: int
+    payment_id: int
+    user_id: int
+    vehicle_id: int
+    started: date
+    stopped: date
+    duration_minutes: int
+    cost: float
+
+def get_fake_session(id: int) -> Session:
+    return [{0, 0, 0, 0, "2020-03-25", "2020-03-25", 30, 1}, {1, 1, 1, 1, "2020-03-25", "2020-03-25", 30, 1}][id]
+
 def get_fake_parking_location(id: int) -> Parking_location:
     return [
         {
-            1, 
+            0, 
             "Bedrijventerrein Almere Parkeergarage", 
             "Industrial Zone", 
             "Schanssingel 337, 2421 BS Almere", 
@@ -87,7 +102,7 @@ def get_fake_vehicle(id: int) -> Vehicle:
         {
             0,
             0,
-            "",
+            "test_license_plate",
             "",
             "",
             "",
@@ -131,9 +146,10 @@ invalid_header: dict[str, str] = {"Authorization": "Bearer invalid"}
 '''
 Test creating a new reservation when a user is authorized.
 '''
-@patch("path.to.function.db_post_reservation", side_effect=fake_post_reservation)
-@patch("path.to.function.db_get_parking_locations", side_effect=get_fake_parking_location)
-@patch("path.to.function.db_get_vehicle", side_effect=get_fake_vehicle)
+@patch("../../controllers/reservatin_controller.db_post_reservation", side_effect=fake_post_reservation)
+@patch("../../controllers/reservatin_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
+@patch("../../controllers/reservatin_controller.db_get_vehicle", side_effect=get_fake_vehicle)
+@patch("../../controllers/reservatin_controller.db_get_sessions", side_effect=get_fake_session)
 def test_create_reservation_when_authorized() -> None:
     data: Reservation = Reservation(0, 1, 1, "aaaaa", str(date.today()))
     response = client.post("/reservations", headers=valid_header, json=asdict(data))
@@ -146,9 +162,10 @@ def test_create_reservation_when_authorized() -> None:
 '''
 Test creating a new reservation when a user is not authorized.
 '''
-@patch("path.to.function.db_post_reservation", side_effect=fake_post_reservation)
-@patch("path.to.function.db_get_parking_locations", side_effect=get_fake_parking_location)
-@patch("path.to.function.db_get_vehicle", side_effect=get_fake_vehicle)
+@patch("../../controllers/reservatin_controller.db_post_reservation", side_effect=fake_post_reservation)
+@patch("../../controllers/reservatin_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
+@patch("../../controllers/reservatin_controller.db_get_vehicle", side_effect=get_fake_vehicle)
+@patch("../../controllers/reservatin_controller.db_get_sessions", side_effect=get_fake_session)
 def test_create_reservation_when_not_authorized() -> None:
     data: Reservation = Reservation(1, 1, 1, "aaaa", str(date.today()))
     response = client.post("/reservations", headers=invalid_header, json=asdict(data))
@@ -159,9 +176,10 @@ def test_create_reservation_when_not_authorized() -> None:
 '''
 Test creating a new reservation when a user has not filled in all data
 '''
-@patch("path.to.function.db_post_reservation", side_effect=fake_post_reservation)
-@patch("path.to.function.db_get_parking_locations", side_effect=get_fake_parking_location)
-@patch("path.to.function.db_get_vehicle", side_effect=get_fake_vehicle)
+@patch("../../controllers/reservatin_controller.db_post_reservation", side_effect=fake_post_reservation)
+@patch("../../controllers/reservatin_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
+@patch("../../controllers/reservatin_controller.db_get_vehicle", side_effect=get_fake_vehicle)
+@patch("../../controllers/reservatin_controller.db_get_sessions", side_effect=get_fake_session)
 def test_create_reservation_when_date_incomplete() -> None:
     response = client.post("/reservations", headers=valid_header, json={"parking_lot_id": 11})
     assert response.status_code == 422
@@ -171,9 +189,10 @@ def test_create_reservation_when_date_incomplete() -> None:
 '''
 Test creating a new reservation when a parking location does not exist
 '''
-@patch("path.to.function.db_post_reservation", side_effect=fake_post_reservation)
-@patch("path.to.function.db_get_parking_locations", side_effect=get_fake_parking_location)
-@patch("path.to.function.db_get_vehicle", side_effect=get_fake_vehicle)
+@patch("../../controllers/reservatin_controller.db_post_reservation", side_effect=fake_post_reservation)
+@patch("../../controllers/reservatin_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
+@patch("../../controllers/reservatin_controller.db_get_vehicle", side_effect=get_fake_vehicle)
+@patch("../../controllers/reservatin_controller.db_get_sessions", side_effect=get_fake_session)
 def test_create_reservation_when_date_incomplete() -> None:
     data: Reservation = Reservation(0, 1, 1, "aaaaa", str(date.today()))
     response = client.post("/reservations", headers=valid_header, json=asdict(data))
@@ -184,9 +203,10 @@ def test_create_reservation_when_date_incomplete() -> None:
 '''
 Test creating a new reservation when a parking location is already full
 '''
-@patch("path.to.function.db_post_reservation", side_effect=fake_post_reservation)
-@patch("path.to.function.db_get_parking_locations", side_effect=get_fake_parking_location)
-@patch("path.to.function.db_get_vehicle", side_effect=get_fake_vehicle)
+@patch("../../controllers/reservatin_controller.db_post_reservation", side_effect=fake_post_reservation)
+@patch("../../controllers/reservatin_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
+@patch("../../controllers/reservatin_controller.db_get_vehicle", side_effect=get_fake_vehicle)
+@patch("../../controllers/reservatin_controller.db_get_sessions", side_effect=get_fake_session)
 def test_create_reservation_when_parking_location_full() -> None:
     data: Reservation = Reservation(1, 1, 1, "aaaaa", str(date.today()))
     response = client.post("/reservations", headers=valid_header, json=asdict(data))
@@ -198,9 +218,10 @@ def test_create_reservation_when_parking_location_full() -> None:
 '''
 Test creating a new reservation when a vehicle already has a reservation
 '''
-@patch("path.to.function.db_post_reservation", side_effect=fake_post_reservation)
-@patch("path.to.function.db_get_parking_locations", side_effect=get_fake_parking_location)
-@patch("path.to.function.db_get_vehicle", side_effect=get_fake_vehicle)
+@patch("../../controllers/reservatin_controller.db_post_reservation", side_effect=fake_post_reservation)
+@patch("../../controllers/reservatin_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
+@patch("../../controllers/reservatin_controller.db_get_vehicle", side_effect=get_fake_vehicle)
+@patch("../../controllers/reservatin_controller.db_get_sessions", side_effect=get_fake_session)
 def test_create_reservation_when_vehicle_has_reservation() -> None:
     data: Reservation = Reservation(1, 1, 1, "aaaaa", str(date.today()))
     fake_post_reservation(data)
@@ -212,3 +233,13 @@ def test_create_reservation_when_vehicle_has_reservation() -> None:
 '''
 Test creating a new reservation when a vehicle is already parked
 '''
+@patch("../../controllers/reservatin_controller.db_post_reservation", side_effect=fake_post_reservation)
+@patch("../../controllers/reservatin_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
+@patch("../../controllers/reservatin_controller.db_get_vehicle", side_effect=get_fake_vehicle)
+@patch("../../controllers/reservatin_controller.db_get_sessions", side_effect=get_fake_session)
+def test_create_reservation_when_vehicle_is_parked() -> None:
+    reservation: Reservation = Reservation(1, 1, 1, "test_license_plate", str(date.today()))
+    response = client.post("/reservations", headers=valid_header, json=asdict(reservation))
+    assert response.status_code == 403
+    assert reservations.len() == 0
+    reservations.clear()
