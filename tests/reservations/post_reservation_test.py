@@ -1,144 +1,245 @@
+from dataclasses import asdict, dataclass
+from datetime import date
+import json
 from unittest.mock import patch
-from datetime import datetime, timedelta
-import jwt
 import pytest
 from fastapi.testclient import TestClient
-from ../../app import app
+from ../../server import app
 
 '''
-payments will be in a separate class. the input of this class will be the authorization token of the user.
+reservations will be in a seperate class. the input of this class will be the authorization token of the user.
 each endpoint will check if the token is valid. if not valid, return 401
 the validity of a token is checked in the get_user(token: str = Depends(oauth2_scheme)) function.
-create_payment() creates a new payment with the given data. this happens with the function db_create_payment(data)
-refund_payment() refunds a payment with the given data (creates a negative payment). this happens with the function db_refund_payment(data)
+db_post_reservation() is a function that posts a function to the database. 
+retrieve all reservations where the parking lot or vehicle is the same as the reservation a user is trying to create
+check if there is any overlap between either the parking lot or the vehicle
+return an error if there is any overlap
+
 '''
 
 client = TestClient(app)
 
+@dataclass
+class Reservation:
+    parking_lot_id: int
+    payment_id: int
+    user_id: int
+    license_plate: str
+    started: str
 
-'''
-A function that creates a new authorization token so a user can be verified
-'''
-def create_test_token(username: str):
-    expire = datetime.now() + timedelta(minutes=30)
-    token = jwt.encode({"sub": username, "exp": expire}, "SECRET_KEY", algorithm="HS256")
+@dataclass
+class Parking_location:
+    id: int
+    name: str
+    location: str
+    adress: str
+    capacity: int
+    reserved: int
+    tariff: float
+    daytariff: float
+    created_at: date
+    lat: float
+    lng: float
+
+@dataclass
+class Vehicle:
+    id: int
+    user_id: int
+    license_plate: str
+    make: str
+    model: str
+    color: str
+    year: int
+    created_at: date
+
+@dataclass
+class Session:
+    id: int
+    parking_lot_id: int
+    payment_id: int
+    user_id: int
+    vehicle_id: int
+    started: date
+    stopped: date
+    duration_minutes: int
+    cost: float
+
+def get_fake_session(id: int) -> Session:
+    return [{0, 0, 0, 0, "2020-03-25", "2020-03-25", 30, 1}, {1, 1, 1, 1, "2020-03-25", "2020-03-25", 30, 1}][id]
+
+def get_fake_parking_location(id: int) -> Parking_location:
+    return [
+        {
+            0, 
+            "Bedrijventerrein Almere Parkeergarage", 
+            "Industrial Zone", 
+            "Schanssingel 337, 2421 BS Almere", 
+            335, 
+            77, 
+            1.9, 
+            11, 
+            "2020-03-25", 
+            52.3133, 
+            5.2234
+        }, 
+        {
+            1, 
+            "Bedrijventerrein Almere Parkeergarage", 
+            "Industrial Zone", 
+            "Schanssingel 337, 2421 BS Almere", 
+            335, 
+            355, 
+            1.9, 
+            11, 
+            "2020-03-25", 
+            52.3133, 
+            5.2234
+        }
+        ][id]
+
+def get_fake_vehicle(id: int) -> Vehicle:
+    return [
+        {
+            0,
+            0,
+            "test_license_plate",
+            "",
+            "",
+            "",
+            2005,
+            "2020-03-25"
+        }, 
+        {
+            1,
+            0,
+            "",
+            "",
+            "",
+            "",
+            2005,
+            "2020-03-25"
+        }
+        ][id]
+    
+
+reservations: list[Reservation] = []
+
+def fake_post_reservation(reservation: Reservation) -> None:
+    reservations.append(reservation)
+
+def get_fake_reservations(rid: int)-> Reservation:
+    result: Reservation = None
+    for res in reservations:
+        if res["id"] == rid:
+            result = res
+    return result
+
+def create_test_token(username: str) -> str:
+    expire: date = datetime.utcnow() + timedelta(minutes=30)
+    token: str = jwt.encode({"sub": username, "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
     return token
 
-
-token = create_test_token("alice")
+token: str = create_test_token("test")
 valid_header: dict[str, str] = {"Authorization": f"Bearer {token}"}
 invalid_header: dict[str, str] = {"Authorization": "Bearer invalid"}
 
-
 '''
-Fake payment data used for mocking database responses
+Test creating a new reservation when a user is authorized.
 '''
-def get_fake_payment_data():
-    return {
-        "user_id": "1",
-        "amount": 12.5,
-        "method": "credit_card",
-        "status": "completed",
-        "created_at": datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-    }
-
-
-'''
-Fake refund data used for mocking database responses
-'''
-def get_fake_refund(data):
-    return {
-        "transaction": data.get("transaction", "txn123"),
-        "amount": -abs(data.get("amount", 0)),
-        "coupled_to": data.get("coupled_to"),
-        "processed_by": data.get("processed_by", "alice"),
-        "created_at": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
-        "completed": False,
-        "hash": "hash123"
-    }
-
-
-payments: list[dict] = []
-
-
-def fake_create_payment(data: dict) -> None:
-    payments.append(data)
-
-
-def fake_refund_payment(data: dict) -> dict:
-    refund = get_fake_refund(data)
-    payments.append(refund)
-    return refund
+@patch("../../controllers/reservation_controller.db_post_reservation", side_effect=fake_post_reservation)
+@patch("../../controllers/reservation_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
+@patch("../../controllers/reservation_controller.db_get_vehicle", side_effect=get_fake_vehicle)
+@patch("../../controllers/reservation_controller.db_get_sessions", side_effect=get_fake_session)
+def test_create_reservation_when_authorized() -> None:
+    data: Reservation = Reservation(0, 1, 1, "aaaaa", str(date.today()))
+    response = client.post("/reservations", headers=valid_header, json=asdict(data))
+    assert response.status_code == 200
+    assert len(reservations) == 1
+    assert reservations[0].parking_lot_id == 1
+    reservations.clear()
 
 
 '''
-Test creating a payment when authorized
+Test creating a new reservation when a user is not authorized.
 '''
-@patch("../../controllers/payment_controller.db_create_payment", side_effect=fake_create_payment)
-def test_post_payment_when_authorized(mock_create_payment) -> None:
-    data = get_fake_payment_data()
-    response = client.post("/payments", headers=valid_header, json=data)
-    assert response.status_code == 201
-    assert len(payments) == 1
-    assert payments[0]["amount"] == 12.5
-    payments.clear()
-
-
-'''
-Test creating a payment with missing or invalid data
-'''
-@patch("../../controllers/payment_controller.db_create_payment", side_effect=fake_create_payment)
-def test_post_payment_invalid_data(mock_create_payment) -> None:
-    response = client.post("/payments", headers=valid_header, json={})
-    assert response.status_code == 400
-    assert len(payments) == 0
-    payments.clear()
-
-
-'''
-Test creating a payment when not authorized
-'''
-@patch("../../controllers/payment_controller.db_create_payment", side_effect=fake_create_payment)
-def test_post_payment_not_authorized(mock_create_payment) -> None:
-    data = get_fake_payment_data()
-    response = client.post("/payments", headers=invalid_header, json=data)
+@patch("../../controllers/reservation_controller.db_post_reservation", side_effect=fake_post_reservation)
+@patch("../../controllers/reservation_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
+@patch("../../controllers/reservation_controller.db_get_vehicle", side_effect=get_fake_vehicle)
+@patch("../../controllers/reservation_controller.db_get_sessions", side_effect=get_fake_session)
+def test_create_reservation_when_not_authorized() -> None:
+    data: Reservation = Reservation(1, 1, 1, "aaaa", str(date.today()))
+    response = client.post("/reservations", headers=invalid_header, json=asdict(data))
     assert response.status_code == 401
-    assert len(payments) == 0
-    payments.clear()
+    reservations.clear()
 
 
 '''
-Test refunding a payment (creates negative payment) when authorized
+Test creating a new reservation when a user has not filled in all data
 '''
-@patch("../../controllers/payment_controller.db_refund_payment", side_effect=fake_refund_payment)
-def test_post_refund_payment_when_authorized(mock_refund_payment) -> None:
-    data = {"amount": 12.5, "processed_by": "alice"}
-    response = client.post("/payments/refund", headers=valid_header, json=data)
-    assert response.status_code == 201
-    assert len(payments) == 1
-    assert payments[0]["amount"] < 0
-    payments.clear()
+@patch("../../controllers/reservation_controller.db_post_reservation", side_effect=fake_post_reservation)
+@patch("../../controllers/reservation_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
+@patch("../../controllers/reservation_controller.db_get_vehicle", side_effect=get_fake_vehicle)
+@patch("../../controllers/reservation_controller.db_get_sessions", side_effect=get_fake_session)
+def test_create_reservation_when_date_incomplete() -> None:
+    response = client.post("/reservations", headers=valid_header, json={"parking_lot_id": 11})
+    assert response.status_code == 422
+    assert reservations.len() == 0
+    reservations.clear()
+
+'''
+Test creating a new reservation when a parking location does not exist
+'''
+@patch("../../controllers/reservation_controller.db_post_reservation", side_effect=fake_post_reservation)
+@patch("../../controllers/reservation_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
+@patch("../../controllers/reservation_controller.db_get_vehicle", side_effect=get_fake_vehicle)
+@patch("../../controllers/reservation_controller.db_get_sessions", side_effect=get_fake_session)
+def test_create_reservation_when_date_incomplete() -> None:
+    data: Reservation = Reservation(0, 1, 1, "aaaaa", str(date.today()))
+    response = client.post("/reservations", headers=valid_header, json=asdict(data))
+    assert response.status_code == 404
+    assert reservations.len() == 0
+    reservations.clear()
+
+'''
+Test creating a new reservation when a parking location is already full
+'''
+@patch("../../controllers/reservation_controller.db_post_reservation", side_effect=fake_post_reservation)
+@patch("../../controllers/reservation_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
+@patch("../../controllers/reservation_controller.db_get_vehicle", side_effect=get_fake_vehicle)
+@patch("../../controllers/reservation_controller.db_get_sessions", side_effect=get_fake_session)
+def test_create_reservation_when_parking_location_full() -> None:
+    data: Reservation = Reservation(1, 1, 1, "aaaaa", str(date.today()))
+    response = client.post("/reservations", headers=valid_header, json=asdict(data))
+    assert response.status_code == 403
+    assert reservations.len() == 0
+    reservations.clear()
 
 
 '''
-Test refunding a payment when missing amount field
+Test creating a new reservation when a vehicle already has a reservation
 '''
-@patch("../../controllers/payment_controller.db_refund_payment", side_effect=fake_refund_payment)
-def test_post_refund_payment_missing_amount(mock_refund_payment) -> None:
-    data = {"processed_by": "alice"}
-    response = client.post("/payments/refund", headers=valid_header, json=data)
-    assert response.status_code == 400
-    assert len(payments) == 0
-    payments.clear()
+@patch("../../controllers/reservation_controller.db_post_reservation", side_effect=fake_post_reservation)
+@patch("../../controllers/reservation_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
+@patch("../../controllers/reservation_controller.db_get_vehicle", side_effect=get_fake_vehicle)
+@patch("../../controllers/reservation_controller.db_get_sessions", side_effect=get_fake_session)
+def test_create_reservation_when_vehicle_has_reservation() -> None:
+    data: Reservation = Reservation(1, 1, 1, "aaaaa", str(date.today()))
+    fake_post_reservation(data)
+    response = client.post("/reservations", headers=valid_header, json=asdict(data))
+    assert response.status_code == 403
+    assert reservations.len() == 1
+    reservations.clear()
 
-
 '''
-Test refunding a payment when not authorized
+Test creating a new reservation when a vehicle is already parked
 '''
-@patch("../../controllers/payment_controller.db_refund_payment", side_effect=fake_refund_payment)
-def test_post_refund_payment_not_authorized(mock_refund_payment) -> None:
-    data = {"amount": 12.5, "processed_by": "alice"}
-    response = client.post("/payments/refund", headers=invalid_header, json=data)
-    assert response.status_code == 401
-    assert len(payments) == 0
-    payments.clear()
+@patch("../../controllers/reservation_controller.db_post_reservation", side_effect=fake_post_reservation)
+@patch("../../controllers/reservation_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
+@patch("../../controllers/reservation_controller.db_get_vehicle", side_effect=get_fake_vehicle)
+@patch("../../controllers/reservation_controller.db_get_sessions", side_effect=get_fake_session)
+def test_create_reservation_when_vehicle_is_parked() -> None:
+    reservation: Reservation = Reservation(1, 1, 1, "test_license_plate", str(date.today()))
+    response = client.post("/reservations", headers=valid_header, json=asdict(reservation))
+    assert response.status_code == 403
+    assert reservations.len() == 0
+    reservations.clear()
