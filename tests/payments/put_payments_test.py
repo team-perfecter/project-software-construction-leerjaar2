@@ -19,7 +19,7 @@ client = TestClient(app)
 A function that creates a new authorization token so a user can be verified
 '''
 def create_test_token(username: str):
-    expire = datetime.utcnow() + timedelta(minutes=30)
+    expire = datetime.now() + timedelta(minutes=30)
     token = jwt.encode({"sub": username, "exp": expire}, "SECRET_KEY", algorithm="HS256")
     return token
 
