@@ -7,14 +7,10 @@ from fastapi.testclient import TestClient
 from ../../server import app
 
 '''
-reservations will be in a seperate class. the input of this class will be the authorization token of the user.
-each endpoint will check if the token is valid. if not valid, return 401
-the validity of a token is checked in the get_user(token: str = Depends(oauth2_scheme)) function.
-db_post_reservation() is a function that posts a function to the database. 
-retrieve all reservations where the parking lot or vehicle is the same as the reservation a user is trying to create
-check if there is any overlap between either the parking lot or the vehicle
-return an error if there is any overlap
-
+when the put /reservations endpoint is called, a user must fill in 2 fields: a license plate and the data that must be updated
+the api will check if the vehicle has a reservation, and return a 404 if it does not
+the api will then check if the data the user has send is valid (whether the park lot exists and if the date is in the future)
+lastly, the api will update the reservation
 '''
 
 client = TestClient(app)
@@ -124,7 +120,12 @@ def get_fake_vehicle(id: int) -> Vehicle:
 
 reservations: list[Reservation] = []
 
-def fake_post_reservation(reservation: Reservation) -> None:
+def fake_put_reservation(reservation: Reservation) -> None:
+    for i in range(len(reservations)):
+        if reservations[i].parking_lot_id == reservation.parking_lot_id:
+            if reservations[i].license_plate == reservation.license_plate:
+                reservations.pop(i)
+                break
     reservations.append(reservation)
 
 def get_fake_reservations(rid: int)-> Reservation:
@@ -133,6 +134,9 @@ def get_fake_reservations(rid: int)-> Reservation:
         if res["id"] == rid:
             result = res
     return result
+
+def reset_reservations() -> None:
+    reservations.append(Reservation(0, 0, 0, "test_license_plate", ""), Reservation(0, 0, 1, "test_license_plate2", ""))
 
 def create_test_token(username: str) -> str:
     expire: date = datetime.utcnow() + timedelta(minutes=30)
@@ -144,102 +148,114 @@ valid_header: dict[str, str] = {"Authorization": f"Bearer {token}"}
 invalid_header: dict[str, str] = {"Authorization": "Bearer invalid"}
 
 '''
-Test creating a new reservation when a user is authorized.
+Test successfully updating a reservation
 '''
-@patch("../../controllers/reservation_controller.db_post_reservation", side_effect=fake_post_reservation)
+@patch("../../controllers/reservation_controller.db_post_reservation", side_effect=fake_put_reservation)
 @patch("../../controllers/reservation_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
 @patch("../../controllers/reservation_controller.db_get_vehicle", side_effect=get_fake_vehicle)
 @patch("../../controllers/reservation_controller.db_get_sessions", side_effect=get_fake_session)
-def test_create_reservation_when_authorized() -> None:
-    data: Reservation = Reservation(0, 1, 1, "aaaaa", str(date.today()))
-    response = client.post("/reservations", headers=valid_header, json=asdict(data))
+def test_successfully_update_reservation() -> None:
+    reservation_amount_before = reservations.len()
+    assert reservations[0].parking_lot_id == 0
+
+    data: Reservation = Reservation(1, 1, 1, "test_license_plate", str(date.today()))
+    response = client.put("/reservations", headers=valid_header, json={"test_license_plate", asdict(data)})
+
     assert response.status_code == 200
-    assert len(reservations) == 1
+    assert len(reservations) == reservation_amount_before
     assert reservations[0].parking_lot_id == 1
-    reservations.clear()
-
+    reset_reservations()
 
 '''
-Test creating a new reservation when a user is not authorized.
+Test updating a reservation when not authorized
 '''
-@patch("../../controllers/reservation_controller.db_post_reservation", side_effect=fake_post_reservation)
+@patch("../../controllers/reservation_controller.db_post_reservation", side_effect=fake_put_reservation)
 @patch("../../controllers/reservation_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
 @patch("../../controllers/reservation_controller.db_get_vehicle", side_effect=get_fake_vehicle)
 @patch("../../controllers/reservation_controller.db_get_sessions", side_effect=get_fake_session)
-def test_create_reservation_when_not_authorized() -> None:
-    data: Reservation = Reservation(1, 1, 1, "aaaa", str(date.today()))
-    response = client.post("/reservations", headers=invalid_header, json=asdict(data))
-    assert response.status_code == 401
-    reservations.clear()
+def test_update_reservation_not_authorized() -> None:
+    reservation_amount_before = reservations.len()
+    assert reservations[0].parking_lot_id == 0
 
+    data: Reservation = Reservation(1, 1, 1, "test_license_plate", str(date.today()))
+    response = client.put("/reservations", headers=invalid_header, json={"test_license_plate", asdict(data)})
+
+    assert response.status_code == 200
+    assert len(reservations) == reservation_amount_before
+    assert reservations[0].parking_lot_id == 0
+    reset_reservations()
 
 '''
-Test creating a new reservation when a user has not filled in all data
+Test updating a reservation when not all data is filled in
 '''
-@patch("../../controllers/reservation_controller.db_post_reservation", side_effect=fake_post_reservation)
+
+@patch("../../controllers/reservation_controller.db_post_reservation", side_effect=fake_put_reservation)
 @patch("../../controllers/reservation_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
 @patch("../../controllers/reservation_controller.db_get_vehicle", side_effect=get_fake_vehicle)
 @patch("../../controllers/reservation_controller.db_get_sessions", side_effect=get_fake_session)
-def test_create_reservation_when_date_incomplete() -> None:
-    response = client.post("/reservations", headers=valid_header, json={"parking_lot_id": 11})
-    assert response.status_code == 422
-    assert reservations.len() == 0
-    reservations.clear()
+def test_update_reservation_incomplete_data() -> None:
+    reservation_amount_before = reservations.len()
+    assert reservations[0].parking_lot_id == 0
+    response = client.put("/reservations", headers=valid_header, json={"test_license_plate", {"parking_lot_id": 1}})
+
+    assert response.status_code == 200
+    assert len(reservations) == reservation_amount_before
+    assert reservations[0].parking_lot_id == 1
+    reset_reservations()
 
 '''
-Test creating a new reservation when a parking location does not exist
+Test updating a reservation with an invalid license plate
 '''
-@patch("../../controllers/reservation_controller.db_post_reservation", side_effect=fake_post_reservation)
+@patch("../../controllers/reservation_controller.db_post_reservation", side_effect=fake_put_reservation)
 @patch("../../controllers/reservation_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
 @patch("../../controllers/reservation_controller.db_get_vehicle", side_effect=get_fake_vehicle)
 @patch("../../controllers/reservation_controller.db_get_sessions", side_effect=get_fake_session)
-def test_create_reservation_when_date_incomplete() -> None:
-    data: Reservation = Reservation(0, 1, 1, "aaaaa", str(date.today()))
-    response = client.post("/reservations", headers=valid_header, json=asdict(data))
+def test_update_reservation_invalid_license_plate() -> None:
+    reservation_amount_before = reservations.len()
+    assert reservations[0].parking_lot_id == 0
+
+    data: Reservation = Reservation(1, 1, 1, "aaaaa", str(date.today()))
+    response = client.put("/reservations", headers=valid_header, json={"invalid_license_plate", asdict(data)})
+
     assert response.status_code == 404
-    assert reservations.len() == 0
-    reservations.clear()
+    assert len(reservations) == reservation_amount_before
+    assert reservations[0].parking_lot_id == 0
+    reset_reservations()
 
 '''
-Test creating a new reservation when a parking location is already full
+Test updating a reservation with an invalid parking lot
 '''
-@patch("../../controllers/reservation_controller.db_post_reservation", side_effect=fake_post_reservation)
+@patch("../../controllers/reservation_controller.db_post_reservation", side_effect=fake_put_reservation)
 @patch("../../controllers/reservation_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
 @patch("../../controllers/reservation_controller.db_get_vehicle", side_effect=get_fake_vehicle)
 @patch("../../controllers/reservation_controller.db_get_sessions", side_effect=get_fake_session)
-def test_create_reservation_when_parking_location_full() -> None:
-    data: Reservation = Reservation(1, 1, 1, "aaaaa", str(date.today()))
-    response = client.post("/reservations", headers=valid_header, json=asdict(data))
-    assert response.status_code == 403
-    assert reservations.len() == 0
-    reservations.clear()
+def test_update_reservation_invalid_license_plate() -> None:
+    reservation_amount_before = reservations.len()
+    assert reservations[0].parking_lot_id == 0
 
+    data: Reservation = Reservation(99999, 1, 1, "test_license_plate", str(date.today()))
+    response = client.put("/reservations", headers=valid_header, json={"test_license_plate", asdict(data)})
+
+    assert response.status_code == 404
+    assert len(reservations) == reservation_amount_before
+    assert reservations[0].parking_lot_id == 0
+    reset_reservations()
 
 '''
-Test creating a new reservation when a vehicle already has a reservation
+Test updating a reservation when the date is set to the past
 '''
-@patch("../../controllers/reservation_controller.db_post_reservation", side_effect=fake_post_reservation)
+@patch("../../controllers/reservation_controller.db_post_reservation", side_effect=fake_put_reservation)
 @patch("../../controllers/reservation_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
 @patch("../../controllers/reservation_controller.db_get_vehicle", side_effect=get_fake_vehicle)
 @patch("../../controllers/reservation_controller.db_get_sessions", side_effect=get_fake_session)
-def test_create_reservation_when_vehicle_has_reservation() -> None:
-    data: Reservation = Reservation(1, 1, 1, "aaaaa", str(date.today()))
-    fake_post_reservation(data)
-    response = client.post("/reservations", headers=valid_header, json=asdict(data))
-    assert response.status_code == 403
-    assert reservations.len() == 1
-    reservations.clear()
+def test_update_reservation_invalid_license_plate() -> None:
+    reservation_amount_before = reservations.len()
+    assert reservations[0].started == date.today()
 
-'''
-Test creating a new reservation when a vehicle is already parked
-'''
-@patch("../../controllers/reservation_controller.db_post_reservation", side_effect=fake_post_reservation)
-@patch("../../controllers/reservation_controller.db_get_parking_locations", side_effect=get_fake_parking_location)
-@patch("../../controllers/reservation_controller.db_get_vehicle", side_effect=get_fake_vehicle)
-@patch("../../controllers/reservation_controller.db_get_sessions", side_effect=get_fake_session)
-def test_create_reservation_when_vehicle_is_parked() -> None:
-    reservation: Reservation = Reservation(1, 1, 1, "test_license_plate", str(date.today()))
-    response = client.post("/reservations", headers=valid_header, json=asdict(reservation))
-    assert response.status_code == 403
-    assert reservations.len() == 0
-    reservations.clear()
+    data: Reservation = Reservation(99999, 1, 1, "test_license_plate", str(date.today() - 1))
+    response = client.put("/reservations", headers=valid_header, json={"test_license_plate", asdict(data)})
+
+    assert response.status_code == 404
+    assert len(reservations) == reservation_amount_before
+    assert reservations[0].started == date.today()
+    reset_reservations()
