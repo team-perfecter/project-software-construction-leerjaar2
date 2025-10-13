@@ -1,6 +1,5 @@
-from dataclasses import dataclass
-from datetime import date
 from unittest.mock import patch
+
 import pytest
 from fastapi.testclient import TestClient
 from ../../app import app
@@ -20,77 +19,65 @@ client = TestClient(app)
 '''
 A function that creates a new authorization token so a user can be verified
 '''
-def create_test_token(username: str) -> str:
-    expire: date = datetime.utcnow() + timedelta(minutes=30)
-    token: str = jwt.encode({"sub": username, "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
+def create_test_token(username: str):
+    expire = datetime.utcnow() + timedelta(minutes=30)
+    token = jwt.encode({"sub": username, "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
     return token
 
-token: str = create_test_token("test")
-valid_headers: dict[str, str] = {"Authorization": f"Bearer {token}"}
-invalid_header: dict[str, str] = {"Authorization": "Bearer invalid"}
+token = create_test_token("alice")
+valid_headers = {"Authorization": f"Bearer {token}"}
+invalid_header = {"Authorization": "Bearer invalid"}
 
-@dataclass
-class Reservation:
-    id: int
-    user_id: int
-    parking_lot_id: int
-    vehicle_id: int
-    start_time: str
-    end_time: str
-    status: str
-    created_at: str
-    cost: float
-
-
-def get_fake_reservation(rid: int) -> Reservation:
-    return [        
-        Reservation(
-            1, 
-            1, 
-            217, 
-            471, 
-            '2025-12-03T11:00:00Z', 
-            '2025-12-03T14:00:00Z', 
-            'confirmed', 
-            '2025-12-01T11:00:00Z', 
-            7.5
-        ),
-        Reservation(
-            2, 
-            2, 
-            165, 
-            2385, 
-            '2025-12-01T17:30:00Z', 
-            '2025-12-01T20:30:00Z', 
-            'confirmed', 
-            '2025-11-04T17:30:00Z', 
-            4.2
-        )
-    ][rid]
+def get_fake_reservation(rid: int):
+    return [{
+        "id": "1",
+        "user_id": "1",
+        "parking_lot_id": "217",
+        "vehicle_id": "471",
+        "start_time": "2025-12-03T11:00:00Z",
+        "end_time": "2025-12-03T14:00:00Z",
+        "status": "confirmed",
+        "created_at": "2025-12-01T11:00:00Z",
+        "cost": 7.5
+    },
+    {
+        "id": "2",
+        "user_id": "2",
+        "parking_lot_id": "165",
+        "vehicle_id": "2385",
+        "start_time": "2025-12-01T17:30:00Z",
+        "end_time": "2025-12-01T20:30:00Z",
+        "status": "confirmed",
+        "created_at": "2025-11-04T17:30:00Z",
+        "cost": 4.2
+    }][rid]
 
 '''
 Test if a reservation is properly received.
 '''
-@patch("path.to.function.db_get_reservation", side_effect=get_fake_reservation)
-def test_get_reservation_when_authorized() -> None:
-    response = client.get("/reservations/0", headers=valid_headers)
-    data = response.json()
-    assert response.status_code == 200
-    assert data.id == 1
-    
+def test_get_reservation_when_authorized():
+    response = client.get("/reservations/", headers=valid_headers)
+    with patch("db_get_reservation", side_effect=get_fake_reservation):
+        res = get_reservation(0)
+        assert res["id"] == get_fake_reservation
+        assert response.status_code == 200
 
 '''
 Test what will happen when a reservation does not exist.
 '''
-@patch("path.to.function.db_get_reservation", side_effect=get_fake_reservation)
-def test_get_empty_reservation() -> None:
-    response = client.get("/reservations/2", headers=valid_headers)
-    assert response.status_code == 404
+def test_get_empty_reservation():
+    response = client.get("/reservations", headers=valid_headers)
+    with patch("db_get_reservation", side_effect=get_fake_reservation):
+        res = get_reservation(2)
+        assert res["id"] == None
+        assert response.status_code == 404
 
 '''
 Test what will happen when a user tries to get a reservation when not authorized
 '''
-@patch("path.to.function.db_get_reservation", side_effect=get_fake_reservation)
-def test_get_reservation_not_authorized() -> None:
-    response = client.get("/reservations/1", headers=invalid_header)
-    assert response.status_code == 401
+def test_get_reservation_not_authorized():
+    response = client.get("/reservations", headers=invalid_header)
+    with patch("db_get_reservation", side_effect=get_fake_reservation):
+        res = get_reservation(0)
+        assert res["id"] == None
+        assert response.status_code == 401
