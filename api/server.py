@@ -1,6 +1,7 @@
 import json
 import hashlib
 import uuid
+import os
 from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from storage_utils import load_json, save_data, save_user_data, load_parking_lot_data, save_parking_lot_data, save_reservation_data, load_reservation_data, load_payment_data, save_payment_data
@@ -637,6 +638,16 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 
     def do_GET(self):
+        
+        if self.path == "/test":
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"message": "hello this is a test to see if the api works"}).encode('utf-8'))
+
+        if self.path == "/crash":
+            os._exit(1)
+            
         if self.path == "/profile":
             token = self.headers.get('Authorization')
             if not token or not get_session(token):
@@ -930,6 +941,6 @@ class RequestHandler(BaseHTTPRequestHandler):
                 return
             
 
-server = HTTPServer(('localhost', 8000), RequestHandler)
-print("Server running on http://localhost:8000")
+server = HTTPServer(('0.0.0.0', 8000), RequestHandler)
+print("Server running on http://0.0.0.0:8000")
 server.serve_forever()
