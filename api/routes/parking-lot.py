@@ -98,7 +98,17 @@ parking_lot_list: list[Parkinglot] = [
 # TODO: get all parking lots                        /parking-lots/
 @app.get("/parking-lots/")
 async def get_all_parking_lots():
+    if len(parking_lot_list) == 0:
+        raise HTTPException(
+            status_code=204,
+            detail={
+                "error": "No Content",
+                "message": f"There are no parking lots",
+                "code": "PARKING_LOT_NOT_FOUND",
+            },
+        )
     return parking_lot_list
+
 
 # TODO: get parking lot by lid                      /parking-lots/{lid}
 @app.get("/parking-lots/{lid}")
@@ -114,7 +124,6 @@ async def get_parking_lot_by_lid(lid: int):
             "code": "PARKING_LOT_NOT_FOUND",
         },
     )
-
 
 
 # TODO: get all sessions lot by lid (admin only)    /parking-lots/{lid}/sessions
