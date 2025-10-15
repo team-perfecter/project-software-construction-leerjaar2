@@ -1,6 +1,10 @@
 from api.auth_utils import *
 from dataclasses import dataclass
 from datetime import date
+from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, status
+
+
 
 from fastapi import FastAPI
 
@@ -28,7 +32,7 @@ async def register(user: User):
     user_list.append(user)
     return {"message": "user created succesfully"}
 
-@app.get("/login")
+@app.post("/login")
 async def login(data: LoginData):
     user = next((u for u in user_list if u.username == data.username), None)
     if not user:
@@ -44,9 +48,9 @@ async def login(data: LoginData):
 async def get_user(user_id: int):
     return {"username: " + user_list[user_id].username, "password: " + user_list[user_id].password}
 
-@app.get("/logout")
-async def logout():
-    revoke_token(token)
+# @app.get("/logout")
+# async def logout():
+#     revoke_token(token)
 
 
     
