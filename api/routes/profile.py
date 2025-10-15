@@ -28,3 +28,8 @@ async def register(user: User):
 @app.get("/get_user/{user_id}")
 async def get_user(user_id: int):
     return {"username: " + user_list[user_id].username, "password: " + user_list[user_id].password}
+
+@app.get("/logout")
+async def logout():
+    revoke_token(token)
+    
