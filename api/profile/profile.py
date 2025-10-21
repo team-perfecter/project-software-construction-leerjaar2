@@ -1,8 +1,8 @@
-import hashlib
 from datatypes.user import User
 from storage.profile_storage import Profile_storage
+from utilities.Hasher import hash_string
 import logging
-from argon2 import PasswordHasher
+
 from fastapi import FastAPI, HTTPException
 
 app = FastAPI()
@@ -33,10 +33,10 @@ async def register(user: User):
     if username_check != None:
         logging.info("A user tried to create a profile, but the name was already created: %s", user.name)
         raise HTTPException(status_code = 409, detail = "Name already taken")
-    argon2_hasher = PasswordHasher()
-    hashed_password = argon2_hasher.hash(user.password)
+    hashed_password = hash_string(user.password)
     user.password = hashed_password
     logging.info("A user has created a new profile with the name: %s", user.name)
+    
     return JSONResponse(content = {"message": "User created successfully"}, status_code = 201)
 
 @app.get("/get_user/{user_id}")
