@@ -91,8 +91,6 @@ async def vehicles(vehicle_id: int):
     else:
         return "Something went wrong."
 
-
-
 #Get vehicles of an user. (Admin)
 @app.get("/vehicles/user/{user_id}")
 async def vehicles_user(user_id: int):
