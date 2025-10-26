@@ -85,7 +85,7 @@ async def vehicles(vehicle_id: int):
     #Get user vehicle.
     vehicle = list(filter(lambda vehicle: vehicle["id"] == vehicle_id, vehicle_list))[0]
 
-    #Shows the vehicle if you are ADMIN or if it is your vehicle.
+    #Shows one vehicle if you are ADMIN or if it is the vehicle of the loggedin user.
     if auth["role"] == "ADMIN" or auth["role"] == "USER" and auth["id"] == vehicle["user_id"]:
         return vehicle
     else:
