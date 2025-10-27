@@ -65,13 +65,13 @@ vehicle_list: list[Vehicles] = [
 
 #Get:
 
-temp_login_id = 2
+#Temperary login. (1 = user with cars), (2 = Admin), (3 = user with no cars)
+temp_login_id = 1
+auth = list(filter(lambda user: user["id"] == temp_login_id, user_list))[0]
+
 #Get all vehicles from logged in user or get all vehicles if loggedin is ADMIN. (User and Admin)
 @app.get("/vehicles")
 async def vehicles():
-    #Temperary login.
-    auth = list(filter(lambda user: user["id"] == temp_login_id, user_list))[0]
-
     #Get all vehicles for Admin. Get All your owned vehicles for user.
     vehicles = vehicle_list if auth["role"] == "ADMIN" else list(filter(lambda vehicle: vehicle["user_id"] == auth["id"], vehicle_list))
     return "No vehicles found" if vehicles == [] else vehicles
@@ -79,9 +79,6 @@ async def vehicles():
 #Get one vehicle of an user. (User and Admin)
 @app.get("/vehicles/{vehicle_id}")
 async def vehicles(vehicle_id: int):
-    #Temperary login.
-    auth = list(filter(lambda user: user["id"] == temp_login_id, user_list))[0]
-
     #Get user vehicle.
     vehicle = list(filter(lambda vehicle: vehicle["id"] == vehicle_id, vehicle_list))[0]
 
