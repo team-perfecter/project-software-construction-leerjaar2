@@ -19,3 +19,6 @@ Content-Type: application/json
   "password": "1234"
 }
 
+### Logout
+POST http://127.0.0.1:8000/logout
+Authorization: Bearer {{access_token}}
