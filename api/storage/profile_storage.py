@@ -1,4 +1,4 @@
-from datatypes.user import User
+from api.datatypes.user import User
 
 #eventually the database queries / JSON write/read will be here.
 
