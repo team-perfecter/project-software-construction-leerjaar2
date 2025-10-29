@@ -38,6 +38,7 @@ async def vehicles(vehicle_id: int):
 #Get vehicles of an user. (Admin)
 @app.get("/vehicles/user/{user_id}")
 async def vehicles_user(user_id: int):
+    #Get user vehicles
     vehicles_user = vehicle_modal.get_all_user_vehicles(user_id)
     return "Vehicles not found" if vehicles_user == [] else vehicles_user
 
