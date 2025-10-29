@@ -3,7 +3,7 @@ POST http://127.0.0.1:8000/register
 Content-Type: application/json
 
 {
-  "username": "jerrel",
+  "username": "jerrel1111",
   "password": "1234",
   "name": "Jerrel",
   "email": "test@example.com",
@@ -15,10 +15,10 @@ POST http://127.0.0.1:8000/login
 Content-Type: application/json
 
 {
-  "username": "jerrel",
+  "username": "jerrel1111",
   "password": "1234"
 }
 
-### Logout
-POST http://127.0.0.1:8000/logout
-Authorization: Bearer {{access_token}}
+### Logout user
+# POST http://127.0.0.1:8000/logout
+# Authorization: Bearer 416a8780-b089-47f6-a5ef-43741930c9d9
