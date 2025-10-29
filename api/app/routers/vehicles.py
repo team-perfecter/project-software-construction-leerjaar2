@@ -5,26 +5,29 @@ from api.storage.vehicle_modal import Vehicle_modal
 app = FastAPI()
 
 #Modals:
-users_modal: Vehicle_modal = Profile_storage()
+users_modal: Profile_storage = Profile_storage()
 vehicle_modal: Vehicle_modal = Vehicle_modal()
 
 
+
+#Temperary login. (1 = user with cars), (2 = Admin), (3 = user with no cars)
+temp_login_id = 2
+auth = list(filter(lambda user: user["id"] == temp_login_id, users_modal.get_all_users()))[0]
 
 #Get:
 
 #Get all vehicles from logged in user or get all vehicles if loggedin is ADMIN. (User and Admin)
 @app.get("/vehicles")
 async def vehicles():
-    print(vehicle_modal)
     #Get all vehicles for Admin. Get All your owned vehicles for user.
-    vehicles = vehicle_modal.get_all_vehicles()
+    vehicles = vehicle_modal.get_all_vehicles() if auth["role"] == "ADMIN" else vehicle_modal.get_all_user_vehicles(temp_login_id)
     return "No vehicles found" if vehicles == [] else vehicles
 
 #Get one vehicle of an user. (User and Admin)
 @app.get("/vehicles/{vehicle_id}")
 async def vehicles(vehicle_id: int):
     #Get user vehicle.
-    vehicle = list(filter(lambda vehicle: vehicle["id"] == vehicle_id, vehicle_modal.get_all_vehicles()))[0]
+    vehicle = vehicle_modal.get_one_vehicle(vehicle_id)
 
     #Shows one vehicle if you are ADMIN or if it is the vehicle of the loggedin user.
     if auth["role"] == "ADMIN" or auth["role"] == "USER" and auth["id"] == vehicle["user_id"]:
@@ -35,7 +38,7 @@ async def vehicles(vehicle_id: int):
 #Get vehicles of an user. (Admin)
 @app.get("/vehicles/user/{user_id}")
 async def vehicles_user(user_id: int):
-    vehicles_user = list(filter(lambda vehicle: vehicle["user_id"] == user_id, vehicle_modal.get_all_vehicles()))
+    vehicles_user = vehicle_modal.get_all_user_vehicles(user_id)
     return "Vehicles not found" if vehicles_user == [] else vehicles_user
 
 
