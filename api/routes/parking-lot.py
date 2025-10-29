@@ -1,58 +1,12 @@
 from dataclasses import dataclass
 from datetime import date
+from datatypes.parkinglot import Parkinglot
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
 
 # TODO? moet door Stelain een ok krijgen nadat server.py gerefactored is (versie 1.0 klaar is)
 
 app = FastAPI()
-
-
-@dataclass
-class Parkinglot:
-    id: int
-    name: str
-    location: str
-    address: str
-    capacity: int
-    reserved: int
-    tariff: float
-    daytariff: float
-    created_at: date
-    lat: float
-    lng: float
-
-
-""" data
-json
-"1": {
-        "id": "1",
-        "name": "Bedrijventerrein Almere Parkeergarage",
-        "location": "Industrial Zone",
-        "address": "Schanssingel 337, 2421 BS Almere",
-        "capacity": 335,
-        "reserved": 77,
-        "tariff": 1.9,
-        "daytariff": 11,
-        "created_at": "2020-03-25",
-        "coordinates": {
-            "lat": 52.3133,
-            "lng": 5.2234
-        }
-    }
-db
-"id": "1",
-"name": "Bedrijventerrein Almere Parkeergarage",
-"location": "Industrial Zone",
-"address": "Schanssingel 337, 2421 BS Almere",
-"capacity": 335,
-"reserved": 77,
-"tariff": 1.9,
-"daytariff": 11,
-"created_at": "2020-03-25",
-"lat": 52.3133,
-"lng": 5.2234
-"""
 
 
 parking_lot_list: list[Parkinglot] = [
@@ -84,8 +38,30 @@ parking_lot_list: list[Parkinglot] = [
     ),
 ]
 
+
 # POST
 # TODO: create parking lot (admin only)             /parking-lots
+@app.post("/parking-lots")
+async def create_parking_lot(parking_lot: Parkinglot):
+    parking_lot_list.append(parking_lot)
+    return parking_lot
+
+@app.post("/parking-lots", status_code=status.HTTP_201_CREATED)
+async def create_parking_lot(parking_lot: Parkinglot):
+    # Validate that name is not empty
+    if not parking_lot.name.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Parking lot name cannot be empty"
+        )
+    
+    # Generate a new ID
+    new_id = max([lot.id for lot in parking_lot_list], default=0) + 1
+    parking_lot.id = new_id
+    
+    parking_lot_list.append(parking_lot)
+    return parking_lot
+
 # TODO: start parking session by lid                /parking-lots/{lid}/sessions/start
 # Authenticatie: Vereist
 # Body: {"licenseplate": "XX-XX-XX"}
@@ -143,4 +119,5 @@ async def get_parking_lot_by_lid(lid: int):
 
 # DELETE
 # TODO: delete parking lot by lid (admin only)      /parking-lots/{lid}
+
 # TODO: delete session by session lid (admin only)  /parking-lots/{lid}/sessions/{sid}
