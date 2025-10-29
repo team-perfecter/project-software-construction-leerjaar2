@@ -1,9 +1,11 @@
-from datatypes.parking_lot import Parking_lot
-from storage.parking_lot_storage import Parking_lot_storage
-from fastapi import FastAPI, HTTPException
+from api.datatypes.parking_lot import Parking_lot
+from api.storage.parking_lot_storage import Parking_lot_storage
+from fastapi import HTTPException, APIRouter
 import logging
 
-app = FastAPI()
+router = APIRouter(
+    tags=["Parking lots"]
+)
 
 storage: Parking_lot_storage = Parking_lot_storage()
 logging.basicConfig(
@@ -12,7 +14,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-@app.get("/parking_lot/{parking_lot_id}")
+@router.get("/parking_lot/{parking_lot_id}")
 async def get_parking_lot_by_id(parking_lot_id: int):
     # if not authenticated, raise httpexception
     logging.info("A user with the id of %i retrieved information about a parking lot with the id %i", 0, parking_lot_id)
