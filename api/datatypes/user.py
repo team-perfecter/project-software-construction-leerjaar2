@@ -1,12 +1,14 @@
-from dataclasses import dataclass
+from pydantic import BaseModel
+from typing import Optional
 from datetime import date
 
-@dataclass
-class User:
-    id: int
+class UserCreate(BaseModel):
     username: str
     password: str
-    name: str
+    name: Optional[str] = None
     email: str
-    phone: str
-    birth_year: date
+    phone: Optional[str] = None
+    birth_year: Optional[date] = None
+
+class User(UserCreate):
+    id: int
