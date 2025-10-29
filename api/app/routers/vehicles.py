@@ -14,6 +14,8 @@ vehicle_modal: Vehicle_modal = Vehicle_modal()
 temp_login_id = 2
 auth = list(filter(lambda user: user["id"] == temp_login_id, users_modal.get_all_users()))[0]
 
+
+
 #Get:
 
 #Get all vehicles from logged in user or get all vehicles if loggedin is ADMIN. (User and Admin)
