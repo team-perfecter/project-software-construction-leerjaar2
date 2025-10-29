@@ -48,6 +48,6 @@ class Vehicle_modal:
     
     #Creates vehicles
     def create_vehicle(self, vehicle_create) -> list[Vehicles]:
-        vehicle_create["id"] = len(self.vehicle_list)
+        vehicle_create["id"] = len(self.vehicle_list) + 1
         self.vehicle_list.append(vehicle_create)
         return self.vehicle_list

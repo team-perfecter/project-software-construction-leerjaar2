@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from api.storage.profile_storage import Profile_storage
 from api.storage.vehicle_modal import Vehicle_modal
 
@@ -50,7 +50,7 @@ async def vehicles_user(user_id: int):
 
 #Create a vehicle for an user. (user)
 @app.post("/vehicles/create")
-async def vehicle_create(vehicle: dict):
+async def vehicle_create(vehicle: dict = Body(...)):
     #Create vehicle.
     updated_list = vehicle_modal.create_vehicle(vehicle)
     return updated_list
