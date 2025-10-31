@@ -23,3 +23,11 @@ async def get_parking_lot_by_id(parking_lot_id: int):
         logging.warning("Parking lot with the id %i does not exist", parking_lot_id)
         raise HTTPException(status_code = 404, details = {"message: ": f"Parking lot with id ${parking_lot_id} does not exist",})
     return parking_lot
+
+@router.get("/parking_lot/location/{location}")
+async def get_parking_lot_by_id(location: str):
+    # if not authenticated, raise httpexception
+    user_id: int = 1
+    parking_lots: list[Parking_lot] = storage.get_parking_lot_by_location(location)
+    logging.warning("A user with the ID of %i tried to retrieve parking lots in the location %s.", user_id, location)
+    return parking_lots
