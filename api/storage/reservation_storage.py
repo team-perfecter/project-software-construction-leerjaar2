@@ -17,3 +17,10 @@ class Reservation_storage:
     
     def post_reservation(self, reservation: Reservation) -> None:
         self.reservation_list.append(reservation)
+
+    def get_reservation_by_vehicle(self, vehicle_id: int) -> list[Reservation]:
+        result: list[Reservation] = []
+        for reservation in self.reservation_list:
+            if reservation.vehicle_id == vehicle_id:
+                result.append(reservation)
+        return result
