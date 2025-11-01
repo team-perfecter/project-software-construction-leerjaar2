@@ -5,7 +5,9 @@ from datetime import datetime
 from fastapi import FastAPI, HTTPException
 import logging
 
-app = FastAPI()
+router = APIRouter(
+    tags=["profile"]
+)
 
 storage: Reservation_storage = Reservation_storage()
 logging.basicConfig(
@@ -14,7 +16,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-app.post("/create_reservation")
+@router.post("/create_reservation")
 async def create_reservation(vehicle_id: int, parking_lot_id: int, start_date: datetime, end_date: datetime):
     # check if the user is logged in
 
