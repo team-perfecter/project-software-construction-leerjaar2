@@ -1,25 +1,25 @@
 import os
+import logging
 from datetime import date, datetime
-from profile import get_current_user, require_admin
-
 from api.storage.profile_storage import Profile_storage
 from api.storage.parking_lot_storage import Parking_lot_storage
 from api.storage_utils import *
 from api.datatypes.parking_lot import Parking_lot
-from datatypes.session import (
-    SessionStartRequest,
-    SessionStopRequest,
-)  # sessies later maken
-from fastapi import Depends, FastAPI, HTTPException, status
+
+# from api.datatypes.session import SessionStartRequest, SessionStopRequest  # sessies later maken
+from fastapi import FastAPI, APIRouter, HTTPException, status
 from pydantic import BaseModel
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
+router = APIRouter(tags=["profile"])
 
 users_modal: Profile_storage = Profile_storage()
 parking_lot_storage: Parking_lot_storage = Parking_lot_storage()
-
-# TODO? moet door Stelain een ok krijgen nadat server.py gerefactored is (versie 1.0 klaar is) hij zei oke
-
-app = FastAPI()
 
 temp_login_id = 2
 auth = list(
@@ -27,25 +27,34 @@ auth = list(
 )[0]
 
 
-def check_if_admin():
+def admin_check():
     """Check if current user is admin, raise HTTPException if not"""
+    logging.info("Admin check performed for user with id %i", auth["id"])
     if auth["role"] != "ADMIN":
+        logging.warning("Access denied for user with id %i - not an admin", auth["id"])
         raise HTTPException(
             status_code=403, detail="Access denied. Admin privileges required."
         )
+    logging.info("Admin access granted for user with id %i", auth["id"])
 
 
 # region POST
 # TODO: create parking lot (admin only)             /parking-lots
-@app.post("/parking-lots", status_code=status.HTTP_201_CREATED)
+@router.post("/parking-lots", status_code=status.HTTP_201_CREATED)
 async def create_parking_lot(parking_lot: Parking_lot):
-    check_if_admin()
+    logging.info("User with id %i attempting to create a new parking lot", auth["id"])
+    admin_check()
+
     # later validatie toevoegen?
     parking_lots = parking_lot_storage.get_all_parking_lots()
     new_id = max([lot.id for lot in parking_lots], default=0) + 1
     parking_lot.id = new_id
 
+    logging.info(
+        "Creating parking lot with id %i and name '%s'", new_id, parking_lot.name
+    )
     parking_lot_storage.post_parking_lot(parking_lot)
+    logging.info("Successfully created parking lot with id %i", new_id)
     return parking_lot
 
 
@@ -53,46 +62,51 @@ async def create_parking_lot(parking_lot: Parking_lot):
 # Authenticatie: Vereist
 # Body: {"licenseplate": "XX-XX-XX"}
 # Validatie: check of er al een actieve session is voor dat kenteken
-@app.post("/parking-lots/{lid}/sessions/start")
-async def start_parking_session(lid: int, request: SessionStartRequest):
-    # Check if admin
-    # Check if parking lot exists
-    parking_lot = parking_lot_storage.get_parking_lot_by_id(lid)
-    if not parking_lot:
-        raise HTTPException(
-            status_code=404,
-            detail={
-                "error": "Parking lot not found",
-                "message": f"Parking lot with ID {lid} does not exist",
-            },
-        )
-
-    # Load existing sessions for this parking lot
-    # Check if there's already an active session for this license plate
-    # Create new session
-    # Save sessions back to file
+# @router.post("/parking-lots/{lid}/sessions/start")
+# async def start_parking_session(lid: int, request: SessionStartRequest):
+#     logging.info("User with id %i attempting to start session at parking lot %i", auth["id"], lid)
+#     # Check if admin
+#     admin_check()
+#     # Check if parking lot exists
+#     parking_lot = parking_lot_storage.get_parking_lot_by_id(lid)
+#     if not parking_lot:
+#         logging.warning("Parking lot with id %i does not exist", lid)
+#         raise HTTPException(
+#             status_code=404,
+#             detail={
+#                 "error": "Parking lot not found",
+#                 "message": f"Parking lot with ID {lid} does not exist",
+#             },
+#         )
+#     logging.info("Starting session at parking lot %i", lid)
+#     # Load existing sessions for this parking lot
+#     # Check if there's already an active session for this license plate
+#     # Create new session
+#     # Save sessions back to file
 
 
 # TODO: end parking session by lid                  /parking-lots/{lid}/sessions/stop
-def stop_parking_session(lid: int, request: SessionStopRequest):
-    # Check if admin
-
-    # Check if parking lot exists
-    parking_lot = parking_lot_storage.get_parking_lot_by_id(lid)
-    if not parking_lot:
-        raise HTTPException(
-            status_code=404,
-            detail={
-                "error": "Parking lot not found",
-                "message": f"Parking lot with ID {lid} does not exist",
-            },
-        )
-
-    # Load existing sessions for this parking lot
-    # Find active session for this license plate
-    # Calculate total fee based on duration and tariff
-    # Mark session as ended
-    # Save sessions back to file
+# def stop_parking_session(lid: int, request: SessionStopRequest):
+#     logging.info("User with id %i attempting to stop session at parking lot %i", auth["id"], lid)
+#     # Check if admin
+#     admin_check()
+#     # Check if parking lot exists
+#     parking_lot = parking_lot_storage.get_parking_lot_by_id(lid)
+#     if not parking_lot:
+#         logging.warning("Parking lot with id %i does not exist", lid)
+#         raise HTTPException(
+#             status_code=404,
+#             detail={
+#                 "error": "Parking lot not found",
+#                 "message": f"Parking lot with ID {lid} does not exist",
+#             },
+#         )
+#     logging.info("Stopping session at parking lot %i", lid)
+#     # Load existing sessions for this parking lot
+#     # Find active session for this license plate
+#     # Calculate total fee based on duration and tariff
+#     # Mark session as ended
+#     # Save sessions back to file
 
 
 # endregion
@@ -100,10 +114,12 @@ def stop_parking_session(lid: int, request: SessionStopRequest):
 
 # region GET
 # TODO: get all parking lots                        /parking-lots/
-@app.get("/parking-lots/")
+@router.get("/parking-lots/")
 async def get_all_parking_lots():
+    logging.info("User with id %i retrieving all parking lots", auth["id"])
     parking_lots = parking_lot_storage.get_all_parking_lots()
     if len(parking_lots) == 0:
+        logging.warning("No parking lots found in the system")
         raise HTTPException(
             status_code=204,
             detail={
@@ -112,15 +128,20 @@ async def get_all_parking_lots():
                 "code": "PARKING_LOT_NOT_FOUND",
             },
         )
+    logging.info("Successfully retrieved %i parking lots", len(parking_lots))
     return parking_lots
 
 
 # TODO: get parking lot by lid                      /parking-lots/{lid}
-@app.get("/parking-lots/{lid}")
+@router.get("/parking-lots/{lid}")
 async def get_parking_lot_by_lid(lid: int):
+    logging.info("User with id %i retrieving parking lot with id %i", auth["id"], lid)
     parking_lot = parking_lot_storage.get_parking_lot_by_id(lid)
     if parking_lot:
+        logging.info("Successfully retrieved parking lot with id %i", lid)
         return parking_lot
+
+    logging.warning("Parking lot with id %i does not exist", lid)
     raise HTTPException(
         status_code=404,
         detail={
@@ -134,6 +155,7 @@ async def get_parking_lot_by_lid(lid: int):
 # TODO: get all sessions lot by lid (admin only)    /parking-lots/{lid}/sessions
 # TODO: get session by session sid (admin only)     /parking-lots/{lid}/sessions/{sid}
 # region extra
+# TODO? moet door Stelain een ok krijgen nadat server.py gerefactored is (versie 1.0 klaar is) hij zei oke
 # TODO? PO ok maar eerst de rest: get parking lots availability               /parking-lots/availability
 # TODO? PO ok maar eerst de rest: get parking lot availability by id          /parking-lots/{id}/availability
 # TODO? PO ok maar eerst de rest: search parking lots                         /parking-lots/search
@@ -146,6 +168,10 @@ async def get_parking_lot_by_lid(lid: int):
 # region PUT
 # TODO: update parking lot by lid (admin only)      /parking-lots/{lid}
 def update_parking_lot(lid: int, updated_lot: Parking_lot):
+    logging.info(
+        "User with id %i attempting to update parking lot with id %i", auth["id"], lid
+    )
+    admin_check()
     pass
 
 
@@ -154,16 +180,18 @@ def update_parking_lot(lid: int, updated_lot: Parking_lot):
 
 # region DELETE
 # TODO: delete parking lot by lid (admin only)      /parking-lots/{lid}
-@app.delete("/parking-lots/{lid}")
-async def delete_parking_lot(
-    lid: int,
-    current_user: str = Depends(get_current_user),
-    admin_user: str = Depends(require_admin),
-):
+@router.delete("/parking-lots/{lid}")
+async def delete_parking_lot(lid: int):
+    logging.info(
+        "User with id %i attempting to delete parking lot with id %i", auth["id"], lid
+    )
+    admin_check()
+
     # Find parking lot
     parking_lot = parking_lot_storage.get_parking_lot_by_id(lid)
 
     if not parking_lot:
+        logging.warning("Parking lot with id %i does not exist", lid)
         raise HTTPException(
             status_code=404,
             detail={
@@ -178,10 +206,15 @@ async def delete_parking_lot(
 
     # Remove parking lot from the list
     # Delete parking lot
+    logging.info("Deleting parking lot '%s' with id %i", parking_lot.name, lid)
     success = parking_lot_storage.delete_parking_lot(lid)
     if not success:
+        logging.error("Failed to delete parking lot with id %i", lid)
         raise HTTPException(status_code=500, detail="Failed to delete parking lot")
 
+    logging.info(
+        "Successfully deleted parking lot '%s' with id %i", parking_lot.name, lid
+    )
     return {
         "message": f"Parking lot '{parking_lot.name}' with ID {lid} has been successfully deleted",
         "deleted_parking_lot": {
@@ -193,17 +226,24 @@ async def delete_parking_lot(
 
 
 # TODO: delete session by session lid (admin only)  /parking-lots/{lid}/sessions/{sid}
-@app.delete("/parking-lots/{lid}/sessions/{sid}")
+@router.delete("/parking-lots/{lid}/sessions/{sid}")
 async def delete_parking_session(
     lid: int,
     sid: int,
-    current_user: str = Depends(get_current_user),
-    admin_user: str = Depends(require_admin),
 ):
+    logging.info(
+        "User with id %i attempting to delete session %i from parking lot %i",
+        auth["id"],
+        sid,
+        lid,
+    )
+    admin_check()
+
     # Check if parking lot exists
     parking_lot = parking_lot_storage.get_parking_lot_by_id(lid)
 
     if not parking_lot:
+        logging.warning("Parking lot with id %i does not exist", lid)
         raise HTTPException(
             status_code=404,
             detail={
@@ -213,6 +253,7 @@ async def delete_parking_session(
             },
         )
 
+    logging.info("Deleting session %i from parking lot %i", sid, lid)
     # Load sessions for this parking lot
     # Check if session exists
     # Get session details before deletion
