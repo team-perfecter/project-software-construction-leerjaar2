@@ -3,15 +3,22 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from profile import get_current_user, require_admin
 
+from api.storage.profile_storage import Profile_storage
 from api.storage_utils import *
-from datatypes.parkinglot import Parkinglot
+from api.datatypes.parking_lot import Parkinglot
 from datatypes.session_requests import SessionStartRequest, SessionStopRequest
 from fastapi import Depends, FastAPI, HTTPException, status
 from pydantic import BaseModel
 
+
+users_modal: Profile_storage = Profile_storage()
+    
 # TODO? moet door Stelain een ok krijgen nadat server.py gerefactored is (versie 1.0 klaar is) hij zei oke
 
 app = FastAPI()
+
+temp_login_id = 2
+auth = list(filter(lambda user: user["id"] == temp_login_id, users_modal.get_all_users()))[0]
 
 
 parking_lot_list: list[Parkinglot] = [
@@ -49,14 +56,19 @@ parking_lot_list: list[Parkinglot] = [
 @app.post("/parking-lots", status_code=status.HTTP_201_CREATED)
 async def create_parking_lot(parking_lot: Parkinglot):
     # Check if admin
-    if not parking_lot.name.strip():
-        raise HTTPException(status_code=400, detail="Parking lot name cannot be empty")
+    if auth["role"] == "ADMIN":
+        if not parking_lot.name.strip():
+            raise HTTPException(status_code=400, detail="Parking lot name cannot be empty")
 
-    new_id = max([lot.id for lot in parking_lot_list], default=0) + 1
-    parking_lot.id = new_id
+        new_id = max([lot.id for lot in parking_lot_list], default=0) + 1
+        parking_lot.id = new_id
 
-    parking_lot_list.append(parking_lot)
-    return parking_lot
+        parking_lot_list.append(parking_lot)
+        return parking_lot
+    else:
+        return "Something went wrong."
+
+
 
 
 # TODO: start parking session by lid                /parking-lots/{lid}/sessions/start
