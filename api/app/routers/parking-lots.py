@@ -1,4 +1,6 @@
+from api.auth_utils import get_current_user
 from api.datatypes.parking_lot import Parking_lot
+from api.datatypes.user import User
 from api.storage.parking_lot_storage import Parking_lot_storage
 from fastapi import HTTPException, APIRouter
 import logging
@@ -15,7 +17,7 @@ logging.basicConfig(
 )
 
 @router.get("/parking_lot/{parking_lot_id}")
-async def get_parking_lot_by_id(parking_lot_id: int):
+async def get_parking_lot_by_id(parking_lot_id: int, current_user: User = Depends(get_current_user)):
     # if not authenticated, raise httpexception
     logging.info("A user with the id of %i retrieved information about a parking lot with the id %i", 0, parking_lot_id)
     parking_lot: Parking_lot | None = storage.get_parking_lot_by_id(parking_lot_id)
