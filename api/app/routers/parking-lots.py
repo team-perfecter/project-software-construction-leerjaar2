@@ -25,7 +25,7 @@ async def get_parking_lot_by_id(parking_lot_id: int, current_user: str = Depends
     return parking_lot
 
 @router.get("/parking_lot/location/{location}")
-async def get_parking_lot_by_id(location: str):
+async def get_parking_lot_by_id(location: str, current_user: str = Depends(get_current_user)):
     # if not authenticated, raise httpexception
     user_id: int = 1
     parking_lots: list[Parking_lot] = storage.get_parking_lot_by_location(location)
