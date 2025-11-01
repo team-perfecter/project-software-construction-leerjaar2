@@ -1,5 +1,7 @@
 import logging
 
+from api.auth_utils import get_current_user
+from api.datatypes.user import User
 from fastapi import APIRouter, HTTPException
 
 from api.datatypes.reservation import Reservation
@@ -21,12 +23,10 @@ logging.basicConfig(
 )
 
 @router.get("/reservations/{vehicle_id}")
-async def reservations(vehicle_id: int):
+async def reservations(vehicle_id: int, current_user: User = Depends(get_current_user)):
     vehicle: Vehicle | None = vehicle_storage.get_vehicle_by_id(vehicle_id)
-    user_id: int = 0
+    user_id: int = current_user.id
     if vehicle is None:
-        # temporary user id
-
         logging.warning("A user with the ID %i tried to retrieve a vehicle that doesnt exist: %i", user_id, vehicle_id)
         raise HTTPException(status_code=404, detail="Vehicle not found")
 
