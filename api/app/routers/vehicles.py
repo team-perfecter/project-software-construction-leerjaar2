@@ -1,3 +1,5 @@
+from api.auth_utils import get_current_user
+from api.datatypes.user import User
 from fastapi import FastAPI, HTTPException
 from api.storage.profile_storage import Profile_storage
 from api.storage.vehicle_modal import Vehicle_modal
@@ -77,9 +79,8 @@ async def vehicle_update(vehicle_id):
 
 #delete a vehicle for an user.
 @app.delete("vehicles/delete/{vehicle_id}")
-async def vehicle_update(vehicle_id: int):
-    # check if the user is logged in
-    user_id: int = 1
+async def vehicle_update(vehicle_id: int, current_user: User = Depends(get_current_user)):
+    user_id: int = current_user.id
 
     vehicle: Vehicle | None = vehicle_modal.get_one_vehicle(vehicle_id)
 
