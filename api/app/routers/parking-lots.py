@@ -18,7 +18,6 @@ logging.basicConfig(
 
 @router.get("/parking_lot/{parking_lot_id}")
 async def get_parking_lot_by_id(parking_lot_id: int, current_user: User = Depends(get_current_user)):
-    # if not authenticated, raise httpexception
     logging.info("A user with the id of %i retrieved information about a parking lot with the id %i", 0, parking_lot_id)
     parking_lot: Parking_lot | None = storage.get_parking_lot_by_id(parking_lot_id)
     if parking_lot == None:
