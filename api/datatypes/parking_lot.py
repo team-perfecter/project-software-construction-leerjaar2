@@ -3,7 +3,7 @@ from datetime import date
 
 
 @dataclass
-class Parkinglot:
+class Parking_lot:
     id: int
     name: str
     location: str

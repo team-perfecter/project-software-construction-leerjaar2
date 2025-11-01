@@ -1,74 +1,52 @@
 import os
-from dataclasses import dataclass
 from datetime import date, datetime
 from profile import get_current_user, require_admin
 
 from api.storage.profile_storage import Profile_storage
+from api.storage.parking_lot_storage import Parking_lot_storage
 from api.storage_utils import *
-from api.datatypes.parking_lot import Parkinglot
-from datatypes.session_requests import SessionStartRequest, SessionStopRequest
+from api.datatypes.parking_lot import Parking_lot
+from datatypes.session import (
+    SessionStartRequest,
+    SessionStopRequest,
+)  # sessies later maken
 from fastapi import Depends, FastAPI, HTTPException, status
 from pydantic import BaseModel
 
 
 users_modal: Profile_storage = Profile_storage()
-    
+parking_lot_storage: Parking_lot_storage = Parking_lot_storage()
+
 # TODO? moet door Stelain een ok krijgen nadat server.py gerefactored is (versie 1.0 klaar is) hij zei oke
 
 app = FastAPI()
 
 temp_login_id = 2
-auth = list(filter(lambda user: user["id"] == temp_login_id, users_modal.get_all_users()))[0]
+auth = list(
+    filter(lambda user: user["id"] == temp_login_id, users_modal.get_all_users())
+)[0]
 
 
-parking_lot_list: list[Parkinglot] = [
-    Parkinglot(
-        id=1,
-        name="Bedrijventerrein Almere Parkeergarage",
-        location="Industrial Zone",
-        address="Schanssingel 337, 2421 BS Almere",
-        capacity=335,
-        reserved=77,
-        tariff=1.9,
-        daytariff=11.0,
-        created_at=date(2020, 3, 25),
-        lat=52.3133,
-        lng=5.2234,
-    ),
-    Parkinglot(
-        id=2,
-        name="Centrum Parkeergarage",
-        location="City Center",
-        address="Hoofdstraat 123, 1234 AB Amsterdam",
-        capacity=200,
-        reserved=45,
-        tariff=2.5,
-        daytariff=15.0,
-        created_at=date(2021, 5, 10),
-        lat=52.3676,
-        lng=4.9041,
-    ),
-]
+def check_if_admin():
+    """Check if current user is admin, raise HTTPException if not"""
+    if auth["role"] != "ADMIN":
+        raise HTTPException(
+            status_code=403, detail="Access denied. Admin privileges required."
+        )
 
 
 # region POST
 # TODO: create parking lot (admin only)             /parking-lots
 @app.post("/parking-lots", status_code=status.HTTP_201_CREATED)
-async def create_parking_lot(parking_lot: Parkinglot):
-    # Check if admin
-    if auth["role"] == "ADMIN":
-        if not parking_lot.name.strip():
-            raise HTTPException(status_code=400, detail="Parking lot name cannot be empty")
+async def create_parking_lot(parking_lot: Parking_lot):
+    check_if_admin()
+    # later validatie toevoegen?
+    parking_lots = parking_lot_storage.get_all_parking_lots()
+    new_id = max([lot.id for lot in parking_lots], default=0) + 1
+    parking_lot.id = new_id
 
-        new_id = max([lot.id for lot in parking_lot_list], default=0) + 1
-        parking_lot.id = new_id
-
-        parking_lot_list.append(parking_lot)
-        return parking_lot
-    else:
-        return "Something went wrong."
-
-
+    parking_lot_storage.post_parking_lot(parking_lot)
+    return parking_lot
 
 
 # TODO: start parking session by lid                /parking-lots/{lid}/sessions/start
@@ -79,11 +57,7 @@ async def create_parking_lot(parking_lot: Parkinglot):
 async def start_parking_session(lid: int, request: SessionStartRequest):
     # Check if admin
     # Check if parking lot exists
-    parking_lot = None
-    for lot in parking_lot_list:
-        if lot.id == lid:
-            parking_lot = lot
-            break
+    parking_lot = parking_lot_storage.get_parking_lot_by_id(lid)
     if not parking_lot:
         raise HTTPException(
             status_code=404,
@@ -104,11 +78,7 @@ def stop_parking_session(lid: int, request: SessionStopRequest):
     # Check if admin
 
     # Check if parking lot exists
-    parking_lot = None
-    for lot in parking_lot_list:
-        if lot.id == lid:
-            parking_lot = lot
-            break
+    parking_lot = parking_lot_storage.get_parking_lot_by_id(lid)
     if not parking_lot:
         raise HTTPException(
             status_code=404,
@@ -132,7 +102,8 @@ def stop_parking_session(lid: int, request: SessionStopRequest):
 # TODO: get all parking lots                        /parking-lots/
 @app.get("/parking-lots/")
 async def get_all_parking_lots():
-    if len(parking_lot_list) == 0:
+    parking_lots = parking_lot_storage.get_all_parking_lots()
+    if len(parking_lots) == 0:
         raise HTTPException(
             status_code=204,
             detail={
@@ -141,15 +112,15 @@ async def get_all_parking_lots():
                 "code": "PARKING_LOT_NOT_FOUND",
             },
         )
-    return parking_lot_list
+    return parking_lots
 
 
 # TODO: get parking lot by lid                      /parking-lots/{lid}
 @app.get("/parking-lots/{lid}")
 async def get_parking_lot_by_lid(lid: int):
-    for lot in parking_lot_list:
-        if lot.id == lid:
-            return lot
+    parking_lot = parking_lot_storage.get_parking_lot_by_id(lid)
+    if parking_lot:
+        return parking_lot
     raise HTTPException(
         status_code=404,
         detail={
@@ -174,7 +145,7 @@ async def get_parking_lot_by_lid(lid: int):
 # endregion
 # region PUT
 # TODO: update parking lot by lid (admin only)      /parking-lots/{lid}
-def update_parking_lot(lid: int, updated_lot: Parkinglot):
+def update_parking_lot(lid: int, updated_lot: Parking_lot):
     pass
 
 
@@ -189,15 +160,8 @@ async def delete_parking_lot(
     current_user: str = Depends(get_current_user),
     admin_user: str = Depends(require_admin),
 ):
-    # Find parking lot in the list later db
-    parking_lot = None
-    parking_lot_index = None
-
-    for index, lot in enumerate(parking_lot_list):
-        if lot.id == lid:
-            parking_lot = lot
-            parking_lot_index = index
-            break
+    # Find parking lot
+    parking_lot = parking_lot_storage.get_parking_lot_by_id(lid)
 
     if not parking_lot:
         raise HTTPException(
@@ -213,7 +177,10 @@ async def delete_parking_lot(
     # If sessions file doesn't exist or can't be read, continue with deletion
 
     # Remove parking lot from the list
-    parking_lot_list.pop(parking_lot_index)
+    # Delete parking lot
+    success = parking_lot_storage.delete_parking_lot(lid)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to delete parking lot")
 
     return {
         "message": f"Parking lot '{parking_lot.name}' with ID {lid} has been successfully deleted",
@@ -234,11 +201,7 @@ async def delete_parking_session(
     admin_user: str = Depends(require_admin),
 ):
     # Check if parking lot exists
-    parking_lot = None
-    for lot in parking_lot_list:
-        if lot.id == lid:
-            parking_lot = lot
-            break
+    parking_lot = parking_lot_storage.get_parking_lot_by_id(lid)
 
     if not parking_lot:
         raise HTTPException(
@@ -251,13 +214,9 @@ async def delete_parking_session(
         )
 
     # Load sessions for this parking lot
-
     # Check if session exists
-
     # Get session details before deletion
-
     # Remove session
-
     # Save updated sessions back to file
 
     # return {
