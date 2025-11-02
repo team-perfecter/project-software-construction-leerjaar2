@@ -43,8 +43,16 @@ class Vehicle_modal:
         return list(filter(lambda vehicle: vehicle["user_id"] == user_id, self.vehicle_list))
     
     #Return one vehicle
-    def get_one_vehicle(self, vehicle_id) -> list[Vehicles]:
+    def get_one_vehicle(self, vehicle_id: int) -> Vehicle | None:
         return list(filter(lambda vehicle: vehicle["id"] == vehicle_id, self.vehicle_list))[0]
+    
+    # Deletes a vehicle
+    def delete_vehicle(self, vehicle_id: int) -> None:
+        new_vehicle_list: list[Vehicle] = []
+        for vehicle in self.vehicle_list:
+            if vehicle.id != vehicle_id:
+                new_vehicle_list.append(vehicle)
+        self.vehicle_list = new_vehicle_list
     
     #Creates vehicles
     def create_vehicle(self, vehicle_create) -> list[Vehicles]:
