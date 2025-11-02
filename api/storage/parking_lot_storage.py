@@ -9,7 +9,7 @@ class Parking_lot_storage:
     def get_all_parking_lots(self) -> list[Parking_lot]:
         return self.parking_lot_list
     
-    def get_parking_lot_by_id(self, parking_lot_id) -> Parking_lot | None:
+    def get_parking_lot_by_id(self, parking_lot_id: int) -> Parking_lot | None:
         for parking_lot in self.parking_lot_list:
             if parking_lot.id == parking_lot_id:
                 return parking_lot
