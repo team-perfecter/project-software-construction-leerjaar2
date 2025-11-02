@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from api.storage.profile_storage import Profile_storage
 from api.storage.vehicle_modal import Vehicle_modal
 
@@ -40,7 +40,7 @@ async def vehicles(vehicle_id: int):
 #Get vehicles of an user. (Admin)
 @app.get("/vehicles/user/{user_id}")
 async def vehicles_user(user_id: int):
-    #Get user vehicles
+    #Get user vehicles.
     vehicles_user = vehicle_modal.get_all_user_vehicles(user_id)
     return "Vehicles not found" if vehicles_user == [] else vehicles_user
 
@@ -48,17 +48,19 @@ async def vehicles_user(user_id: int):
 
 #Post:
 
-#Create a vehicle for an user.
-@app.post("vehicles/create")
-async def vehicle_create():
-    print("create vehicle of a user.")
+#Create a vehicle for an user. (user)
+@app.post("/vehicles/create")
+async def vehicle_create(vehicle: dict = Body(...)):
+    #Create vehicle.
+    updated_list = vehicle_modal.create_vehicle(vehicle)
+    return updated_list
 
 
 
 #Put:
 
 #Update a vehicle for an user.
-@app.put("vehicles/update/{vehicle_id}")
+@app.put("/vehicles/update/{vehicle_id}")
 async def vehicle_update(vehicle_id):
     print("update vehicle of a user.")
 
@@ -67,6 +69,6 @@ async def vehicle_update(vehicle_id):
 #delete:
 
 #delete a vehicle for an user.
-@app.delete("vehicles/delete/{vehicle_id}")
+@app.delete("/vehicles/delete/{vehicle_id}")
 async def vehicle_update(vehicle_id):
     print("delete vehicle of a user.")

@@ -43,5 +43,11 @@ class Vehicle_modal:
         return list(filter(lambda vehicle: vehicle["user_id"] == user_id, self.vehicle_list))
     
     #Return one vehicle
-    def get_one_vehicle(self, vehicle_id) -> list[Vehicle]:
+    def get_one_vehicle(self, vehicle_id) -> list[Vehicles]:
         return list(filter(lambda vehicle: vehicle["id"] == vehicle_id, self.vehicle_list))[0]
+    
+    #Creates vehicles
+    def create_vehicle(self, vehicle_create) -> list[Vehicles]:
+        vehicle_create["id"] = len(self.vehicle_list) + 1
+        self.vehicle_list.append(vehicle_create)
+        return self.vehicle_list
