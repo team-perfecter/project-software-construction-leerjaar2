@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 @dataclass
-class Vehicles:
+class Vehicle:
     id: int
     user_id: int
     license_plate: str
