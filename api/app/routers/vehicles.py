@@ -1,6 +1,11 @@
+from api.auth_utils import get_current_user
+from api.datatypes.user import User
 from fastapi import FastAPI, HTTPException
 from api.storage.profile_storage import Profile_storage
 from api.storage.vehicle_modal import Vehicle_modal
+from api.datatypes.vehicles import Vehicle
+import logging
+from starlette.responses import JSONResponse
 
 app = FastAPI()
 
@@ -8,6 +13,12 @@ app = FastAPI()
 users_modal: Profile_storage = Profile_storage()
 vehicle_modal: Vehicle_modal = Vehicle_modal()
 
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
 
 
 #Temperary login. (1 = user with cars), (2 = Admin), (3 = user with no cars)
@@ -40,7 +51,7 @@ async def vehicles(vehicle_id: int):
 #Get vehicles of an user. (Admin)
 @app.get("/vehicles/user/{user_id}")
 async def vehicles_user(user_id: int):
-    #Get user vehicles
+    #Get user vehicles.
     vehicles_user = vehicle_modal.get_all_user_vehicles(user_id)
     return "Vehicles not found" if vehicles_user == [] else vehicles_user
 
@@ -48,17 +59,19 @@ async def vehicles_user(user_id: int):
 
 #Post:
 
-#Create a vehicle for an user.
-@app.post("vehicles/create")
-async def vehicle_create():
-    print("create vehicle of a user.")
+#Create a vehicle for an user. (user)
+@app.post("/vehicles/create")
+async def vehicle_create(vehicle: dict = Body(...)):
+    #Create vehicle.
+    updated_list = vehicle_modal.create_vehicle(vehicle)
+    return updated_list
 
 
 
 #Put:
 
 #Update a vehicle for an user.
-@app.put("vehicles/update/{vehicle_id}")
+@app.put("/vehicles/update/{vehicle_id}")
 async def vehicle_update(vehicle_id):
     print("update vehicle of a user.")
 
@@ -68,5 +81,19 @@ async def vehicle_update(vehicle_id):
 
 #delete a vehicle for an user.
 @app.delete("vehicles/delete/{vehicle_id}")
-async def vehicle_update(vehicle_id):
-    print("delete vehicle of a user.")
+async def vehicle_update(vehicle_id: int, current_user: User = Depends(get_current_user)):
+    user_id: int = current_user.id
+
+    vehicle: Vehicle | None = vehicle_modal.get_one_vehicle(vehicle_id)
+
+    if vehicle == None:
+        logging.warning("A user with the ID of %i tried to delete a vehicle with the ID of %i, but the vehicle could not be found.", user_id, vehicle_id)
+        raise HTTPException(status_code=404, detail={"error": "vehicle not found"})
+    
+    if vehicle.user_id != user_id:
+        logging.warning("A user with the ID of %i tried to delete a vehicle with the ID of %i, but the vehicle does not belong to the user.", user_id, vehicle_id)
+        raise HTTPException(status_code=401, detail={"error": "Not authoized to delete this vehicle"})
+    
+    vehicle_modal.delete_vehicle(vehicle.id)
+    logging.info("A user with the ID of %i succesfully deleted a vehicle with the ID of %i.", user_id, vehicle_id)
+    return JSONResponse(content={"message": "Vehicle succesfully deleted"}, status_code=201)

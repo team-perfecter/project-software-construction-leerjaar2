@@ -1,10 +1,10 @@
-from api.datatypes.vehicles import Vehicles
+from api.datatypes.vehicles import Vehicle
 
 #eventually the database queries / JSON write/read will be here.
 
 class Vehicle_modal:
     def __init__(self):
-        self.vehicle_list: list[Vehicles] = [
+        self.vehicle_list: list[Vehicle] = [
             {
                 "id": 1,
                 "user_id": 1,
@@ -35,13 +35,27 @@ class Vehicle_modal:
         ]
     
     #Return all vehicles
-    def get_all_vehicles(self) -> list[Vehicles]:
+    def get_all_vehicles(self) -> list[Vehicle]:
         return self.vehicle_list
     
     #return all vehicles of user
-    def get_all_user_vehicles(self, user_id) -> list[Vehicles]:
+    def get_all_user_vehicles(self, user_id) -> list[Vehicle]:
         return list(filter(lambda vehicle: vehicle["user_id"] == user_id, self.vehicle_list))
     
     #Return one vehicle
-    def get_one_vehicle(self, vehicle_id) -> list[Vehicles]:
+    def get_one_vehicle(self, vehicle_id: int) -> Vehicle | None:
         return list(filter(lambda vehicle: vehicle["id"] == vehicle_id, self.vehicle_list))[0]
+    
+    # Deletes a vehicle
+    def delete_vehicle(self, vehicle_id: int) -> None:
+        new_vehicle_list: list[Vehicle] = []
+        for vehicle in self.vehicle_list:
+            if vehicle.id != vehicle_id:
+                new_vehicle_list.append(vehicle)
+        self.vehicle_list = new_vehicle_list
+    
+    #Creates vehicles
+    def create_vehicle(self, vehicle_create) -> list[Vehicles]:
+        vehicle_create["id"] = len(self.vehicle_list) + 1
+        self.vehicle_list.append(vehicle_create)
+        return self.vehicle_list

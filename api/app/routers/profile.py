@@ -21,8 +21,8 @@ logging.basicConfig(
 async def register(user: UserCreate):
 
     missing_fields: list[str] = []
-    if not user.username:
-        missing_fields.append("username")
+    if not user.name:
+        missing_fields.append("name")
     if not user.password:
         missing_fields.append("password")
     if not user.email:
@@ -34,13 +34,14 @@ async def register(user: UserCreate):
         raise HTTPException(status_code=400, detail={
                             "missing_fields": missing_fields})
 
-    username_check = storage.get_user_by_username(user.name)
+    username_check = storage.get_user_by_name(user.name)
     if username_check != None:
         logging.info(
             "A user tried to create a profile, but the name was already created: %s", user.name)
         raise HTTPException(status_code=409, detail="Name already taken")
     hashed_password = hash_string(user.password)
     user.password = hashed_password
+    storage.post_user(user)
     logging.info(
         "A user has created a new profile with the name: %s", user.name)
 

@@ -1,5 +1,6 @@
-from dataclasses import dataclass
+from datetime import date
 from pydantic import BaseModel
+
 
 class Vehicle(BaseModel):
     id: int
@@ -9,3 +10,4 @@ class Vehicle(BaseModel):
     model: str
     color: str
     year: int
+    created_at: date
