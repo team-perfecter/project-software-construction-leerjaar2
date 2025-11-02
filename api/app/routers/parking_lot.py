@@ -3,12 +3,10 @@ import logging
 from datetime import date, datetime
 from api.storage.profile_storage import Profile_storage
 from api.storage.parking_lot_storage import Parking_lot_storage
+from api.storage.session_storage import Session_storage
 from api.storage_utils import *
 from api.datatypes.parking_lot import Parking_lot
-
-# from api.datatypes.session import SessionStartRequest, SessionStopRequest  # sessies later maken
-from fastapi import FastAPI, APIRouter, HTTPException, status
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, status
 
 logging.basicConfig(
     level=logging.INFO,
@@ -16,10 +14,11 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-router = APIRouter(tags=["profile"])
+router = APIRouter(tags=["parking lot"])
 
-users_modal: Profile_storage = Profile_storage()
 parking_lot_storage: Parking_lot_storage = Parking_lot_storage()
+session_storage: Session_storage = Session_storage()
+users_modal: Profile_storage = Profile_storage()
 
 temp_login_id = 2
 auth = list(
@@ -56,33 +55,6 @@ async def create_parking_lot(parking_lot: Parking_lot):
     parking_lot_storage.post_parking_lot(parking_lot)
     logging.info("Successfully created parking lot with id %i", new_id)
     return parking_lot
-
-
-# TODO: start parking session by lid                /parking-lots/{lid}/sessions/start
-# Authenticatie: Vereist
-# Body: {"licenseplate": "XX-XX-XX"}
-# Validatie: check of er al een actieve session is voor dat kenteken
-# @router.post("/parking-lots/{lid}/sessions/start")
-# async def start_parking_session(lid: int, request: SessionStartRequest):
-#     logging.info("User with id %i attempting to start session at parking lot %i", auth["id"], lid)
-#     # Check if admin
-#     admin_check()
-#     # Check if parking lot exists
-#     parking_lot = parking_lot_storage.get_parking_lot_by_id(lid)
-#     if not parking_lot:
-#         logging.warning("Parking lot with id %i does not exist", lid)
-#         raise HTTPException(
-#             status_code=404,
-#             detail={
-#                 "error": "Parking lot not found",
-#                 "message": f"Parking lot with ID {lid} does not exist",
-#             },
-#         )
-#     logging.info("Starting session at parking lot %i", lid)
-#     # Load existing sessions for this parking lot
-#     # Check if there's already an active session for this license plate
-#     # Create new session
-#     # Save sessions back to file
 
 
 # TODO: end parking session by lid                  /parking-lots/{lid}/sessions/stop
