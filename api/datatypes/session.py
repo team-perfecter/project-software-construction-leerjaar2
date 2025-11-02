@@ -17,7 +17,7 @@ class Session:
     end_time: datetime
     duration_in_minutes: int
     cost: float
-    # payment_status: bool
+    # payment_status: bool # TODO kijken of dit handig is
 
 
 """ data
