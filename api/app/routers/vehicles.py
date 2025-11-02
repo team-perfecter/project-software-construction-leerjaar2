@@ -21,7 +21,7 @@ auth = list(filter(lambda user: user["id"] == temp_login_id, users_modal.get_all
 #Get all vehicles from logged in user or get all vehicles if loggedin is ADMIN. (User and Admin)
 @app.get("/vehicles")
 async def vehicles():
-    #Get all vehicles for Admin. Get All your owned vehicles for user.
+    #Get all vehicles if you are Admin or get all your owned vehicles if you are user.
     vehicles = vehicle_modal.get_all_vehicles() if auth["role"] == "ADMIN" else vehicle_modal.get_all_user_vehicles(temp_login_id)
     return "No vehicles found" if vehicles == [] else vehicles
 
