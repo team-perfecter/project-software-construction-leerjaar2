@@ -1,4 +1,4 @@
-from datatypes.reservation import Reservation
+from api.datatypes.reservation import Reservation
 
 #eventually the database queries / JSON write/read will be here.
 
