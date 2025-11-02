@@ -1,7 +1,7 @@
 from dataclasses import dataclass
+from pydantic import BaseModel
 
-@dataclass
-class Vehicle:
+class Vehicle(BaseModel):
     id: int
     user_id: int
     license_plate: str
