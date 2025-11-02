@@ -32,7 +32,7 @@ async def vehicles(vehicle_id: int):
     vehicle = vehicle_modal.get_one_vehicle(vehicle_id)
 
     #Shows one vehicle if you are ADMIN or if it is the vehicle of the loggedin user.
-    if auth["role"] == "ADMIN" or auth["role"] == "USER" and auth["id"] == vehicle["user_id"]:
+    if auth["role"] == "ADMIN" or auth["id"] == vehicle["user_id"]:
         return vehicle
     else:
         return "Something went wrong."
@@ -61,7 +61,7 @@ async def vehicle_create(vehicle: dict = Body(...)):
 
 #Update a vehicle for an user.
 @app.put("/vehicles/update/{vehicle_id}")
-async def vehicle_update(vehicle_id):
+async def vehicle_update(vehicle_id: int):
     print("update vehicle of a user.")
 
 
@@ -70,5 +70,13 @@ async def vehicle_update(vehicle_id):
 
 #delete a vehicle for an user.
 @app.delete("/vehicles/delete/{vehicle_id}")
-async def vehicle_update(vehicle_id):
-    print("delete vehicle of a user.")
+async def vehicle_update(vehicle_id: int):
+    #Get the vehicle.
+    vehicle = vehicle_modal.get_one_vehicle(vehicle_id)
+
+    #Check if you are admin or if it is your vehicle.
+    if auth["role"] == "ADMIN" or auth["id"] == vehicle["user_id"]:
+        updated_list = vehicle_modal.delete_vehicle(vehicle_id)
+        return updated_list
+    else:
+        return "Something went wrong."
