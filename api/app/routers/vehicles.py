@@ -1,6 +1,6 @@
 from api.auth_utils import get_current_user
 from api.datatypes.user import User
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from api.storage.profile_storage import Profile_storage
 from api.storage.vehicle_modal import Vehicle_modal
 from api.datatypes.vehicles import Vehicle
