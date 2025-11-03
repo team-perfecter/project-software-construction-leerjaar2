@@ -80,6 +80,32 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(b"User not found")
 
 
+        elif self.path == "/logout":
+            data = json.loads(self.rfile.read(int(self.headers.get("Content-Length", -1))))
+            token = data.get("session_token")
+
+            if not token:
+                self.send_response(400)
+                self.send_header("Content-type", "application/json")
+                self.end_headers()
+                self.wfile.write(b"Missing session token")
+                return
+
+            session = get_session(token)
+            if not session:
+                self.send_response(401)
+                self.send_header("Content-type", "application/json")
+                self.end_headers()
+                self.wfile.write(b"Invalid or expired session")
+                return
+
+            remove_session(token)
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(b"User logged out")
+
+
         elif self.path.startswith("/parking-lots"):
             token = self.headers.get('Authorization')
             if not token or not get_session(token):
