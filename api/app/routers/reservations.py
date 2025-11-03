@@ -2,7 +2,7 @@ import logging
 
 from api.auth_utils import get_current_user
 from api.datatypes.user import User
-from fastapi import APIRouter, HTTPException
+from fastapi import Depends, APIRouter, HTTPException
 
 from api.datatypes.reservation import Reservation
 from api.datatypes.vehicle import Vehicle
