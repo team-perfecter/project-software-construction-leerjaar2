@@ -12,3 +12,7 @@ class UserCreate(BaseModel):
 
 class User(UserCreate):
     id: int
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
