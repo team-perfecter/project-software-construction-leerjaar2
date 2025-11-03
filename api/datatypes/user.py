@@ -3,10 +3,9 @@ from typing import Optional
 from datetime import date
 
 class UserCreate(BaseModel):
-    username: str
     password: str
-    name: Optional[str] = None
     email: str
+    name: str
     phone: Optional[str] = None
     birth_year: Optional[date] = None
 
