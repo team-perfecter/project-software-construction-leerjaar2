@@ -18,8 +18,14 @@ Content-Type: application/json
   "username": "jerrel1111",
   "password": "1234"
 }
+
+> {% client.global.set("access_token", response.body.access_token); %}
 ###
 GET http://127.0.0.1:8000/user/1
  ### Logout user
 # POST http://127.0.0.1:8000/logout
 # Authorization: Bearer 416a8780-b089-47f6-a5ef-43741930c9d9
+
+### Get current user
+GET http://localhost:8000/me
+Authorization: Bearer {{access_token}}

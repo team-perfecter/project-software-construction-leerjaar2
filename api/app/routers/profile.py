@@ -3,7 +3,7 @@ from api.datatypes.user import User, UserCreate, UserLogin
 from api.storage.profile_storage import Profile_storage
 from api.utilities.Hasher import hash_string
 import logging
-from fastapi import APIRouter, HTTPException
+from fastapi import Depends, APIRouter, HTTPException
 from api.auth_utils import verify_password, create_access_token, get_current_user
 
 router = APIRouter(
@@ -50,18 +50,13 @@ async def register(user: UserCreate):
 
 @router.post("/login")
 async def login(data: UserLogin):
-    # Check if user exists
     user = storage.get_user_by_name(data.username)
     if user is None:
         logging.info("Login failed — username not found: %s", data.username)
         raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    # Verify password
     if not verify_password(data.password, user.password):
         logging.info("Login failed — incorrect password for user: %s", data.username)
         raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    # Create token
     access_token = create_access_token({"sub": user.name})
     logging.info("User '%s' logged in successfully", user.name)
 
@@ -72,3 +67,10 @@ async def login(data: UserLogin):
 async def get_user(user_id: int):
     user_list: list[User] = storage.user_list
     return {"username: " + user_list[user_id].username, "password: " + user_list[user_id].password}
+
+@router.get("/profile", response_model=User)
+async def get_me(username: str = Depends(get_current_user)):
+    user = storage.get_user_by_name(username)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
