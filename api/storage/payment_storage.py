@@ -24,3 +24,10 @@ class Payment_storage:
             if payment.user_id == user_id:
                 result.append(payment)
         return result
+    
+    def get_open_payments_by_user(self, user_id: int) -> list[Payment]:
+        result: list[Payment] = []
+        for payment in self.payment_list:
+            if payment.user_id == user_id and payment.completed_at is None:
+                result.append(payment)
+        return result

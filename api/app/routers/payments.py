@@ -20,7 +20,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-@router.get("/payments")
+@router.get("/payments/me")
 async def get_payments(current_user: User = Depends(get_current_user)):
     user_id: int = current_user.id
     payments_list = payment_storage.get_payments_by_user(user_id)
@@ -28,9 +28,31 @@ async def get_payments(current_user: User = Depends(get_current_user)):
     logging.info("Retrieved %i payments for user ID %i", len(payments_list), user_id)
     return payments_list
 
+@router.get("/payments/open/me")
+async def get_open_payments(current_user: User = Depends(get_current_user)):
+    user_id: int = current_user.id
+    payments_list = payment_storage.get_open_payments_by_user(user_id)
+
+    logging.info("Retrieved %i payments for user ID %i", len(payments_list), user_id)
+    return payments_list
+
 @router.get("/payments/{user_id}")
-async def get_payments(user_id: int):
+async def get_payments_by_user(user_id: int):
+    user = profile_storage.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
     payments_list = payment_storage.get_payments_by_user(user_id)
+
+    logging.info("Retrieved %i payments for user ID %i", len(payments_list), user_id)
+    return payments_list
+
+@router.get("/payments/{user_id}/open")
+async def get_open_payments_by_user(user_id: int):
+    user = profile_storage.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    payments_list = payment_storage.get_open_payments_by_user(user_id)
 
     logging.info("Retrieved %i payments for user ID %i", len(payments_list), user_id)
     return payments_list
