@@ -12,6 +12,9 @@ profile_storage: Profile_storage = Profile_storage()
 profile_storage: Profile_storage = Profile_storage()
 
 SECRET_KEY = "super_secret_key"  # ⚠️ Gebruik een env var in productie
+profile_storage: Profile_storage = Profile_storage()
+
+SECRET_KEY = "super_secret_key"  # ⚠️ Gebruik een env var in productie
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
