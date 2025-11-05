@@ -10,7 +10,7 @@ from api.storage.profile_storage import Profile_storage
 from datetime import datetime
 
 router = APIRouter(
-    tags=["reservations"]
+    tags=["payments"]
 )
 
 payment_storage: Payment_storage = Payment_storage()
@@ -22,7 +22,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-@router.get("/payments/me")
+@router.get("/me")
 async def get_payments(current_user: User = Depends(get_current_user)):
     user_id: int = current_user.id
     payments_list = payment_storage.get_payments_by_user(user_id)
@@ -30,7 +30,7 @@ async def get_payments(current_user: User = Depends(get_current_user)):
     logging.info("Retrieved %i payments for user ID %i", len(payments_list), user_id)
     return payments_list
 
-@router.get("/payments/open/me")
+@router.get("/open/me")
 async def get_open_payments(current_user: User = Depends(get_current_user)):
     user_id: int = current_user.id
     payments_list = payment_storage.get_open_payments_by_user(user_id)
@@ -38,7 +38,7 @@ async def get_open_payments(current_user: User = Depends(get_current_user)):
     logging.info("Retrieved %i payments for user ID %i", len(payments_list), user_id)
     return payments_list
 
-@router.get("/payments/{user_id}")
+@router.get("/{user_id}")
 async def get_payments_by_user(user_id: int):
     user = profile_storage.get_user_by_id(user_id)
     if not user:
@@ -48,7 +48,7 @@ async def get_payments_by_user(user_id: int):
     logging.info("Retrieved %i payments for user ID %i", len(payments_list), user_id)
     return payments_list
 
-@router.get("/payments/{user_id}/open")
+@router.get("/{user_id}/open")
 async def get_open_payments_by_user(user_id: int):
     user = profile_storage.get_user_by_id(user_id)
     if not user:
@@ -59,7 +59,7 @@ async def get_open_payments_by_user(user_id: int):
     logging.info("Retrieved %i payments for user ID %i", len(payments_list), user_id)
     return payments_list
 
-@router.post("/payments/{payment_id}/pay")
+@router.post("/{payment_id}/pay")
 async def make_payment(payment_id: int, current_user: User = Depends(get_current_user)):
     payment = payment_storage.get_payment_by_id(payment_id)
     if not payment:
