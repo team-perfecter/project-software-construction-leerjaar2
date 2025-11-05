@@ -1,0 +1,13 @@
+# POST
+# GET
+
+### Get all parking lots
+GET http://localhost:8000/parking-lots/
+
+### Get parking lot by ID
+GET http://localhost:8000/parking-lots/1
+### Get parking lot by ID (not found example)
+GET http://localhost:8000/parking-lots/999
+
+# PUT
+# DELETE
