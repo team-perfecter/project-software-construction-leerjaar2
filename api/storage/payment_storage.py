@@ -31,3 +31,11 @@ class Payment_storage:
             if payment.user_id == user_id and payment.completed_at is None:
                 result.append(payment)
         return result
+    
+    def update_payment(self, updated_payment: Payment) -> bool:
+        for i, payment in enumerate(self.payment_list):
+            if payment.id == updated_payment.id:
+                self.payment_list[i] = updated_payment
+                return True
+        return False
+
