@@ -4,7 +4,7 @@ from starlette.responses import JSONResponse
 from api.app.routers.profile import storage
 from api.auth_utils import get_current_user
 from api.datatypes.user import User
-from fastapi import Depends, APIRouter, HTTPException
+from fastapi import Depends, APIRouter, HTTPException, status
 from api.datatypes.reservation import Reservation
 from api.datatypes.vehicle import Vehicle
 from api.storage.parking_lot_storage import Parking_lot_storage
