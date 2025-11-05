@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
+from api.datatypes.sessions import Session
 
 
 class Session_storage:
@@ -7,10 +8,10 @@ class Session_storage:
 
     def __init__(self):
         #Tijdelijke opslag van sessies
-        self.session_list: List[Dict[str, Any]] = []
+        self.session_list: list[Session] = []
 
     #Nieuwe sessie starten
-    def start_session(self, vehicle_id: int, user_id: int, parking_lot_id: int = 1) -> Dict[str, Any]:
+    def start_session(self, vehicle_id: int, user_id: int, parking_lot_id: int = 1) -> None:
         #Controleer of dit voertuig al een actieve sessie heeft
         for s in self.session_list:
             if s["vehicle_id"] == vehicle_id and s["stopped"] is None:
@@ -30,7 +31,7 @@ class Session_storage:
         return new_session
 
     #Actieve sessie stoppen
-    def stop_session(self, vehicle_id: int) -> Dict[str, Any]:
+    def stop_session(self, vehicle_id: int) -> None:
         for s in self.session_list:
             if s["vehicle_id"] == vehicle_id and s["stopped"] is None:
                 s["stopped"] = datetime.now()
@@ -41,15 +42,15 @@ class Session_storage:
         raise Exception("No active session found for this vehicle.")
 
     #Alle sessies ophalen
-    def get_all_sessions(self) -> List[Dict[str, Any]]:
+    def get_all_sessions(self) -> List[Session]:
         return self.session_list
 
     #Alle actieve sessies ophalen
-    def get_active_sessions(self) -> List[Dict[str, Any]]:
+    def get_active_sessions(self) -> List[Session]:
         return [s for s in self.session_list if s["stopped"] is None]
 
     #Één sessie zoeken op ID
-    def get_session_by_id(self, session_id: int) -> Optional[Dict[str, Any]]:
+    def get_session_by_id(self, session_id: int) -> Optional[Session]:
         for s in self.session_list:
             if s["id"] == session_id:
                 return s
