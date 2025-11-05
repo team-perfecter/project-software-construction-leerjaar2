@@ -63,15 +63,21 @@ async def get_open_payments_by_user(user_id: int):
 async def make_payment(payment_id: int, current_user: User = Depends(get_current_user)):
     payment = payment_storage.get_payment_by_id(payment_id)
     if not payment:
+        logging.warning("A user with the id of %i tried to make a payment, but the requested payment does not exist: %i", current_user.id, payment_id)
         raise HTTPException(status_code=404, detail="Payment not found")
     
+    
     if payment.user_id != current_user.id:
+        logging.warning("A user with the id of %i tried to make a payment, but the requested payment %i does not belong to the user", current_user.id, payment_id)
         raise HTTPException(status_code=403, detail="No permission to pay this bill")
     
     if payment.completed_at is not None:
+        logging.warning("A user with the id of %i tried to make a payment, but the requested payment %i has already been paid", current_user.id, payment_id)
         raise HTTPException(status_code =400, detail="Payment has already been paid")
     
     payment.completed_at = datetime.now()
     update = payment_storage.update_payment(payment)
     if not update:
+        logging.warning("A user with the id of %i tried to make a payment, but the requested payment %i has failed", current_user.id, payment_id)
         raise HTTPException(status_code=500, detail="Payment has failed")
+    logging.info("A user with the id of %i tried to made a payment: %i", current_user.id, payment_id)
