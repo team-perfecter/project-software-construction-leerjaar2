@@ -9,7 +9,7 @@ from api.datatypes.reservation import Reservation
 from api.datatypes.vehicle import Vehicle
 from api.storage.parking_lot_storage import Parking_lot_storage
 from api.storage.reservation_storage import Reservation_storage
-from api.storage.vehicle_modal import Vehicle_modal
+from api.storage.vehicle_storage import Vehicle_storage
 
 router = APIRouter(
     tags=["reservations"]
@@ -17,7 +17,7 @@ router = APIRouter(
 
 reservation_storage: Reservation_storage = Reservation_storage()
 parking_lot_storage: Parking_lot_storage = Parking_lot_storage()
-vehicle_storage: Vehicle_modal = Vehicle_modal()
+vehicle_storage: Vehicle_storage = Vehicle_storage()
 
 logging.basicConfig(
     level=logging.INFO,
