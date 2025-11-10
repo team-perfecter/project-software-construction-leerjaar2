@@ -97,3 +97,4 @@ async def vehicle_update(vehicle_id: int, current_user: User = Depends(get_curre
     vehicle_modal.delete_vehicle(vehicle.id)
     logging.info("A user with the ID of %i succesfully deleted a vehicle with the ID of %i.", user_id, vehicle_id)
     return JSONResponse(content={"message": "Vehicle succesfully deleted"}, status_code=201)
+
