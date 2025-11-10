@@ -72,7 +72,7 @@ async def vehicle_create(vehicle: dict = Body(...)):
 
 #Update a vehicle for an user.
 @router.put("/vehicles/update/{vehicle_id}")
-async def vehicle_update(vehicle_id: int):
+async def vehicle_update(vehicle: dict = Body(...)):
     print("update vehicle of a user.")
 
 
