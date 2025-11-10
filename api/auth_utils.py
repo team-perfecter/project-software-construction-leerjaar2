@@ -33,7 +33,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 revoked_tokens = set()
 
 def revoke_token(token: str):
-    """Voeg een token toe aan de blacklist (uitloggen)."""
+    """Voeg een token toe aan de blacklist wanneer er wordt uitgelogd."""
     revoked_tokens.add(token)
 
 def is_token_revoked(token: str) -> bool:
@@ -41,7 +41,7 @@ def is_token_revoked(token: str) -> bool:
     return token in revoked_tokens
 
 def get_current_user(token: str = Depends(oauth2_scheme)):
-    """Controleer of token geldig én niet ingetrokken is."""
+    """Controleer of token geldig en niet ingetrokken is."""
     if is_token_revoked(token):
         raise HTTPException(status_code=401, detail="Token has been revoked (user logged out)")
 
