@@ -1,4 +1,4 @@
-from api.datatypes.vehicles import Vehicle
+from api.datatypes.vehicle import Vehicle
 
 #eventually the database queries / JSON write/read will be here.
 

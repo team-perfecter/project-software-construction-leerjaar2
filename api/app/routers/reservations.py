@@ -4,13 +4,12 @@ from starlette.responses import JSONResponse
 from api.app.routers.profile import storage
 from api.auth_utils import get_current_user
 from api.datatypes.user import User
-from fastapi import Depends, APIRouter, HTTPException
+from fastapi import Depends, APIRouter, HTTPException, status
 from api.datatypes.reservation import Reservation
 from api.datatypes.vehicle import Vehicle
 from api.storage.parking_lot_storage import Parking_lot_storage
 from api.storage.reservation_storage import Reservation_storage
 from api.storage.vehicle_modal import Vehicle_modal
-from api.storage.vehicle_storage import Vehicle_storage
 
 router = APIRouter(
     tags=["reservations"]
@@ -43,7 +42,7 @@ async def reservations(vehicle_id: int, current_user: User = Depends(get_current
     return reservation_list
 
 
-@router.post("/create_reservation")
+@router.post("/create_reservation", status_code=status.HTTP_201_CREATED)
 async def create_reservation(vehicle_id: int, parking_lot_id: int, start_date: datetime, end_date: datetime, current_user: User = Depends(get_current_user)):
 
     # check for missing fields
@@ -105,7 +104,7 @@ async def create_reservation(vehicle_id: int, parking_lot_id: int, start_date: d
         raise HTTPException(status_code = 403, detail = {"message": f"invalid start date. The start date cannot be later than the end date start date: {start_date}, end date: {end_date}"})
 
     # create a new reservation
-    storage.post_reservation(Reservation(None, vehicle_id, current_user.id, parking_lot_id, start_date, end_date, "status", datetime.now, parking_lot.tariff))
+    reservation_storage.post_reservation(Reservation(None, vehicle_id, current_user.id, parking_lot_id, start_date, end_date, "status", datetime.now, parking_lot.tariff))
     logging.info("A user with the id of %i has successfully created a new reservation with the vehicle id %i at parking lot %i", current_user.id, vehicle_id, parking_lot_id)
     return JSONResponse(content={"message": "Reservation created successfully"}, status_code=201)
 

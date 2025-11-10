@@ -1,13 +1,13 @@
 from api.auth_utils import get_current_user
 from api.datatypes.user import User
-from fastapi import FastAPI, HTTPException, Body
+from fastapi import FastAPI, HTTPException, Body, Depends, APIRouter
 from api.storage.profile_storage import Profile_storage
 from api.storage.vehicle_modal import Vehicle_modal
-from api.datatypes.vehicles import Vehicle
+from api.datatypes.vehicle import Vehicle
 import logging
 from starlette.responses import JSONResponse
 
-app = FastAPI()
+router = APIRouter(tags=["vehicles"])
 
 #Modals:
 users_modal: Profile_storage = Profile_storage()
@@ -30,14 +30,14 @@ auth = list(filter(lambda user: user["id"] == temp_login_id, users_modal.get_all
 #Get:
 
 #Get all vehicles from logged in user or get all vehicles if loggedin is ADMIN. (User and Admin)
-@app.get("/vehicles")
+@router.get("/vehicles")
 async def vehicles():
     #Get all vehicles if you are Admin or get all your owned vehicles if you are user.
     vehicles = vehicle_modal.get_all_vehicles() if auth["role"] == "ADMIN" else vehicle_modal.get_all_user_vehicles(temp_login_id)
     return "No vehicles found" if vehicles == [] else vehicles
 
 #Get one vehicle of an user. (User and Admin)
-@app.get("/vehicles/{vehicle_id}")
+@router.get("/vehicles/{vehicle_id}")
 async def vehicles(vehicle_id: int):
     #Get user vehicle.
     vehicle = vehicle_modal.get_one_vehicle(vehicle_id)
@@ -49,7 +49,7 @@ async def vehicles(vehicle_id: int):
         return "Something went wrong."
 
 #Get vehicles of an user. (Admin)
-@app.get("/vehicles/user/{user_id}")
+@router.get("/vehicles/user/{user_id}")
 async def vehicles_user(user_id: int):
     #Get user vehicles.
     vehicles_user = vehicle_modal.get_all_user_vehicles(user_id)
@@ -60,7 +60,7 @@ async def vehicles_user(user_id: int):
 #Post:
 
 #Create a vehicle for an user. (user)
-@app.post("/vehicles/create")
+@router.post("/vehicles/create")
 async def vehicle_create(vehicle: dict = Body(...)):
     #Create vehicle.
     updated_list = vehicle_modal.create_vehicle(vehicle)
@@ -71,7 +71,7 @@ async def vehicle_create(vehicle: dict = Body(...)):
 #Put:
 
 #Update a vehicle for an user.
-@app.put("/vehicles/update/{vehicle_id}")
+@router.put("/vehicles/update/{vehicle_id}")
 async def vehicle_update(vehicle_id: int):
     print("update vehicle of a user.")
 
@@ -80,7 +80,7 @@ async def vehicle_update(vehicle_id: int):
 #delete:
 
 #delete a vehicle for an user.
-@app.delete("vehicles/delete/{vehicle_id}")
+@router.delete("vehicles/delete/{vehicle_id}")
 async def vehicle_update(vehicle_id: int, current_user: User = Depends(get_current_user)):
     user_id: int = current_user.id
 

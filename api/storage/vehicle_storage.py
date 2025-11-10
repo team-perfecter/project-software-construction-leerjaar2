@@ -1,5 +1,4 @@
 from api.datatypes.vehicle import Vehicle
-from dataclasses import dataclass
 from typing import List, Optional
 
 #eventually the database queries / JSON write/read will be here.
@@ -7,17 +6,6 @@ from typing import List, Optional
 # Eventueel importeren vanuit jouw datatypes map:
 # from api.datatypes.vehicle import Vehicle
 # maar voor nu definieer ik hem hier zodat het werkt zonder extra bestand.
-
-@dataclass
-class Vehicle:
-    id: int
-    user_id: int
-    license_plate: str
-    make: str
-    model: str
-    color: str
-    year: int
-
 
 class Vehicle_storage:
     """In-memory opslag voor voertuigen (testversie, zonder database)."""

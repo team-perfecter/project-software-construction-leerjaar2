@@ -1,8 +1,8 @@
-from pydantic import BaseClass
+from pydantic import BaseModel
 from datetime import date
 
 
-class Parking_lot(BaseClass):
+class Parking_lot(BaseModel):
   id: int
   name: str
   location: str
