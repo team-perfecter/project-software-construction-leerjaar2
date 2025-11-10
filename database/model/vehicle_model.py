@@ -3,7 +3,7 @@ from api.datatypes.vehicle import Vehicle
 
 #eventually the database queries / JSON write/read will be here.
 
-class Vehicle_modal:
+class Vehicle_model:
     def __init__(self):
         self.cur = database_conn.cursor()
 
