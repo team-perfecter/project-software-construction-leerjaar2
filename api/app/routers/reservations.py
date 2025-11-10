@@ -106,4 +106,26 @@ async def create_reservation(vehicle_id: int, parking_lot_id: int, start_date: d
     # create a new reservation
     reservation_storage.post_reservation(Reservation(None, vehicle_id, current_user.id, parking_lot_id, start_date, end_date, "status", datetime.now, parking_lot.tariff))
     logging.info("A user with the id of %i has successfully created a new reservation with the vehicle id %i at parking lot %i", current_user.id, vehicle_id, parking_lot_id)
-    return {"message": "Reservation created successfully"}
+    return JSONResponse(content={"message": "Reservation created successfully"}, status_code=201)
+
+@router.delete("/reservations/{reservation_id}")
+async def delete_reservation(reservation_id: int, current_user: User = Depends(get_current_user)):
+    # Controleer of de reservatie bestaat
+    reservation: Reservation | None = reservation_storage.get_reservation_by_id(reservation_id)
+    if reservation is None:
+        logging.warning("User with id %i tried to delete a reservation that does not exist: %i", current_user.id, reservation_id)
+        raise HTTPException(status_code=404, detail={"message": "Reservation not found"})
+
+    # Controleer of de reservatie toebehoort aan de ingelogde gebruiker
+    if reservation.user_id != current_user.id:
+        logging.warning("User with id %i tried to delete a reservation that does not belong to them: %i", current_user.id, reservation_id)
+        raise HTTPException(status_code=403, detail={"message": "This reservation does not belong to the logged-in user"})
+
+    # Verwijder de reservatie
+    success = reservation_storage.delete_reservation(reservation_id)
+    if not success:
+        logging.error("Failed to delete reservation with id %i for user %i", reservation_id, current_user.id)
+        raise HTTPException(status_code=500, detail={"message": "Failed to delete reservation"})
+
+    logging.info("User with id %i successfully deleted reservation with id %i", current_user.id, reservation_id)
+    return JSONResponse(content={"message": "Reservation deleted successfully"}, status_code=200)
