@@ -1,15 +1,16 @@
-# project-software-construction-leerjaar2
+how to start application:
 
-In order to run FastAPI, navigate to the file that contains FastAPI code and execute the following command:
-uvicorn {filename}:app --reload
-for now, the filename is profile, so go to api/profile and execute: uvicorn profile:app --reload
+step 1:
+make sure docker desktop is running.
 
+step 2:
+in the console, navigate to the root folder of this project.
 
+step 3:
+run the command `docker compose up --build -d`
 
-In order to run the dockerfile, go to the folder that contains the docker compose (./api) and run the following command:
+the application should be running now
 
-docker compose up --build
+in the database/model is a file with an example query. run this file, and a new user should be inserted in the database.
 
-Then, go to http://localhost:8000/test to access the api.
-
-http://localhost:8000/crash simulates a crash. The api should restart automatically.
+in order to see the data in the database (and execute queries directly to it), run the command `docker exec -it postgres psql -U user -d database`
