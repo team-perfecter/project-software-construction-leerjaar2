@@ -33,7 +33,7 @@ class Vehicle_modal:
                 "year": 2022,
             },
         ]
-    
+
     #Return all vehicles
     def get_all_vehicles(self) -> list[Vehicle]:
         return self.vehicle_list
@@ -57,9 +57,26 @@ class Vehicle_modal:
             if vehicle.id != vehicle_id:
                 new_vehicle_list.append(vehicle)
         self.vehicle_list = new_vehicle_list
+
+    #Return all vehicles.
+    def get_all_vehicles(self) -> list[Vehicle]:
+        return self.vehicle_list
     
-    #Create a vehicles
+    #return all vehicles of user.
+    def get_all_user_vehicles(self, user_id) -> list[Vehicle]:
+        return list(filter(lambda vehicle: vehicle["user_id"] == user_id, self.vehicle_list))
+
+    #Return a vehicle.
+    def get_one_vehicle(self, vehicle_id) -> list[Vehicle]:
+        return list(filter(lambda vehicle: vehicle["id"] == vehicle_id, self.vehicle_list))[0]
+    
+    #Create a vehicle.
     def create_vehicle(self, vehicle_create) -> list[Vehicle]:
         vehicle_create["id"] = len(self.vehicle_list) + 1
         self.vehicle_list.append(vehicle_create)
+        return self.vehicle_list
+    
+    #Delete a vehicle.
+    def delete_vehicle(self, vehicle_id) -> list[Vehicle]:
+        self.vehicle_list = list(filter(lambda vehicle: vehicle["id"] != vehicle_id, self.vehicle_list))
         return self.vehicle_list
