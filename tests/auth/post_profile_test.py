@@ -67,24 +67,14 @@ def test_register_new_user(mock_create_user, mock_get_empty_user):
 '''
 Probeer een profiel aan te maken met incomplete data.
 '''
-def test_register_user_incomplete_data():
-    with patch("api.routers.profile.user_model.create_user", side_effect=fake_register_user):
-        payload = {"username": "missing_password"}
-        response = client.post("/register", json=payload)
-        assert response.status_code in [400, 422]
-        data = response.json()
-        assert "error" in data or "detail" in data
-
-'''
-Succesvol profiel aanmaken.
-'''
-def test_register_user_success():
-    with patch("api.routers.profile.user_model.create_user", side_effect=fake_register_user):
-        payload = {"username": "alice", "password": "secret123"}
-        response = client.post("/register", json=payload)
-        assert response.status_code == 201
-        data = response.json()
-        assert "User created" in data["message"]
+@patch("api.app.routers.profile.user_model.create_user", side_effect=fake_register_user)
+@patch("api.app.routers.profile.user_model.get_user_by_username", side_effect=fake_get_empty_user)
+def test_register_user_incomplete_data(mock_create_user, mock_get_empty_user):
+    payload = {"username": "missing_password"}
+    response = client.post("/register", json=payload)
+    assert response.status_code in [400, 422]
+    data = response.json()
+    assert "error" in data or "detail" in data
 
 '''
 Gebruiker gebruikt een verkeerd wachtwoord.
