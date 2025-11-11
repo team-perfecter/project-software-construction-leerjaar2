@@ -28,10 +28,10 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR,
     email VARCHAR,
     phone VARCHAR,
-    role VARCHAR,
-    created_at DATE,
+    role VARCHAR DEFAULT 'user',
+    created_at TIMESTAMP DEFAULT NOW(),
     birth_year INTEGER,
-    active BOOLEAN
+    active BOOLEAN DEFAULT TRUE
 );
 """)
 

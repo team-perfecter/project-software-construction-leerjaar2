@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import jwt
 import pytest
 from fastapi.testclient import TestClient
-from ../../app import app
+from api.main import app
 
 client = TestClient(app)
 
@@ -39,18 +39,18 @@ def fake_login_user(data):
 Gebruiker maakt een nieuw profiel aan.
 '''
 def test_register_new_user():
-    with patch("app.routers.auth.db_register_user", side_effect=fake_register_user):
+    with patch("api.routers.profile.user_model.create_user", side_effect=fake_register_user):
         payload = {"username": "new_user", "password": "test123"}
         response = client.post("/register", json=payload)
-        assert response.status_code == 200
+        assert response.status_code == 201
         data = response.json()
-        assert "User registered" in data["message"]
+        assert "User created" in data["message"]
 
 '''
 Probeer een profiel aan te maken met incomplete data.
 '''
 def test_register_user_incomplete_data():
-    with patch("app.routers.auth.db_register_user", side_effect=fake_register_user):
+    with patch("api.routers.profile.user_model.create_user", side_effect=fake_register_user):
         payload = {"username": "missing_password"}
         response = client.post("/register", json=payload)
         assert response.status_code in [400, 422]
@@ -61,12 +61,12 @@ def test_register_user_incomplete_data():
 Succesvol profiel aanmaken.
 '''
 def test_register_user_success():
-    with patch("app.routers.auth.db_register_user", side_effect=fake_register_user):
+    with patch("api.routers.profile.user_model.create_user", side_effect=fake_register_user):
         payload = {"username": "alice", "password": "secret123"}
         response = client.post("/register", json=payload)
-        assert response.status_code == 200
+        assert response.status_code == 201
         data = response.json()
-        assert "User registered" in data["message"]
+        assert "User created" in data["message"]
 
 '''
 Gebruiker gebruikt een verkeerd wachtwoord.

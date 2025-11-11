@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 import jwt
 import pytest
 from fastapi.testclient import TestClient
-from ../../app import app
 
 client = TestClient(app)
 

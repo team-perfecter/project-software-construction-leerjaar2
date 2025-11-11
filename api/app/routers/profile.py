@@ -1,5 +1,6 @@
 from starlette.responses import JSONResponse
 from api.datatypes.user import User, UserCreate, UserLogin
+from api.models.user_model import UserModel
 from api.storage.profile_storage import Profile_storage
 from api.utilities.Hasher import hash_string
 import logging
@@ -11,6 +12,7 @@ router = APIRouter(
 )
 
 storage: Profile_storage = Profile_storage()
+user_model: UserModel = UserModel()
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -35,14 +37,14 @@ async def register(user: UserCreate):
         raise HTTPException(status_code=400, detail={
                             "missing_fields": missing_fields})
 
-    username_check = storage.get_user_by_name(user.name)
-    if username_check != None:
+    username_check = user_model.get_user_by_username(user.username)
+    if username_check is not None:
         logging.info(
             "A user tried to create a profile, but the name was already created: %s", user.name)
         raise HTTPException(status_code=409, detail="Name already taken")
     hashed_password = hash_string(user.password)
     user.password = hashed_password
-    storage.post_user(user)
+    user_model.create_user(user)
     logging.info(
         "A user has created a new profile with the name: %s", user.name)
 
@@ -50,7 +52,7 @@ async def register(user: UserCreate):
 
 @router.post("/login")
 async def login(data: UserLogin):
-    user = storage.get_user_by_name(data.username)
+    user = user_model.get_user_by_username(data.username)
     if user is None:
         logging.info("Login failed — username not found: %s", data.username)
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -65,12 +67,14 @@ async def login(data: UserLogin):
 
 @router.get("/get_user/{user_id}")
 async def get_user(user_id: int):
-    user_list: list[User] = storage.user_list
-    return {"username: " + user_list[user_id].username, "password: " + user_list[user_id].password}
+    user: User = user_model.get_user_by_id(user_id)
+    if user is None:
+        return JSONResponse(status_code=404, content={"message": "User not found"})
+    return {"username: " + user.username, "password: " + user.password}
 
 @router.get("/profile", response_model=User)
 async def get_me(username: str = Depends(get_current_user)):
-    user = storage.get_user_by_name(username)
+    user = user_model.get_user_by_username(username)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
