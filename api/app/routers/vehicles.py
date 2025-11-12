@@ -2,7 +2,7 @@ from api.auth_utils import get_current_user
 from api.datatypes.user import User
 from fastapi import FastAPI, HTTPException, Body, Depends, APIRouter
 from api.storage.profile_storage import Profile_storage
-from database.model.vehicle_model import Vehicle_model
+from api.models.vehicle_model import Vehicle_model
 from api.datatypes.vehicle import Vehicle
 import logging
 from starlette.responses import JSONResponse
@@ -10,7 +10,6 @@ from starlette.responses import JSONResponse
 router = APIRouter(tags=["vehicles"])
 
 #Models:
-users_storage: Profile_storage = Profile_storage()
 vehicle_model: Vehicle_model = Vehicle_model()
 
 
@@ -21,9 +20,7 @@ logging.basicConfig(
 )
 
 
-#Temperary login. (1 = user with cars), (2 = Admin), (3 = user with no cars)
-temp_login_id = 2
-auth = list(filter(lambda user: user["id"] == temp_login_id, users_storage.get_all_users()))[0]
+
 
 
 
@@ -33,7 +30,7 @@ auth = list(filter(lambda user: user["id"] == temp_login_id, users_storage.get_a
 @router.get("/vehicles")
 async def vehicles():
     #Get all vehicles if you are Admin or get all your owned vehicles if you are user.
-    vehicles = vehicle_model.get_all_vehicles() if auth["role"] == "ADMIN" else vehicle_model.get_all_user_vehicles(auth["id"])
+    vehicles = vehicle_model.get_all_vehicles() if get_current_user().role == "ADMIN" else vehicle_model.get_all_user_vehicles(get_current_user().id)
     return "No vehicles found" if vehicles == [] else vehicles
 
 #Get one vehicle of an user. (User and Admin)
@@ -43,7 +40,7 @@ async def vehicles(vehicle_id: int):
     vehicle = vehicle_model.get_one_vehicle(vehicle_id)
 
     #Shows one vehicle if you are ADMIN or if it is the vehicle of the loggedin user.
-    if auth["role"] == "ADMIN" or auth["id"] == vehicle["user_id"]:
+    if get_current_user().role == "ADMIN" or get_current_user().id == vehicle["user_id"]:
         return vehicle
     else:
         return "Something went wrong."
@@ -52,7 +49,7 @@ async def vehicles(vehicle_id: int):
 @router.get("/vehicles/user/{user_id}")
 async def vehicles_user(user_id: int):
     #Get user vehicles.
-    if auth["role"] == "ADMIN":
+    if get_current_user().role == "ADMIN":
         vehicles_user = vehicle_model.get_all_user_vehicles(user_id)
         return "Vehicles not found." if vehicles_user == [] else vehicles_user
     else:
