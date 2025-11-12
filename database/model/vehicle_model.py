@@ -41,6 +41,6 @@ class Vehicle_model:
 
     #Delete a vehicle.
     def delete_vehicle(self, vehicle_id):
-        self.cur.execute("DELETE FROM vehicles WHERE id='%s'", (vehicle_id))
+        self.cur.execute("DELETE FROM vehicles WHERE id=%s", (vehicle_id))
         self.cur.fetchone()
         
