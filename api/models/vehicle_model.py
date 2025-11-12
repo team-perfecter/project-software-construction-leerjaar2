@@ -1,4 +1,4 @@
-from database.database_connection import database_conn
+from models.database_conn import database_conn
 from api.datatypes.vehicle import Vehicle
 
 #eventually the database queries / JSON write/read will be here.
