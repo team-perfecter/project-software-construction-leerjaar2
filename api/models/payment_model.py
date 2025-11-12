@@ -5,7 +5,7 @@ import psycopg2
 from api.datatypes.payment import PaymentCreate, Payment
 
 
-class UserModel:
+class PaymentModel:
     def init(self):
         self.connection = psycopg2.connect(
             host="localhost",
