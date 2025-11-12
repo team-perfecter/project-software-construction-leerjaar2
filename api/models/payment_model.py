@@ -47,12 +47,33 @@ class UserModel:
                        """, user_id, False)
         return cursor.fetchall()
     
-    # def update_payment(self, id):
-    #     cursor = self.connection.cursor()
-    #     payment = cursor.execute("""
-    #         SELECT * FROM payments WHERE id = %s;
-    #                    """, id)
-    #     for(field in payment):
+    def update_payment(self, id, p: PaymentCreate):
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            UPDATE payments 
+            SET user_id = %s, transaction = %s, amount = %s, completed = %s, 
+                hash = %s, method = %s, issuer = %s, bank = %s, date = %s
+            WHERE id = %s
+            RETURNING id;
+        """, (p.user_id, p.transaction, p.amount, 
+              p.completed, p.hash, p.method, 
+              p.issuer, p.bank, p.date, id,))
+        updated = cursor.fetchone()
+        self.connection.commit()
+        return updated is not None
+    
+    def mark_payment_completed(self, id):
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            UPDATE payments
+            SET completed = TRUE
+            WHERE id = %s
+            RETURNING id;
+        """, (id,))
+        updated = cursor.fetchone()
+        self.connection.commit()
+        return updated is not None
+
 
     def delete_payment(self, id):
         cursor = self.connection.cursor()
