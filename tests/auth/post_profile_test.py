@@ -6,7 +6,8 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch
 
 from api.auth_utils import SECRET_KEY
-from api.datatypes.user import UserCreate
+from api.datatypes.user import UserCreate, User
+from api.utilities.Hasher import hash_string
 
 with patch("psycopg2.connect"):
     from api.main import app
@@ -47,6 +48,14 @@ def fake_login_user(data):
 def fake_get_empty_user(username: str):
     return
 
+def fake_get_exisiting_user(username: str):
+    return User(id=0, username=username, password="password", email="email", name=username, role="user", phone="0", birth_year=2001, created_at=datetime.now())
+
+def fake_verify_password(password, hashed_password):
+    return True
+
+def fake_do_not_verify_password(password, hashed_password):
+    return False
 '''
 Gebruiker maakt een nieuw profiel aan.
 '''
@@ -77,37 +86,36 @@ def test_register_user_incomplete_data(mock_create_user, mock_get_empty_user):
     assert "error" in data or "detail" in data
 
 '''
+Succesvol inloggen.
+'''
+@patch("api.app.routers.profile.user_model.get_user_by_username", side_effect=fake_get_exisiting_user)
+@patch("api.app.routers.profile.verify_password", side_effect=fake_verify_password)
+def test_login_success(fake_user, fake_verify):
+    payload = {"username": "alice", "password": "password"}
+    response = client.post("/login", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert "access_token" in data
+    assert data["token_type"] == "bearer"
+
+'''
 Gebruiker gebruikt een verkeerd wachtwoord.
 '''
-def test_login_wrong_password():
-    with patch("app.routers.auth.db_login_user", side_effect=fake_login_user):
-        payload = {"username": "alice", "password": "wrongpass"}
-        response = client.post("/login", json=payload)
-        assert response.status_code in [401, 403]
-        data = response.json()
-        assert "error" in data
-        assert "Incorrect password" in data["error"]
+@patch("api.app.routers.profile.user_model.get_user_by_username", side_effect=fake_get_exisiting_user)
+@patch("api.app.routers.profile.verify_password", side_effect=fake_do_not_verify_password)
+def test_login_wrong_password(fake_user, incorrect_password):
+    payload = {"username": "alice", "password": "wrongpass"}
+    response = client.post("/login", json=payload)
+    assert response.status_code in [401, 403]
+    data = response.json()
+    assert "Invalid credentials" in data["detail"]
 
 '''
 Proberen in te loggen met een niet bestaand account.
 '''
 def test_login_nonexistent_user():
-    with patch("app.routers.auth.db_login_user", side_effect=fake_login_user):
-        payload = {"username": "unknown", "password": "test123"}
-        response = client.post("/login", json=payload)
-        assert response.status_code == 404
-        data = response.json()
-        assert "error" in data
-        assert "User not found" in data["error"]
-
-'''
-Succesvol inloggen.
-'''
-def test_login_success():
-    with patch("app.routers.auth.db_login_user", side_effect=fake_login_user):
-        payload = {"username": "alice", "password": "secret123"}
-        response = client.post("/login", json=payload)
-        assert response.status_code == 200
-        data = response.json()
-        assert "access_token" in data
-        assert data["token_type"] == "bearer"
+    payload = {"username": "unknown", "password": "test123"}
+    response = client.post("/login", json=payload)
+    assert response.status_code == 404
+    data = response.json()
+    assert "Username not found" in data["detail"]
