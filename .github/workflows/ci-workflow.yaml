@@ -49,6 +49,7 @@ jobs:
         pip install pytest pytest-cov
 
     - name: Run database migrations
+      if: false # tijdelijk om te kijken wat het doet bij de volgende stap
       working-directory: ./database
       run: |
         pip install -r requirements.txt
