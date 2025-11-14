@@ -50,6 +50,7 @@ jobs:
 
     - name: Run database migrations
       if: false # tijdelijk om te kijken wat het doet bij de volgende stap
+                # en omdat de db nog niet helemaal werkt
       working-directory: ./database
       run: |
         pip install -r requirements.txt
