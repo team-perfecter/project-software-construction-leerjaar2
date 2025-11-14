@@ -1,6 +1,9 @@
 import time
 
 import psycopg2
+import sys
+
+db_name = sys.argv[1] if len(sys.argv) > 1 else "database"
 
 conn = None
 
@@ -9,7 +12,7 @@ for i in range(10):
         conn = psycopg2.connect(
             host="db",
             port=5432,
-            database="database",
+            database=db_name,
             user="user",
             password="password"
         )
