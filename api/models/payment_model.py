@@ -26,7 +26,7 @@ class PaymentModel:
         self.connection.commit()
         return created is not None
 
-    def get_payments_by_payment_id(self, id):
+    def get_payment_by_payment_id(self, id):
         cursor = self.connection.cursor()
         cursor.execute("""
             SELECT * FROM payments WHERE user_id = %s;
