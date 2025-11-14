@@ -83,6 +83,7 @@ jobs:
   report:
     runs-on: ubuntu-latest
     needs: test
+    if: always()
     steps:
       - name: Placeholder
         run: echo "Report job - to be implemented"
@@ -90,6 +91,7 @@ jobs:
   webhook:
     runs-on: ubuntu-latest
     needs: [test, report]
+    if: always()
     steps:
       - name: Placeholder
         run: echo "Webhook job - to be implemented"
