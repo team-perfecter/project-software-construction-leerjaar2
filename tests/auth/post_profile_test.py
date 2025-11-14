@@ -1,31 +1,12 @@
-from unittest.mock import patch
-from datetime import datetime, timedelta
-import jwt
-import pytest
+from datetime import datetime
 from fastapi.testclient import TestClient
 from unittest.mock import patch
-
-from api.auth_utils import SECRET_KEY
 from api.datatypes.user import UserCreate, User
-from api.utilities.Hasher import hash_string
 
 with patch("psycopg2.connect"):
     from api.main import app
 
 client = TestClient(app)
-
-'''
-A function that creates a new authorization token so a user can be verified
-'''
-def create_test_token(username: str):
-    SECRET_KEY = "secret"
-    ALGORITHM = "HS256"
-    expire = datetime.utcnow() + timedelta(minutes=30)
-    token = jwt.encode({"sub": username, "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
-    return token
-
-valid_token = create_test_token("alice")
-valid_headers = {"Authorization": f"Bearer {valid_token}"}
 
 '''
 Fake data
@@ -35,14 +16,6 @@ def fake_register_user(user: UserCreate):
         return {"message": "User registered successfully"}
     else:
         return {"error": "Incomplete data"}
-
-def fake_login_user(data):
-    if data.get("username") == "alice" and data.get("password") == "secret123":
-        return {"access_token": "fake_token", "token_type": "bearer"}
-    elif data.get("username") == "alice":
-        return {"error": "Incorrect password"}
-    else:
-        return {"error": "User not found"}
 
 # The function this function mocks requires one input, so this function also gets one input even though it doesnt do anything
 def fake_get_empty_user(username: str):

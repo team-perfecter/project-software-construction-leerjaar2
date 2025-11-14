@@ -1,18 +1,25 @@
-from unittest.mock import patch
 from datetime import datetime, timedelta
-import jwt
-import pytest
 from fastapi.testclient import TestClient
-from ../../app import app
+from unittest.mock import patch
+import jwt
+from api.datatypes.user import User
+
+with patch("psycopg2.connect"):
+    from api.main import app
+    from api.auth_utils import SECRET_KEY, ALGORITHM, get_current_user
+
 
 client = TestClient(app)
-
 '''
 A function that creates a new authorization token so a user can be verified
 '''
 def create_test_token(username: str):
     expire = datetime.utcnow() + timedelta(minutes=30)
-    token = jwt.encode({"sub": username, "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
+    payload = {
+        "sub": username,
+        "exp": expire,
+    }
+    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     return token
 
 valid_token = create_test_token("alice")
@@ -20,16 +27,15 @@ valid_headers = {"Authorization": f"Bearer {valid_token}"}
 invalid_headers = {"Authorization": "Bearer invalid"}
 
 '''
-Fake data
+Ingelogde gebruiker past eigen data succesvol aan.
 '''
-def fake_update_user(username: str, data: dict):
-    if username != "alice":
-        return {"error": "Forbidden"}
-    if not data or "email" not in data:
-        return {"error": "Incomplete data"}
-    if "password" in data:
-        return {"message": "Password updated successfully"}
-    return {"message": "Profile updated successfully"}
+def test_update_own_profile_success():
+    with patch("app.routers.profile.db_update_user", side_effect=fake_update_user):
+        payload = {"email": "newalice@example.com"}
+        response = client.put("/profile", headers=valid_headers, json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        assert "Profile updated" in data["message"]
 
 '''
 Als gebruiker niet ingelogd is en probeert aan te passen.
@@ -49,17 +55,6 @@ def test_update_other_user_profile_forbidden():
         assert response.status_code in [401, 403]
         data = response.json()
         assert "error" in data
-
-'''
-Ingelogde gebruiker past eigen data succesvol aan.
-'''
-def test_update_own_profile_success():
-    with patch("app.routers.profile.db_update_user", side_effect=fake_update_user):
-        payload = {"email": "newalice@example.com"}
-        response = client.put("/profile", headers=valid_headers, json=payload)
-        assert response.status_code == 200
-        data = response.json()
-        assert "Profile updated" in data["message"]
 
 '''
 Ingelogde gebruiker past eigen data aan met incomplete data.

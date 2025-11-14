@@ -1,7 +1,5 @@
 import logging
 from datetime import datetime
-from starlette.responses import JSONResponse
-from api.app.routers.profile import storage
 from api.auth_utils import get_current_user
 from api.datatypes.user import User
 from fastapi import Depends, APIRouter, HTTPException, status

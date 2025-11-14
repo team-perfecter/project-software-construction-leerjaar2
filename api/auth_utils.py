@@ -2,13 +2,12 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from api.datatypes.user import User
-from api.storage.profile_storage import Profile_storage
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 
-profile_storage: Profile_storage = Profile_storage()
+from api.models.user_model import UserModel
 
-profile_storage: Profile_storage = Profile_storage()
+user_model: UserModel = UserModel()
 
 SECRET_KEY = "super_secret_key"  # ⚠️ Gebruik een env var in productie
 ALGORITHM = "HS256"
@@ -49,7 +48,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
 
-        user: User = profile_storage.get_user_by_username(username)
+        user: User = user_model.get_user_by_username(username)
         if user is None:
             raise HTTPException(status_code=401, detail="Invalid token")
         return user

@@ -1,7 +1,6 @@
 from starlette.responses import JSONResponse
 from api.datatypes.user import User, UserCreate, UserLogin
 from api.models.user_model import UserModel
-from api.storage.profile_storage import Profile_storage
 from api.utilities.Hasher import hash_string
 import logging
 from fastapi import Depends, APIRouter, HTTPException
@@ -11,7 +10,6 @@ router = APIRouter(
     tags=["profile"]
 )
 
-storage: Profile_storage = Profile_storage()
 user_model: UserModel = UserModel()
 logging.basicConfig(
     level=logging.INFO,
@@ -50,6 +48,7 @@ async def register(user: UserCreate):
 
     return JSONResponse(content={"message": "User created successfully"}, status_code=201)
 
+
 @router.post("/login")
 async def login(data: UserLogin):
     user = user_model.get_user_by_username(data.username)
@@ -72,9 +71,9 @@ async def get_user(user_id: int):
         return JSONResponse(status_code=404, content={"message": "User not found"})
     return {"username: " + user.username, "password: " + user.password}
 
+
 @router.get("/profile", response_model=User)
-async def get_me(username: str = Depends(get_current_user)):
-    user = user_model.get_user_by_username(username)
+async def get_me(user: User = Depends(get_current_user)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
