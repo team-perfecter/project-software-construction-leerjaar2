@@ -1,10 +1,10 @@
 from starlette.responses import JSONResponse
-from api.datatypes.user import User, UserCreate, UserLogin
+from api.datatypes.user import User, UserCreate, UserLogin, UserUpdate
 from api.models.user_model import UserModel
 from api.utilities.Hasher import hash_string
 import logging
 from fastapi import Depends, APIRouter, HTTPException
-from api.auth_utils import verify_password, create_access_token, get_current_user
+from api.auth_utils import verify_password, create_access_token, get_current_user, revoke_token
 
 router = APIRouter(
     tags=["profile"]
@@ -77,3 +77,18 @@ async def get_me(user: User = Depends(get_current_user)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+
+@router.post("/logout")
+async def logout(token: str):
+    if token is not None:
+        revoke_token(token)
+
+
+@router.put("/update_profile")
+async def update_me(update_data: UserUpdate, current_user: User = Depends(get_current_user)):
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    update_fields = update_data.dict(exclude_unset=True)
+    user_model.update_user(current_user.id, update_fields)
+    return {"message": "Profile updated"}

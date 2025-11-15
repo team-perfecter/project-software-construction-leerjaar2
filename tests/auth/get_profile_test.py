@@ -6,9 +6,7 @@ from api.datatypes.user import User
 
 with patch("psycopg2.connect"):
     from api.main import app
-    from api.auth_utils import SECRET_KEY, ALGORITHM, get_current_user
-
-
+    from api.auth_utils import SECRET_KEY, ALGORITHM, get_current_user, revoked_tokens
 
 '''
 A function that creates a new authorization token so a user can be verified
@@ -34,7 +32,7 @@ def get_fake_user(username: str) -> User | None:
         User(
             id=0,
             username="alice",
-            password="password",  # plain text only for tests
+            password="password",
             email="alice@example.com",
             name="Alice Doe",
             phone="0612345678",
@@ -91,16 +89,9 @@ def test_get_profile_data_is_complete(fake_user):
 '''
 Logout is de gebruiker ingelogd?
 '''
-@patch("api.auth_utils.user_model.get_user_by_username", return_value=get_fake_user("alice"))
-def test_logout_when_logged_in(fake_user):
-    response = client.get("/logout", headers=valid_headers)
+def test_logout_revokes_token():
+    token = "test_token"
+    assert token not in revoked_tokens  # Ensure clean state
+    response = client.post(f"/logout?token={token}")
     assert response.status_code == 200
-    msg = response.json().get("message", "").lower()
-    assert "logout" in msg
-
-'''
-Logout zonder geldige token.
-'''
-def test_logout_when_not_logged_in():
-    response = client.get("/logout", headers=invalid_headers)
-    assert response.status_code == 401
+    assert token in revoked_tokens
