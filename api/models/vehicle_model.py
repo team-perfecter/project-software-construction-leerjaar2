@@ -2,8 +2,6 @@
 from api.datatypes.vehicle import Vehicle
 import psycopg2
 
-#eventually the database queries / JSON write/read will be here.
-
 class Vehicle_model:
     def __init__(self):
         self.connection = psycopg2.connect(
