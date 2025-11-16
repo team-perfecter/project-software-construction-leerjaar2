@@ -55,6 +55,12 @@ async def vehicles_user(user_id: int):
     else:
         return "You are not autorized to this."
 
+#Users must see the history of the vehicles reservations. (User)
+@router.get("/vehicles/history-reservations")
+async def vehicles_user():
+    vehicles_user = vehicle_model.get_all_Reservations_history_vehicles(get_current_user().id)
+    return "Your vehicle reservations are not found." if vehicles_user == [] else vehicles_user
+
 
 
 #Post:
