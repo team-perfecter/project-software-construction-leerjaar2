@@ -63,7 +63,7 @@ async def vehicles_user(user_id: int):
 @router.post("/vehicles/create")
 async def vehicle_create(vehicle: dict = Body(...)):
     #Create vehicle.
-    updated_list = vehicle_model.create_vehicle(vehicle)
+    updated_list = vehicle_model.create_vehicle(get_current_user().id, vehicle)
     return updated_list
 
 
@@ -72,7 +72,7 @@ async def vehicle_create(vehicle: dict = Body(...)):
 
 #Update a vehicle for an user.
 @router.put("/vehicles/update/{vehicle_id}")
-async def vehicle_update(vehicle: dict = Body(...)):
+async def vehicle_update(vehicle_id: int, vehicle: dict = Body(...)):
     print("update vehicle of a user.")
 
 
@@ -81,20 +81,18 @@ async def vehicle_update(vehicle: dict = Body(...)):
 
 #delete a vehicle for an user.
 @router.delete("vehicles/delete/{vehicle_id}")
-async def vehicle_delete(vehicle_id: int, current_user: User = Depends(get_current_user)):
-    user_id: int = current_user.id
-
+async def vehicle_delete(vehicle_id: int):
     vehicle: Vehicle | None = vehicle_model.get_one_vehicle(vehicle_id)
 
     if vehicle == None:
         logging.warning("A user with the ID of %i tried to delete a vehicle with the ID of %i, but the vehicle could not be found.", user_id, vehicle_id)
         raise HTTPException(status_code=404, detail={"error": "vehicle not found"})
-    
-    if vehicle.user_id != user_id:
+
+    if vehicle.user_id != get_current_user().id:
         logging.warning("A user with the ID of %i tried to delete a vehicle with the ID of %i, but the vehicle does not belong to the user.", user_id, vehicle_id)
         raise HTTPException(status_code=401, detail={"error": "Not authoized to delete this vehicle"})
     
     vehicle_model.delete_vehicle(vehicle.id)
-    logging.info("A user with the ID of %i succesfully deleted a vehicle with the ID of %i.", user_id, vehicle_id)
+    logging.info("A user with the ID of %i succesfully deleted a vehicle with the ID of %i.", get_current_user().id, vehicle_id)
     return JSONResponse(content={"message": "Vehicle succesfully deleted"}, status_code=201)
 
