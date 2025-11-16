@@ -8,6 +8,6 @@ Content-Type: application/json
   "hash": "somehashvalue123",
   "method": "ideal",
   "issuer": "Rabobank",
-  "bank": "RABO",
+  "bank": "RABO"
 }
 ###

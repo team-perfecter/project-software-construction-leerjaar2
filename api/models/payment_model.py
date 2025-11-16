@@ -6,25 +6,31 @@ from api.datatypes.payment import PaymentCreate, Payment
 
 
 class PaymentModel:
-    def __init__(self):
-        self.connection = psycopg2.connect(
-            host="localhost",
-            port=5432,
-            database="database",
-            user="user",
-            password="password",
-        )
+    connection = psycopg2.connect(
+        host="db",
+        port=5432,
+        database="database",
+        user="user",
+        password="password",
+    )
 
-    def create_payment(self, p: PaymentCreate):
-        cursor = self.connection.cursor()
-        cursor.execute("""
-            INSERT INTO payments (user_id, transaction, amount, hash, method, issuer, bank)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            RETURNING id;
-        """, (p.user_id, p.transaction, p.amount, p.hash, p.method, p.issuer, p.bank))
-        created = cursor.fetchone()
-        self.connection.commit()
-        return created is not None
+    @classmethod
+    def create_payment(cls, p: PaymentCreate):
+        cursor = cls.connection.cursor()
+        try:
+            cursor.execute("""
+                INSERT INTO payments (user_id, transaction, amount, hash, method, issuer, bank)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                RETURNING id;
+            """, (p.user_id, p.transaction, p.amount, p.hash, p.method, p.issuer, p.bank))
+            created = cursor.fetchone()
+            cls.connection.commit()
+            print("Created:", created)
+            return created is not None
+        except Exception as e:
+            print("DB Error:", e)
+            cls.connection.rollback()
+            return False
 
     def get_payment_by_payment_id(self, id):
         cursor = self.connection.cursor()

@@ -76,13 +76,12 @@ CREATE TABLE IF NOT EXISTS payments (
     user_id INTEGER REFERENCES users(id),
     transaction VARCHAR,
     amount FLOAT,
-    created_at TIMESTAMP DEFAULT NOW(),
     completed BOOLEAN DEFAULT FALSE,
     hash VARCHAR,
     method VARCHAR,
     issuer VARCHAR,
     bank VARCHAR,
-    date TIMESTAMP
+    date TIMESTAMP DEFAULT NOW()
 );
 """)
 

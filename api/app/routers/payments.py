@@ -7,7 +7,6 @@ from api.models.user_model import UserModel
 from api.auth_utils import get_current_user
 
 router = APIRouter(
-    prefix="/payments",
     tags=["payments"]
 )
 
@@ -17,7 +16,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-@router.post("/", status_code=201)
+@router.post("/payments", status_code=201)
 async def create_payment(p: PaymentCreate):
     created = PaymentModel.create_payment(p)
     if not created:
