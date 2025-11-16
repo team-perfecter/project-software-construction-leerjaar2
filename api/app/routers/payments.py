@@ -36,6 +36,12 @@ async def get_payments_by_user(user_id: int):
     logging.info("Retrieved %i payments for user ID %i", len(payments_list), user_id)
     return payments_list
 
+@router.get("/payments/user/{user_id}/open")
+async def get_open_payments_by_user(user_id: int):
+    payments_list = PaymentModel.get_open_payments_by_user(user_id)
+    logging.info("Retrieved %i payments for user ID %i", len(payments_list), user_id)
+    return payments_list
+
 @router.post("/{payment_id}/pay")
 async def pay_payment(payment_id: int, current_user: User = Depends(get_current_user)):
     payment = PaymentModel.get_payment_by_payment_id(payment_id)

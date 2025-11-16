@@ -46,16 +46,20 @@ class PaymentModel:
             SELECT * FROM payments WHERE user_id = %s;
                        """, (user_id,))
         rows = cursor.fetchall()
-        columns = [desc[0] for desc in cursor.description]  # get column names
+        columns = [desc[0] for desc in cursor.description]
         result = [dict(zip(columns, row)) for row in rows]
         return result
     
-    def get_open_payments_by_user(self, user_id):
-        cursor = self.connection.cursor()
+    @classmethod
+    def get_open_payments_by_user(cls, user_id):
+        cursor = cls.connection.cursor()
         cursor.execute("""
-            SELECT * FROM payments WHERE user_id = %s AND completed = %s;
-                       """, (user_id, False))
-        return cursor.fetchall()
+            SELECT * FROM payments WHERE user_id = %s AND completed IS FALSE;
+                       """, (user_id,))
+        rows = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        result = [dict(zip(columns, row)) for row in rows]
+        return result
     
     def update_payment(self, id, p: PaymentCreate):
         cursor = self.connection.cursor()
