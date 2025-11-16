@@ -2,8 +2,7 @@ from datetime import datetime
 
 import psycopg2
 
-from api.datatypes.user import UserCreate, User, UserLogin
-
+from api.datatypes.user import UserCreate, User, UserLogin, UserUpdate
 
 
 class UserModel:
@@ -62,6 +61,23 @@ class UserModel:
             return user_list[0]
         else:
             return None
+
+    def update_user(self, user_id: int, update_data: dict) -> None:
+        if user_id is None or update_data is None:
+            return
+
+        cursor = self.connection.cursor()
+
+        set_clauses = ", ".join(f"{key} = %s" for key in update_data.keys())
+        values = list(update_data.values()) + [user_id]
+
+        cursor.execute(f"""
+            UPDATE users
+            SET {set_clauses}
+            WHERE id = %s;
+        """, values)
+        self.connection.commit()
+
 
     def map_to_user(self, cursor):
         columns = [desc[0] for desc in cursor.description]
