@@ -35,7 +35,7 @@ async def get_open_payments(current_user: User = Depends(get_current_user)):
     return payments_list
 
 @router.get("/{user_id}")
-async def get_payments_by_user(user_id: int):
+async def get_payments_by_user(user_id: int, current_user: User = Depends(get_current_user)):
     user = UserModel.get_user_by_id(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -45,7 +45,7 @@ async def get_payments_by_user(user_id: int):
     return payments_list
 
 @router.get("/{user_id}/open")
-async def get_open_payments_by_user(user_id: int):
+async def get_open_payments_by_user(user_id: int, current_user: User = Depends(get_current_user)):
     user = UserModel.get_user_by_id(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

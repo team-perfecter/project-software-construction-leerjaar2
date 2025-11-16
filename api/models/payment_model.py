@@ -6,7 +6,7 @@ from api.datatypes.payment import PaymentCreate, Payment
 
 
 class PaymentModel:
-    def init(self):
+    def __init__(self):
         self.connection = psycopg2.connect(
             host="localhost",
             port=5432,
@@ -29,22 +29,22 @@ class PaymentModel:
     def get_payment_by_payment_id(self, id):
         cursor = self.connection.cursor()
         cursor.execute("""
-            SELECT * FROM payments WHERE user_id = %s;
-                       """, id)
+            SELECT * FROM payments WHERE id = %s;
+                       """, (id,))
         return cursor.fetchone()
 
     def get_payments_by_user(self, user_id):
         cursor = self.connection.cursor()
         cursor.execute("""
             SELECT * FROM payments WHERE user_id = %s;
-                       """, user_id)
+                       """, (user_id,))
         return cursor.fetchall()
     
     def get_open_payments_by_user(self, user_id):
         cursor = self.connection.cursor()
         cursor.execute("""
             SELECT * FROM payments WHERE user_id = %s AND completed = %s;
-                       """, user_id, False)
+                       """, (user_id, False))
         return cursor.fetchall()
     
     def update_payment(self, id, p: PaymentCreate):

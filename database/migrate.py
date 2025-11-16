@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS payments (
     completed BOOLEAN,
     hash VARCHAR,
     method VARCHAR,
-    issue VARCHAR,
+    issuer VARCHAR,
     bank VARCHAR,
     date TIMESTAMP
 );
