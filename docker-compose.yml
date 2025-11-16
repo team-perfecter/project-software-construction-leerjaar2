@@ -13,14 +13,16 @@ services:
       context: ./database
     depends_on:
       - db
-    command: [ "python", "migrate.py" ]
+    command: ["python", "migrate.py"]
+    restart: "no"
 
   db_migration_test:
     build: 
       context: ./database
     depends_on:
       - test_db
-    command: [ "python", "migrate.py", "test_database" ]
+    command: ["python", "migrate.py", "test_database"]
+    restart: "no"
  
   db:
     image: postgres:16
@@ -45,6 +47,9 @@ services:
       POSTGRES_DB: test_database
     ports:
       - "5433:5432"
+    volumes:
+      - test-db-data:/var/lib/postgresql/data
 
 volumes:
   postgres-data:
+  test-db-data:
