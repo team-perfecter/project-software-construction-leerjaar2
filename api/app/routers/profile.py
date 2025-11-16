@@ -1,17 +1,15 @@
 from starlette.responses import JSONResponse
-from api.datatypes.user import User, UserCreate, UserLogin
+from api.datatypes.user import User, UserCreate, UserLogin, UserUpdate
 from api.models.user_model import UserModel
-from api.storage.profile_storage import Profile_storage
 from api.utilities.Hasher import hash_string
 import logging
 from fastapi import Depends, APIRouter, HTTPException
-from api.auth_utils import verify_password, create_access_token, get_current_user
+from api.auth_utils import verify_password, create_access_token, get_current_user, revoke_token
 
 router = APIRouter(
     tags=["profile"]
 )
 
-storage: Profile_storage = Profile_storage()
 user_model: UserModel = UserModel()
 logging.basicConfig(
     level=logging.INFO,
@@ -50,6 +48,7 @@ async def register(user: UserCreate):
 
     return JSONResponse(content={"message": "User created successfully"}, status_code=201)
 
+
 @router.post("/login")
 async def login(data: UserLogin):
     user = user_model.get_user_by_username(data.username)
@@ -72,9 +71,24 @@ async def get_user(user_id: int):
         return JSONResponse(status_code=404, content={"message": "User not found"})
     return {"username: " + user.username, "password: " + user.password}
 
+
 @router.get("/profile", response_model=User)
-async def get_me(username: str = Depends(get_current_user)):
-    user = user_model.get_user_by_username(username)
+async def get_me(user: User = Depends(get_current_user)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+
+@router.post("/logout")
+async def logout(token: str):
+    if token is not None:
+        revoke_token(token)
+
+
+@router.put("/update_profile")
+async def update_me(update_data: UserUpdate, current_user: User = Depends(get_current_user)):
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    update_fields = update_data.dict(exclude_unset=True)
+    user_model.update_user(current_user.id, update_fields)
+    return {"message": "Profile updated"}
