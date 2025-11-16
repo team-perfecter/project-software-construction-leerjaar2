@@ -1,8 +1,0 @@
-pyjwt
-passlib
-python-jose
-fastapi~=0.121.0
-starlette~=0.49.3
-pydantic~=2.12.4
-uvicorn[standard]~=0.38.0
-psycopg2-binary==2.9.11
