@@ -18,10 +18,10 @@ class PaymentModel:
     def create_payment(self, p: PaymentCreate):
         cursor = self.connection.cursor()
         cursor.execute("""
-            INSERT INTO payments (user_id, transaction, amount, completed, hash, method, issuer, bank, date)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO payments (user_id, transaction, amount, hash, method, issuer, bank)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             RETURNING id;
-        """, (p.user_id, p.transaction, p.amount, p.completed, p.hash, p.method, p.issuer, p.bank, p.date))
+        """, (p.user_id, p.transaction, p.amount, p.hash, p.method, p.issuer, p.bank))
         created = cursor.fetchone()
         self.connection.commit()
         return created is not None

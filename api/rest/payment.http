@@ -5,18 +5,9 @@ Content-Type: application/json
   "user_id": 1,
   "transaction": "TXN-ABC-123",
   "amount": 12.50,
-  "completed": false,
   "hash": "somehashvalue123",
   "method": "ideal",
   "issuer": "Rabobank",
   "bank": "RABO",
-  "date": "2025-01-20T14:30:00"
 }
-
 ###
-GET http://127.0.0.1:8000/get_payments_by_user/1
-# date: Sun, 16 Nov 2025 17:05:36 GMT
-# server: uvicorn
-# content-length: 31
-# content-type: application/json
-# connection: close
