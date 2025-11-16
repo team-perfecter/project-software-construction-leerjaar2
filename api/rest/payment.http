@@ -15,3 +15,8 @@ GET http://127.0.0.1:8000/payments/user/1
 ###
 GET http://127.0.0.1:8000/payments/user/1/open
 ###
+POST http://127.0.0.1:8000/payments/3/pay
+Content-Type: application/json
+
+{}
+###

@@ -32,12 +32,17 @@ class PaymentModel:
             cls.connection.rollback()
             return False
 
-    def get_payment_by_payment_id(self, id):
-        cursor = self.connection.cursor()
+    @classmethod
+    def get_payment_by_payment_id(cls, id):
+        cursor = cls.connection.cursor()
         cursor.execute("""
             SELECT * FROM payments WHERE id = %s;
                        """, (id,))
-        return cursor.fetchone()
+        row = cursor.fetchone()
+        if row:
+            columns = [desc[0] for desc in cursor.description]
+            return dict(zip(columns, row))
+        return None
 
     @classmethod
     def get_payments_by_user(cls, user_id):
@@ -76,8 +81,9 @@ class PaymentModel:
         self.connection.commit()
         return updated is not None
     
-    def mark_payment_completed(self, id):
-        cursor = self.connection.cursor()
+    @classmethod
+    def mark_payment_completed(cls, id):
+        cursor = cls.connection.cursor()
         cursor.execute("""
             UPDATE payments
             SET completed = TRUE
@@ -85,7 +91,7 @@ class PaymentModel:
             RETURNING id;
         """, (id,))
         updated = cursor.fetchone()
-        self.connection.commit()
+        cls.connection.commit()
         return updated is not None
 
 
