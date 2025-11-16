@@ -30,11 +30,8 @@ async def get_my_payments(current_user: User = Depends(get_current_user)):
     logging.info("Retrieved %i payments for user ID %i", len(payments_list), current_user.id)
     return payments_list
 
-@router.get("/user/{user_id}")
-async def get_payments_by_user(user_id: int, current_user: User = Depends(get_current_user)):
-    user = UserModel.get_user_by_id(user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+@router.get("/payments/user/{user_id}")
+async def get_payments_by_user(user_id: int):
     payments_list = PaymentModel.get_payments_by_user(user_id)
     logging.info("Retrieved %i payments for user ID %i", len(payments_list), user_id)
     return payments_list
