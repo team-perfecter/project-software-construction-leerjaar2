@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS payments (
     transaction VARCHAR,
     amount FLOAT,
     created_at TIMESTAMP DEFAULT NOW(),
-    completed BOOLEAN,
+    completed BOOLEAN DEFAULT FALSE,
     hash VARCHAR,
     method VARCHAR,
     issuer VARCHAR,
