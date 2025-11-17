@@ -17,16 +17,22 @@ logging.basicConfig(
 )
 
 @router.post("/payments", status_code=201) #readd currentuser
-async def create_payment(p: PaymentCreate):
+async def create_payment(p: PaymentCreate, current_user: User = Depends(get_current_user)):
     created = PaymentModel.create_payment(p)
     if not created:
         raise HTTPException(status_code=500, detail="Failed to create payment")
     logging.info("Created new payment for user_id %i", p.user_id)
     return {"message": "Payment created successfully"}
 
-@router.get("/me") # only check if it works 
+@router.get("/payments/me") # only check if it works 
 async def get_my_payments(current_user: User = Depends(get_current_user)):
-    payments_list = UserModel.get_payments_by_user(current_user.id)
+    payments_list = PaymentModel.get_payments_by_user(current_user.id)
+    logging.info("Retrieved %i payments for user ID %i", len(payments_list), current_user.id)
+    return payments_list
+
+@router.get("/payments/me/open") #readd currentuser check
+async def get_open_payments_by_user(current_user: User = Depends(get_current_user)):
+    payments_list = PaymentModel.get_open_payments_by_user(current_user.id)
     logging.info("Retrieved %i payments for user ID %i", len(payments_list), current_user.id)
     return payments_list
 
@@ -37,13 +43,13 @@ async def get_payments_by_user(user_id: int):
     return payments_list
 
 @router.get("/payments/user/{user_id}/open") #readd currentuser check
-async def get_open_payments_by_user(user_id: int):
+async def get_open_payments_by_user(user_id: int, current_user: User = Depends(get_current_user)):
     payments_list = PaymentModel.get_open_payments_by_user(user_id)
     logging.info("Retrieved %i payments for user ID %i", len(payments_list), user_id)
     return payments_list
 
 @router.post("/payments/{payment_id}/pay") #readd current user check
-async def pay_payment(payment_id: int):
+async def pay_payment(payment_id: int, current_user: User = Depends(get_current_user)):
     payment = PaymentModel.get_payment_by_payment_id(payment_id)
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")

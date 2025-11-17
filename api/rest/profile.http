@@ -33,3 +33,4 @@ GET http://127.0.0.1:8000/get_user/1
 ### Get current user
 GET http://localhost:8000/profile
 Authorization: Bearer {{token}}
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjMzNzQ1ODh9.TASeGhd5BGRC6A18opKmFsHm5KteZ6glhwv5qv8JJ1c
