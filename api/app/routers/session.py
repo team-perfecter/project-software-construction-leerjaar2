@@ -6,7 +6,7 @@ from api.datatypes.session import Session
 from api.datatypes.user import User
 from api.storage.parking_lot_storage import Parking_lot_storage
 from api.storage.session_storage import Session_storage
-from api.storage.vehicle_modal import Vehicle_modal
+from api.storage.vehicle_storage import Vehicle_storage
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
@@ -20,7 +20,7 @@ router = APIRouter(tags=["sessions"])
 
 session_storage: Session_storage = Session_storage()
 parking_lot_storage: Parking_lot_storage = Parking_lot_storage()
-vehicle_storage: Vehicle_modal = Vehicle_modal()
+vehicle_storage: Vehicle_storage = Vehicle_storage()
 
 
 @router.post("/parking-lots/{lid}/sessions/start", status_code=status.HTTP_201_CREATED)

@@ -1,0 +1,33 @@
+# Create a vehicle for an user
+POST http://127.0.0.1:8000/vehicles/create
+{
+    "license_plate": "45-ASP-1",
+    "make": "Opal",
+    "model": "308",
+    "color": "Blue",
+    "year": 2022,
+}
+
+### Get all vehicles.
+GET http://127.0.0.1:8000/vehicles
+
+### Get one vehicle.
+GET http://127.0.0.1:8000/vehicles/1
+
+# Get vehicles of an user. (only for Admin)
+GET http://127.0.0.1:8000/vehicles/user/1
+
+### Update a vehicle.
+PUT http://127.0.0.1:8000/vehicles/update/1
+{
+    "id": 1,
+    "user_id": 1,
+    "license_plate": "45-ASP-1",
+    "make": "Opal",
+    "model": "308",
+    "color": "Red",
+    "year": 2022,
+}
+
+### Delete a vehicle.
+DELETE http://127.0.0.1:8000/vehicles/delete/1
