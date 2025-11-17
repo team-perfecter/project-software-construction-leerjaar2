@@ -1,0 +1,31 @@
+POST http://127.0.0.1:8000/payments/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjMzNzQ1ODh9.TASeGhd5BGRC6A18opKmFsHm5KteZ6glhwv5qv8JJ1c
+
+{
+  "user_id": 1,
+  "transaction": "TXN-ABC-123",
+  "amount": 12.50,
+  "hash": "somehashvalue123",
+  "method": "ideal",
+  "issuer": "Rabobank",
+  "bank": "RABO"
+}
+###
+GET http://127.0.0.1:8000/payments/user/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjMzNzQ1ODh9.TASeGhd5BGRC6A18opKmFsHm5KteZ6glhwv5qv8JJ1c
+###
+GET http://127.0.0.1:8000/payments/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjMzNzQ1ODh9.TASeGhd5BGRC6A18opKmFsHm5KteZ6glhwv5qv8JJ1c
+###
+GET http://127.0.0.1:8000/payments/user/1/open
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjMzNzQ1ODh9.TASeGhd5BGRC6A18opKmFsHm5KteZ6glhwv5qv8JJ1c
+
+###
+POST http://127.0.0.1:8000/payments/1/pay
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjMzNzQ1ODh9.TASeGhd5BGRC6A18opKmFsHm5KteZ6glhwv5qv8JJ1c
+
+
+{}
+###

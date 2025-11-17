@@ -1,9 +1,9 @@
-from dataclasses import dataclass
+from api.datatypes.payment import Payment, PaymentCreate
 from datetime import datetime, timedelta
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 import jwt
-from ../../app import app
+from api.main import app
 
 '''
 payments will be in a separate class. The input of this class will be the authorization token of the user.
@@ -16,21 +16,12 @@ get_payments_for_user(uid: int) returns all payments for the given user id via d
 client = TestClient(app)
 
 def create_test_token(username: str) -> str:
-    expire = datetime.utcnow() + timedelta(minutes=30)
+    expire = datetime.now() + timedelta(minutes=30)
     return jwt.encode({"sub": username, "exp": expire}, "SECRET_KEY", algorithm="HS256")
 
 token: str = create_test_token("alice")
 valid_headers = {"Authorization": f"Bearer {token}"}
 invalid_header = {"Authorization": "Bearer invalid"}
-
-@dataclass
-class Payment:
-    id: str
-    user_id: str
-    amount: float
-    method: str
-    status: str
-    created_at: str
 
 def get_fake_payment(pid: int) -> Payment:
     return [
