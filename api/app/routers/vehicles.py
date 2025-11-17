@@ -69,10 +69,10 @@ async def vehicle_create(vehicle: VehicleCreate, user: User = Depends(get_curren
 
 
 #Users must see the history of the vehicles reservations. (User)
-#@router.get("/vehicles/history-reservations")
-#async def vehicles_user():
-#    vehicles_user = vehicle_model.get_all_Reservations_history_vehicles(get_current_user().id)
-#    return "Your vehicle reservations are not found." if vehicles_user == [] else vehicles_user
+@router.get("/vehicles/history-reservations/{vehicle_id}")
+async def vehicle_history(vehicle_id: int):
+    vehicles_user = vehicle_model.get_all_Reservations_history_vehicles(vehicle_id)
+    return HTTPException(detail={"message": "Your vehicle reservations are not found."}, status_code=404) if vehicles_user == [] else vehicles_user
 
 
 #Put:
@@ -103,4 +103,3 @@ async def vehicle_delete(vehicle_id: int, user: User = Depends(get_current_user)
     vehicle_model.delete_vehicle(vehicle_id)
     logging.info("A user with the ID of %i succesfully deleted a vehicle with the ID of %i.", user.id, vehicle_id)
     return JSONResponse(content={"message": "Vehicle succesfully deleted"}, status_code=201)
-
