@@ -37,14 +37,15 @@ class UserModel:
 
 
     def get_user_by_username(self, username: str) -> User | None:
+        print(repr(username))
         if username is None:
             return None
         cursor = self.connection.cursor()
         cursor.execute("""
             SELECT * FROM users WHERE username = %s;
             """, (username,))
-
         user_list = self.map_to_user(cursor)
+        print(user_list)
         if len(user_list) > 0:
             return user_list[0]
         else:
@@ -78,7 +79,14 @@ class UserModel:
         """, values)
         self.connection.commit()
 
-
     def map_to_user(self, cursor):
         columns = [desc[0] for desc in cursor.description]
-        return [User(**dict(zip(columns, row))) for row in cursor.fetchall()]
+        users = []
+        for row in cursor.fetchall():
+            row_dict = dict(zip(columns, row))
+            try:
+                user = User.parse_obj(row_dict)
+                users.append(user)
+            except Exception as e:
+                print("Failed to map row to User:", row_dict, e)
+        return users
