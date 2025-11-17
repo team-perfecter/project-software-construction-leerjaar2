@@ -126,3 +126,11 @@ async def stop_parking_session(vehicle_id: int, current_user: User = Depends(get
     )
     payment_model.create_payment(payment)
     return "Session stopped successfully"
+
+@router.get("/sessions/active")
+async def get_active_sessions():
+    """
+    Geeft een lijst van alle actieve sessies.
+    """
+    sessions = session_storage.get_active_sessions()
+    return {"active_sessions": sessions}
