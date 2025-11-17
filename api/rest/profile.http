@@ -3,29 +3,33 @@ POST http://127.0.0.1:8000/register
 Content-Type: application/json
 
 {
-  "username": "jerrel1111",
+  "username": "jerrel",
   "password": "1234",
   "name": "Jerrel",
   "email": "test@example.com",
   "phone": "1234567890",
   "birth_year": "2002"
 }
-###
+
+
+### Login
+# @name login
 POST http://127.0.0.1:8000/login
 Content-Type: application/json
 
 {
-  "username": "jerrel1111",
+  "username": "jerrel",
   "password": "1234"
 }
 
-> {% client.global.set("access_token", response.body.access_token); %}
 ###
+@token = {{login.response.body.access_token}}
+
+
+### Get user
 GET http://127.0.0.1:8000/get_user/1
- ### Logout user
-# POST http://127.0.0.1:8000/logout
-# Authorization: Bearer 416a8780-b089-47f6-a5ef-43741930c9d9
+
 
 ### Get current user
-GET http://localhost:8000/me
-Authorization: Bearer {{access_token}}
+GET http://localhost:8000/profile
+Authorization: Bearer {{token}}
