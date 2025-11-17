@@ -9,8 +9,13 @@ class Session(BaseModel):
     payment_id: Optional[int] = None
     user_id: int
     vehicle_id: int
-    start_time: datetime
-    end_time: Optional[datetime] = None
+    started: datetime
+    stopped: Optional[datetime] = None
     duration_in_minutes: Optional[int] = None
     cost: Optional[float] = None
-    payment_status: str = "pending"
+
+class SessionCreate(BaseModel):
+    parking_lot_id: int
+    user_id: int
+    vehicle_id: int
+    start_time: datetime = datetime.now()

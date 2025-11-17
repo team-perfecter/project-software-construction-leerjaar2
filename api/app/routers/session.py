@@ -2,13 +2,13 @@ import logging
 from datetime import datetime
 
 from api.auth_utils import get_current_user
-from api.datatypes.session import Session
+from api.datatypes.session import Session, SessionCreate
 from api.datatypes.user import User
-from api.storage.parking_lot_storage import Parking_lot_storage
-from api.storage.session_storage import Session_storage
-from api.storage.vehicle_storage import Vehicle_storage
+from api.models.parking_lot_model import ParkingLotModel
+from api.models.session_model import SessionModel
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+
+from api.models.vehicle_model import Vehicle_model
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,9 +18,9 @@ logging.basicConfig(
 
 router = APIRouter(tags=["sessions"])
 
-session_storage: Session_storage = Session_storage()
-parking_lot_storage: Parking_lot_storage = Parking_lot_storage()
-vehicle_storage: Vehicle_storage = Vehicle_storage()
+session_storage: SessionModel = SessionModel()
+parking_lot_model: ParkingLotModel = ParkingLotModel()
+vehicle_model: Vehicle_model = Vehicle_model()
 
 
 @router.post("/parking-lots/{lid}/sessions/start", status_code=status.HTTP_201_CREATED)
@@ -34,7 +34,7 @@ async def start_parking_session(
     )
 
     # parking lot check
-    parking_lot = parking_lot_storage.get_parking_lot_by_id(lid)
+    parking_lot = parking_lot_model.get_parking_lot_by_id(lid)
     if not parking_lot:
         logging.warning("Parking lot with id %i does not exist", lid)
         raise HTTPException(
@@ -46,8 +46,8 @@ async def start_parking_session(
         )
 
     # vehicle en user check
-    vehicle = vehicle_storage.get_one_vehicle(vehicle_id)
-    if not vehicle or vehicle["user_id"] != current_user.id:
+    vehicle = vehicle_model.get_one_vehicle(vehicle_id)
+    if not vehicle or vehicle.user_id != current_user.id:
         if not vehicle:
             logging.warning("Vehicle with id %i does not exist", vehicle_id)
             raise HTTPException(
@@ -72,9 +72,7 @@ async def start_parking_session(
             )
 
     # active session check voor vehicle
-    existing_sessions = session_storage.get_all_sessions_by_id(
-        parking_lot_id=lid, vehicle_id=vehicle_id, active_only=True
-    )
+    existing_sessions =  False #session_storage.get_all_sessions_by_id(lid, vehicle_id)
 
     if existing_sessions:
         logging.warning(
@@ -91,26 +89,14 @@ async def start_parking_session(
         )
 
     # create new session
-    all_sessions = session_storage.get_sessions()
-    new_session_id = max([s.id for s in all_sessions], default=0) + 1
-
-    new_session = Session(
-        id=new_session_id,
-        parking_lot_id=lid,
-        user_id=current_user.id,
-        vehicle_id=vehicle_id,
-        license_plate=vehicle["license_plate"],
-        start_time=datetime.now(),
-        end_time=None,
-        payment_status="pending",
-    )
 
     # Save session
-    session_storage.start_session(new_session)
+    session = session_storage.create_session(lid, current_user.id, vehicle_id)
+    if session is None:
+        return "This vehicle already has a session"
 
     logging.info(
-        "Successfully started session %i for user %i at parking lot %i with vehicle %i",
-        new_session_id,
+        "Successfully started session for user %i at parking lot %i with vehicle %i",
         current_user.id,
         lid,
         vehicle_id,
@@ -118,9 +104,16 @@ async def start_parking_session(
 
     return {
         "message": "Session started successfully",
-        "session_id": new_session_id,
         "parking_lot_id": lid,
         "vehicle_id": vehicle_id,
-        "license_plate": vehicle["license_plate"],
-        "start_time": new_session.start_time.isoformat(),
+        "license_plate": vehicle.license_plate,
     }
+
+@router.post("/parking-lots/{lid}/sessions/stop")
+async def stop_parking_session(vehicle_id: int, current_user: User = Depends(get_current_user)):
+    active_sessions = session_storage.get_vehicle_sessions(vehicle_id)
+    print(active_sessions)
+    if not active_sessions:
+        return "This vehicle has no active sessions"
+    session_storage.stop_session(active_sessions)
+    return "Session stopped successfully"

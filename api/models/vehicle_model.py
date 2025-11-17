@@ -27,8 +27,12 @@ class Vehicle_model:
     #Return a vehicle.
     def get_one_vehicle(self, vehicle_id):
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM vehicles WHERE id = %s", (vehicle_id))
-        return cursor.fetchone()
+        cursor.execute("SELECT * FROM vehicles WHERE id = %s", (vehicle_id,))
+        row = cursor.fetchone()
+        if not row:
+            return None
+        columns = [desc[0] for desc in cursor.description]
+        return Vehicle.parse_obj(dict(zip(columns, row)))
 
     #Create a vehicle.
     def create_vehicle(self, user_id, vehicle: VehicleCreate):
@@ -37,6 +41,7 @@ class Vehicle_model:
             INSERT INTO vehicles (user_id, license_plate, make, model, color, year)
             VALUES (%s, %s, %s, %s, %s, %s)
         """, (user_id, vehicle.license_plate, vehicle.make, vehicle.model, vehicle.color, vehicle.year))
+        self.connection.commit()
 
     def update_vehicle(self, vehicle):
         cursor = self.connection.cursor()

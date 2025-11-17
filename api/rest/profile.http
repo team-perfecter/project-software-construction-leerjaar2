@@ -11,6 +11,8 @@ Content-Type: application/json
   "birth_year": "2002"
 }
 
+### Get user
+GET http://127.0.0.1:8000/get_user/1
 
 ### Login
 # @name login
@@ -25,11 +27,41 @@ Content-Type: application/json
 ###
 @token = {{login.response.body.access_token}}
 
-
-### Get user
-GET http://127.0.0.1:8000/get_user/1
-
+### Logout
+POST http://127.0.0.1:8000/logout
+Authorization: Bearer {{token}}
 
 ### Get current user
 GET http://localhost:8000/profile
 Authorization: Bearer {{token}}
+
+### Create a vehicle
+POST http://127.0.0.1:8000/vehicles/create
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "license_plate": "ABC123",
+  "make": "Toyota",
+  "model": "Corolla",
+  "color": "Blue",
+  "year": 2020
+}
+
+### Get created vehicle
+GET http://localhost:8000/vehicles
+Authorization: Bearer {{token}}
+
+### Get parking lot
+GET http://localhost:8000/parking-lots/1
+Authorization: Bearer {{token}}
+
+### Start a session
+POST http://localhost:8000/parking-lots/1/sessions/start?vehicle_id=5
+Authorization: Bearer {{token}}
+
+### Stop a session
+POST http://localhost:8000/parking-lots/1/sessions/stop?vehicle_id=5
+Authorization: Bearer {{token}}
+
+

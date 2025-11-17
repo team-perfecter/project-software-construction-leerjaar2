@@ -4,7 +4,7 @@ from api.models.user_model import UserModel
 from api.utilities.Hasher import hash_string
 import logging
 from fastapi import Depends, APIRouter, HTTPException
-from api.auth_utils import verify_password, create_access_token, get_current_user, revoke_token
+from api.auth_utils import verify_password, create_access_token, get_current_user, revoke_token, oauth2_scheme
 
 router = APIRouter(
     tags=["profile"]
@@ -59,7 +59,6 @@ async def login(data: UserLogin):
         logging.info("Login failed — incorrect password for user: %s", data.username)
         raise HTTPException(status_code=401, detail="Invalid credentials")
     access_token = create_access_token({"sub": user.username})
-    print(access_token)
     logging.info("User '%s' logged in successfully", user.username)
 
     return {"access_token": access_token, "token_type": "bearer"}
@@ -81,9 +80,11 @@ async def get_me(user: User = Depends(get_current_user)):
 
 
 @router.post("/logout")
-async def logout(token: str):
-    if token is not None:
+async def logout(token: str = Depends(oauth2_scheme), user: User = Depends(get_current_user)):
+    if user:
         revoke_token(token)
+        return "logged out successfully"
+    return "user not logged in"
 
 
 @router.put("/update_profile")

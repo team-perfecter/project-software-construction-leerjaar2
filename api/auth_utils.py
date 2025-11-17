@@ -62,7 +62,6 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
             raise HTTPException(
                 status_code=401, detail="Invalid token payload")
         user: User = user_model.get_user_by_username(username)
-        print(user)
         if user is None:
             raise HTTPException(status_code=401, detail="Invalid token")
         return user
