@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import pytest
 import jwt
 from fastapi.testclient import TestClient
-from ../../app import app
+from api.main import app
 
 '''
 POST /parking-lots endpoint tests

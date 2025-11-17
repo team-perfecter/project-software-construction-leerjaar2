@@ -58,8 +58,9 @@ async def login(data: UserLogin):
     if not verify_password(data.password, user.password):
         logging.info("Login failed — incorrect password for user: %s", data.username)
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    access_token = create_access_token({"sub": user.name})
-    logging.info("User '%s' logged in successfully", user.name)
+    access_token = create_access_token({"sub": user.username})
+    print(access_token)
+    logging.info("User '%s' logged in successfully", user.username)
 
     return {"access_token": access_token, "token_type": "bearer"}
 
