@@ -1,109 +1,71 @@
 from datetime import datetime
 from typing import List, Optional
 from api.datatypes.session import Session
-
+from api.models.session_model import SessionModel
 
 class Session_storage:
-    """In-memory opslag voor parkeersessies (testversie, zonder database)."""
+    """Database-opslag voor parkeersessies (via psycopg2)."""
 
     def __init__(self):
-        #Tijdelijke opslag van sessies
-        self.session_list: list[Session] = []
+        self.model = SessionModel()
 
-    #Nieuwe sessie starten
-    def start_session(self, vehicle_id: int, user_id: int, parking_lot_id: int = 1) -> None:
-        #Controleer of dit voertuig al een actieve sessie heeft
-        for s in self.session_list:
-            if s["vehicle_id"] == vehicle_id and s["stopped"] is None:
+    # Nieuwe sessie starten
+    def start_session(self, vehicle_id: int, user_id: int, parking_lot_id: int = 1):
+        """
+        Start een nieuwe sessie in de database.
+        """
+        # controleer eerst of er al een actieve sessie is
+        active_sessions = self.model.get_active_sessions()
+        for s in active_sessions:
+            if s["vehicle_id"] == vehicle_id:
                 raise Exception("Vehicle already has an active session.")
 
-        new_session = {
-            "id": len(self.session_list) + 1,
-            "vehicle_id": vehicle_id,
-            "user_id": user_id,
-            "parking_lot_id": parking_lot_id,
-            "started": datetime.now(),
-            "stopped": None,
-            "duration_minutes": None,
-            "cost": None,
-        }
-        self.session_list.append(new_session)
-        return new_session
+        # maak nieuwe sessie aan in de DB
+        session_id = self.model.start_session(parking_lot_id, user_id, vehicle_id)
+        return {"message": "Session started", "session_id": session_id}
 
-    #Actieve sessie stoppen
-    def stop_session(self, vehicle_id: int) -> None:
-        for s in self.session_list:
-            if s["vehicle_id"] == vehicle_id and s["stopped"] is None:
-                s["stopped"] = datetime.now()
-                duration = (s["stopped"] - s["started"]).total_seconds() / 60
-                s["duration_minutes"] = int(duration)
-                s["cost"] = round(duration * 0.05, 2)  # voorbeeldtarief
-                return s
+    # Actieve sessie stoppen
+    def stop_session(self, vehicle_id: int):
+        """
+        Stop de actieve sessie van dit voertuig.
+        """
+        active_sessions = self.model.get_active_sessions()
+        for s in active_sessions:
+            if s["vehicle_id"] == vehicle_id:
+                stopped_session = self.model.end_session(s["id"])
+                return stopped_session
+
         raise Exception("No active session found for this vehicle.")
 
-    #Alle sessies ophalen
-    def get_all_sessions(self) -> List[Session]:
-        return self.session_list
+    # Alle sessies ophalen
+    def get_all_sessions(self):
+        return self.model.get_all_sessions()
 
-    #Alle actieve sessies ophalen
-    def get_active_sessions(self) -> List[Session]:
-        return [s for s in self.session_list if s["stopped"] is None]
+    # Alle actieve sessies ophalen
+    def get_active_sessions(self):
+        return self.model.get_active_sessions()
 
-
+    # Specifieke sessie zoeken
     def find_sessions(
         self,
         parking_lot_id: int = None,
         vehicle_id: int = None,
         user_id: int = None,
         session_id: int = None,
-        license_plate: str = None,
-        payment_status: str = None,
         active_only: bool = False,
-    ) -> list[Session]:
-
-        filtered_sessions = self.session_list.copy()
-
-        if parking_lot_id is not None:
-            filtered_sessions = [
-                s for s in filtered_sessions if s.parking_lot_id == parking_lot_id
-            ]
-
-        if vehicle_id is not None:
-            filtered_sessions = [
-                s for s in filtered_sessions if s.vehicle_id == vehicle_id
-            ]
-
-        if user_id is not None:
-            filtered_sessions = [s for s in filtered_sessions if s.user_id == user_id]
-
-        if session_id is not None:
-            filtered_sessions = [s for s in filtered_sessions if s.id == session_id]
-
-        if license_plate is not None:
-            filtered_sessions = [
-                s for s in filtered_sessions if s.license_plate == license_plate
-            ]
-
-        if payment_status is not None:
-            filtered_sessions = [
-                s for s in filtered_sessions if s.payment_status == payment_status
-            ]
-
+    ):
+        # Je kunt hier je model-functies uitbreiden later als filtering nodig is
+        sessions = self.model.get_all_sessions()
         if active_only:
-            filtered_sessions = [s for s in filtered_sessions if s.end_time is None]
-
-        return filtered_sessions
-
-    def update_session(self, session_id: int, updated_session: Session) -> bool:
-        for index, session in enumerate(self.session_list):
-            if session.id == session_id:
-                self.session_list[index] = updated_session
-                return True
-        return False
+            sessions = [s for s in sessions if s["stopped"] is None]
+        if vehicle_id:
+            sessions = [s for s in sessions if s["vehicle_id"] == vehicle_id]
+        if user_id:
+            sessions = [s for s in sessions if s["user_id"] == user_id]
+        return sessions
 
     def delete_session(self, session_id: int) -> bool:
-        for index, session in enumerate(self.session_list):
-            if session.id == session_id:
-                self.session_list.pop(index)
-                return True
-        return False
+        cursor = self.model.connection.cursor()
+        cursor.execute("DELETE FROM sessions WHERE id = %s;", (session_id,))
+        self.model.connection.commit()
+        return cursor.rowcount > 0

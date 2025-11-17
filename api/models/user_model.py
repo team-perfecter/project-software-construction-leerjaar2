@@ -37,7 +37,6 @@ class UserModel:
 
 
     def get_user_by_username(self, username: str) -> User | None:
-        print(repr(username))
         if username is None:
             return None
         cursor = self.connection.cursor()
@@ -45,7 +44,6 @@ class UserModel:
             SELECT * FROM users WHERE username = %s;
             """, (username,))
         user_list = self.map_to_user(cursor)
-        print(user_list)
         if len(user_list) > 0:
             return user_list[0]
         else:

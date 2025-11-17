@@ -4,10 +4,10 @@ from typing import Optional
 
 class PaymentCreate(BaseModel):
   user_id: int
-  transaction: str
+  transaction: Optional[str] = None
   amount: float
-  hash: str
-  method: str
+  hash: Optional[str] = None
+  method: Optional[str] = None
   issuer: Optional[str] = None
   bank: Optional[str] = None
 
