@@ -2,9 +2,11 @@ import logging
 from datetime import datetime
 
 from api.auth_utils import get_current_user
+from api.datatypes.payment import Payment, PaymentCreate
 from api.datatypes.session import Session, SessionCreate
 from api.datatypes.user import User
 from api.models.parking_lot_model import ParkingLotModel
+from api.models.payment_model import PaymentModel
 from api.models.session_model import SessionModel
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -21,6 +23,7 @@ router = APIRouter(tags=["sessions"])
 session_storage: SessionModel = SessionModel()
 parking_lot_model: ParkingLotModel = ParkingLotModel()
 vehicle_model: Vehicle_model = Vehicle_model()
+payment_model: PaymentModel = PaymentModel()
 
 
 @router.post("/parking-lots/{lid}/sessions/start", status_code=status.HTTP_201_CREATED)
@@ -112,8 +115,14 @@ async def start_parking_session(
 @router.post("/parking-lots/{lid}/sessions/stop")
 async def stop_parking_session(vehicle_id: int, current_user: User = Depends(get_current_user)):
     active_sessions = session_storage.get_vehicle_sessions(vehicle_id)
-    print(active_sessions)
     if not active_sessions:
         return "This vehicle has no active sessions"
-    session_storage.stop_session(active_sessions)
+    session = session_storage.stop_session(active_sessions)
+    print("current stopped session ")
+    print(session)
+    payment: PaymentCreate = PaymentCreate(
+        user_id=current_user.id,
+        amount = session["cost"]
+    )
+    payment_model.create_payment(payment)
     return "Session stopped successfully"

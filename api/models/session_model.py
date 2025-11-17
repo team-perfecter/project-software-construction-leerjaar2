@@ -37,11 +37,11 @@ class SessionModel:
         return self.map_to_session(cursor)[0]
 
     # Sessie stoppen (wanneer voertuig vertrekt)
-    def stop_session(self, session: Session) -> Session | None:
+    def stop_session(self, session: Session):
 
         stopped = datetime.now()
         duration_minutes = int((stopped - session.started).total_seconds() / 60)
-        cost = round(duration_minutes * 0.05, 2)
+        cost = round(duration_minutes * 0.05, 2) + 1
 
         cursor = self.connection.cursor()
         cursor.execute("""
@@ -55,7 +55,9 @@ class SessionModel:
 
         self.connection.commit()
 
-        return cursor.fetchone()[0]
+        row = cursor.fetchone()
+        columns = [desc[0] for desc in cursor.description]
+        return dict(zip(columns, row))
 
     # Alle sessies ophalen
     def get_all_sessions(self) -> list[Session]:
