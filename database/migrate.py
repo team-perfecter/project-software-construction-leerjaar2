@@ -1,26 +1,29 @@
 import time
-
 import psycopg2
 import sys
 
+# Get database name from command line argument or default to "database"
 db_name = sys.argv[1] if len(sys.argv) > 1 else "database"
 
-conn = None
+# Determine the host based on Docker service
+host_name = "db" if db_name == "database" else "test_db"
 
+conn = None
 for i in range(10):
     try:
         conn = psycopg2.connect(
-            host="db",
+            host=host_name,
             port=5432,
             database=db_name,
             user="user",
             password="password"
         )
-        print("connected to database")
+        print(f"Connected to database '{db_name}' on host '{host_name}'")
         break
     except psycopg2.Error as e:
         print(e)
         time.sleep(3)
+
 cur = conn.cursor()
 
 cur.execute("""
@@ -73,13 +76,12 @@ CREATE TABLE IF NOT EXISTS payments (
     user_id INTEGER REFERENCES users(id),
     transaction VARCHAR,
     amount FLOAT,
-    created_at TIMESTAMP,
-    completed_at TIMESTAMP,
+    completed BOOLEAN DEFAULT FALSE,
     hash VARCHAR,
     method VARCHAR,
-    issue VARCHAR,
+    issuer VARCHAR,
     bank VARCHAR,
-    date TIMESTAMP
+    date TIMESTAMP DEFAULT NOW()
 );
 """)
 
@@ -115,4 +117,4 @@ conn.commit()
 cur.close()
 conn.close()
 
-print("tables created")
+print("Tables created in database:", db_name)

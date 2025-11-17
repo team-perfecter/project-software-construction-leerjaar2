@@ -13,7 +13,8 @@ services:
       context: ./database
     depends_on:
       - db
-    command: [ "python", "migrate.py" ]
+    command: ["python", "migrate.py"]
+    restart: "no"
 
   #db_migration_test:
   #  build:
@@ -48,3 +49,4 @@ services:
 
 volumes:
   postgres-data:
+  test-db-data:
