@@ -6,7 +6,7 @@ from typing import List, Optional
 class ParkingLotModel:
     def __init__(self):
         self.connection = psycopg2.connect(
-            host="localhost",
+            host="db",
             port=5432,
             database="database",
             user="user",
@@ -80,4 +80,12 @@ class ParkingLotModel:
 
     def map_to_parking_lot(self, cursor) -> List[Parking_lot]:
         columns = [desc[0] for desc in cursor.description]
-        return [Parking_lot(**dict(zip(columns, row))) for row in cursor.fetchall()]
+        parking_lots = []
+        for row in cursor.fetchall():
+            row_dict = dict(zip(columns, row))
+            try:
+                user = Parking_lot.parse_obj(row_dict)
+                parking_lots.append(user)
+            except Exception as e:
+                print("Failed to map row to User:", row_dict, e)
+        return parking_lots

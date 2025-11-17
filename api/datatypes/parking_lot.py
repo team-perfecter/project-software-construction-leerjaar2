@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 from datetime import date
 
@@ -11,6 +13,6 @@ class Parking_lot(BaseModel):
   reserved: int
   tariff: float
   daytariff: float
-  created_at: date
+  created_at: Optional[date] = None
   lat: float
   lng: float
