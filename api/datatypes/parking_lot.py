@@ -16,3 +16,14 @@ class Parking_lot(BaseModel):
   created_at: Optional[date] = None
   lat: float
   lng: float
+
+
+class Parking_lot_create(BaseModel):
+  name: str
+  location: str
+  address: str
+  capacity: int
+  tariff: float
+  daytariff: float
+  lat: float
+  lng: float
