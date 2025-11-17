@@ -1,5 +1,5 @@
 
-from api.datatypes.vehicle import Vehicle
+from api.datatypes.vehicle import Vehicle, VehicleCreate
 import psycopg2
 
 class Vehicle_model:
@@ -13,9 +13,9 @@ class Vehicle_model:
         )
 
     #Return all vehicles
-    def get_all_vehicles(self):
+    def get_all_vehicles_of_user(self, user_id: int):
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM vehicles")
+        cursor.execute("SELECT * FROM vehicles WHERE user_id = %s", (user_id,))
         return cursor.fetchall()
     
     #return all vehicles of user.
@@ -31,14 +31,12 @@ class Vehicle_model:
         return cursor.fetchone()
 
     #Create a vehicle.
-    def create_vehicle(self, user_id, vehicle):
+    def create_vehicle(self, user_id, vehicle: VehicleCreate):
         cursor = self.connection.cursor()
         cursor.execute("""
             INSERT INTO vehicles (user_id, license_plate, make, model, color, year)
             VALUES (%s, %s, %s, %s, %s, %s)
-        """, (user_id, vehicle["license_plate"], vehicle["make"], vehicle["model"], vehicle["color"], vehicle["year"]))
-        cursor.fetchone()
-        return self.get_all_user_vehicles(user_id)
+        """, (user_id, vehicle.license_plate, vehicle.make, vehicle.model, vehicle.color, vehicle.year))
 
     def update_vehicle(self, vehicle):
         cursor = self.connection.cursor()

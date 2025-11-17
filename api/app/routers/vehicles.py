@@ -3,7 +3,7 @@ from api.datatypes.user import User
 from fastapi import FastAPI, HTTPException, Body, Depends, APIRouter
 from api.storage.profile_storage import Profile_storage
 from api.models.vehicle_model import Vehicle_model
-from api.datatypes.vehicle import Vehicle
+from api.datatypes.vehicle import Vehicle, VehicleCreate
 import logging
 from starlette.responses import JSONResponse
 
@@ -28,9 +28,9 @@ logging.basicConfig(
 
 #Get all vehicles from logged in user or get all vehicles if loggedin is ADMIN. (User and Admin)
 @router.get("/vehicles")
-async def vehicles():
+async def vehicles(user: User = Depends(get_current_user)):
     #Get all vehicles if you are Admin or get all your owned vehicles if you are user.
-    vehicles = vehicle_model.get_all_vehicles() if get_current_user().role == "ADMIN" else vehicle_model.get_all_user_vehicles(get_current_user().id)
+    vehicles = vehicle_model.get_all_vehicles_of_user(user.id)
     return "No vehicles found" if vehicles == [] else vehicles
 
 #Get one vehicle of an user. (User and Admin)
@@ -61,10 +61,10 @@ async def vehicles_user(user_id: int):
 
 #Create a vehicle for an user. (user)
 @router.post("/vehicles/create")
-async def vehicle_create(vehicle: dict = Body(...)):
+async def vehicle_create(vehicle: VehicleCreate, user: User = Depends(get_current_user)):
     #Create vehicle.
-    updated_list = vehicle_model.create_vehicle(get_current_user().id, vehicle)
-    return updated_list
+    vehicle_model.create_vehicle(user.id, vehicle)
+    return "Vehicle successfully created"
 
 
 
