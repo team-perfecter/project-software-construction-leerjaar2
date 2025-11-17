@@ -21,14 +21,16 @@ class Vehicle_model:
     #return all vehicles of user.
     def get_all_user_vehicles(self, user_id):
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM vehicles WHERE user_id = %s", (user_id))
+        cursor.execute("SELECT * FROM vehicles WHERE user_id = %s", (user_id,))
         return cursor.fetchall()
     
     #Return a vehicle.
     def get_one_vehicle(self, vehicle_id):
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM vehicles WHERE id = %s", (vehicle_id))
-        return cursor.fetchone()
+        cursor.execute("SELECT * FROM vehicles WHERE id = %s", (vehicle_id,))
+        row = cursor.fetchone()
+        columns = [desc[0] for desc in cursor.description]
+        return dict(zip(columns, row))
 
     #Create a vehicle.
     def create_vehicle(self, user_id, vehicle: VehicleCreate):
@@ -36,7 +38,7 @@ class Vehicle_model:
         cursor.execute("""
             INSERT INTO vehicles (user_id, license_plate, make, model, color, year)
             VALUES (%s, %s, %s, %s, %s, %s)
-        """, (user_id, vehicle.license_plate, vehicle.make, vehicle.model, vehicle.color, vehicle.year))
+        """, (user_id, vehicle.license_plate, vehicle.make, vehicle.model, vehicle.color, vehicle.year,))
 
     def update_vehicle(self, vehicle):
         cursor = self.connection.cursor()
@@ -44,12 +46,22 @@ class Vehicle_model:
             UPDATE vehicles
             SET license_plate=%s, make=%s, model=%s, color=%s, year=%s
             WHERE id=%s
-        """, (vehicle["license_plate"], vehicle["make"], vehicle["model"], vehicle["color"], vehicle["year"], vehicle["id"]))
+        """, (vehicle["license_plate"], vehicle["make"], vehicle["model"], vehicle["color"], vehicle["year"], vehicle["id"],))
         cursor.fetchone()
 
     #Delete a vehicle.
     def delete_vehicle(self, vehicle_id):
         cursor = self.connection.cursor()
-        cursor.execute("DELETE FROM vehicles WHERE id=%s", (vehicle_id))
-        cursor.fetchone()
-        
+        cursor.execute("DELETE FROM vehicles WHERE id=%s", (vehicle_id,))
+
+    def get_all_Reservations_history_vehicles(self, user_id):
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            SELECT *
+            FROM reservations
+            INNER JOIN vehicles
+                ON reservations.vehicle_id = vehicles.vehicle_id
+            INNER JOIN parking_lots p
+                ON reservations.parking_lot_id = parkinglots.parking_lot_id
+            WHERE reservations.user_id = %s
+        """, (user_id,))

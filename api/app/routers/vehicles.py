@@ -30,30 +30,30 @@ logging.basicConfig(
 @router.get("/vehicles")
 async def vehicles(user: User = Depends(get_current_user)):
     #Get all vehicles if you are Admin or get all your owned vehicles if you are user.
+    print()
     vehicles = vehicle_model.get_all_vehicles_of_user(user.id)
-    return "No vehicles found" if vehicles == [] else vehicles
+    return JSONResponse(content={"message": "Vehicles not found"}, status_code=201) if vehicles == [] else vehicles
 
 #Get one vehicle of an user. (User and Admin)
 @router.get("/vehicles/{vehicle_id}")
-async def vehicles(vehicle_id: int):
+async def vehicles(vehicle_id: int, user: User = Depends(get_current_user)):
     #Get user vehicle.
     vehicle = vehicle_model.get_one_vehicle(vehicle_id)
-
     #Shows one vehicle if you are ADMIN or if it is the vehicle of the loggedin user.
-    if get_current_user().role == "ADMIN" or get_current_user().id == vehicle["user_id"]:
+    if user.role == "ADMIN" or user.id == vehicle["user_id"]:
         return vehicle
     else:
-        return "Something went wrong."
+        return HTTPException(detail={"message": "Something went wrong."}, status_code=404)
 
 #Get vehicles of an user. (Admin)
 @router.get("/vehicles/user/{user_id}")
-async def vehicles_user(user_id: int):
+async def vehicles_user(user_id: int, user: User = Depends(get_current_user)):
     #Get user vehicles.
-    if get_current_user().role == "ADMIN":
+    if user.role == "ADMIN":
         vehicles_user = vehicle_model.get_all_user_vehicles(user_id)
-        return "Vehicles not found." if vehicles_user == [] else vehicles_user
+        return JSONResponse(content={"message": "Vehicles not found"}, status_code=201) if vehicles_user == [] else vehicles_user
     else:
-        return "You are not autorized to this."
+        return HTTPException(detail={"message": "You are not autorized to this."}, status_code=404)
 
 
 
@@ -64,8 +64,15 @@ async def vehicles_user(user_id: int):
 async def vehicle_create(vehicle: VehicleCreate, user: User = Depends(get_current_user)):
     #Create vehicle.
     vehicle_model.create_vehicle(user.id, vehicle)
-    return "Vehicle successfully created"
+    return JSONResponse(content={"message": "Vehicle successfully created."}, status_code=201)
+    
 
+
+#Users must see the history of the vehicles reservations. (User)
+#@router.get("/vehicles/history-reservations")
+#async def vehicles_user():
+#    vehicles_user = vehicle_model.get_all_Reservations_history_vehicles(get_current_user().id)
+#    return "Your vehicle reservations are not found." if vehicles_user == [] else vehicles_user
 
 
 #Put:
@@ -74,25 +81,26 @@ async def vehicle_create(vehicle: VehicleCreate, user: User = Depends(get_curren
 @router.put("/vehicles/update/{vehicle_id}")
 async def vehicle_update(vehicle_id: int, vehicle: dict = Body(...)):
     print("update vehicle of a user.")
+    return JSONResponse(content={"message": "This request is under construction."}, status_code=201)
 
 
 
 #delete:
 
 #delete a vehicle for an user.
-@router.delete("vehicles/delete/{vehicle_id}")
-async def vehicle_delete(vehicle_id: int):
+@router.delete("/vehicles/delete/{vehicle_id}")
+async def vehicle_delete(vehicle_id: int, user: User = Depends(get_current_user)):
     vehicle: Vehicle | None = vehicle_model.get_one_vehicle(vehicle_id)
 
     if vehicle == None:
-        logging.warning("A user with the ID of %i tried to delete a vehicle with the ID of %i, but the vehicle could not be found.", user_id, vehicle_id)
+        logging.warning("A user with the ID of %i tried to delete a vehicle with the ID of %i, but the vehicle could not be found.", user.id, vehicle_id)
         raise HTTPException(status_code=404, detail={"error": "vehicle not found"})
 
-    if vehicle.user_id != get_current_user().id:
-        logging.warning("A user with the ID of %i tried to delete a vehicle with the ID of %i, but the vehicle does not belong to the user.", user_id, vehicle_id)
-        raise HTTPException(status_code=401, detail={"error": "Not authoized to delete this vehicle"})
+    if vehicle["user_id"] != user.id:
+        logging.warning("A user with the ID of %i tried to delete a vehicle with the ID of %i, but the vehicle does not belong to the user.", user.id, vehicle_id)
+        raise HTTPException(status_code=404, detail={"error": "Not authoized to delete this vehicle"})
     
-    vehicle_model.delete_vehicle(vehicle.id)
-    logging.info("A user with the ID of %i succesfully deleted a vehicle with the ID of %i.", get_current_user().id, vehicle_id)
+    vehicle_model.delete_vehicle(vehicle_id)
+    logging.info("A user with the ID of %i succesfully deleted a vehicle with the ID of %i.", user.id, vehicle_id)
     return JSONResponse(content={"message": "Vehicle succesfully deleted"}, status_code=201)
 
