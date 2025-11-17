@@ -70,13 +70,13 @@ class PaymentModel:
         cursor = self.connection.cursor()
         cursor.execute("""
             UPDATE payments 
-            SET user_id = %s, transaction = %s, amount = %s, completed = %s, 
-                hash = %s, method = %s, issuer = %s, bank = %s, date = %s
+            SET user_id = %s, transaction = %s, amount = %s, 
+                hash = %s, method = %s, issuer = %s, bank = %s
             WHERE id = %s
             RETURNING id;
         """, (p.user_id, p.transaction, p.amount, 
-              p.completed, p.hash, p.method, 
-              p.issuer, p.bank, p.date, id,))
+            p.hash, p.method, 
+              p.issuer, p.bank, id,))
         updated = cursor.fetchone()
         self.connection.commit()
         return updated is not None
