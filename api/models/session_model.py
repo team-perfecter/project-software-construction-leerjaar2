@@ -69,7 +69,10 @@ class SessionModel:
     def get_active_sessions(self) -> list[Session]:
         cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM sessions WHERE stopped IS NULL;")
-        return self.map_to_session(cursor)
+        rows = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        result = [dict(zip(columns, row)) for row in rows]
+        return result
 
     # Sessie zoeken op ID
     def get_session_by_id(self, session_id: int) -> Session | None:
