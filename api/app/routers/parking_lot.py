@@ -3,7 +3,7 @@ import logging
 from datetime import date, datetime
 from api.models.parking_lot_model import ParkingLotModel
 from api.storage_utils import *
-from api.datatypes.parking_lot import Parking_lot
+from api.datatypes.parking_lot import Parking_lot, Parking_lot_create
 from api.datatypes.user import User
 from api.auth_utils import get_current_user
 from fastapi import APIRouter, HTTPException, status, Depends
@@ -23,26 +23,40 @@ parking_lot_model: ParkingLotModel = ParkingLotModel()
 # TODO: create parking lot (admin only)             /parking-lots
 @router.post("/parking-lots", status_code=status.HTTP_201_CREATED)
 async def create_parking_lot(
-    parking_lot: Parking_lot,
+    parking_lot_data: Parking_lot_create,
     current_user: User = Depends(get_current_user),
 ):
     logging.info(
         "User with id %i attempting to create a new parking lot", current_user.id
     )
 
-    # Check if user is admin
-    if current_user.role != "ADMIN":
-        logging.warning(
-            "Access denied for user with id %i - not an admin", current_user.id
-        )
-        raise HTTPException(
-            status_code=403, detail="Access denied. Admin privileges required."
-        )
+    # # Check if user is admin
+    # if current_user.role != "ADMIN":
+    #     logging.warning(
+    #         "Access denied for user with id %i - not an admin", current_user.id
+    #     )
+    #     raise HTTPException(
+    #         status_code=403, detail="Access denied. Admin privileges required."
+    #     )
 
     # later validatie toevoegen?
     parking_lots = parking_lot_model.get_all_parking_lots()
     new_id = max([lot.id for lot in parking_lots], default=0) + 1
-    parking_lot.id = new_id
+
+    # Maak een volledig Parking_lot object met gegenereerde velden
+    parking_lot = Parking_lot(
+        id=new_id,
+        name=parking_lot_data.name,
+        location=parking_lot_data.location,
+        address=parking_lot_data.address,
+        capacity=parking_lot_data.capacity,
+        reserved=0,  # Nieuwe parking lot start met 0 reserveringen
+        tariff=parking_lot_data.tariff,
+        daytariff=parking_lot_data.daytariff,
+        created_at=date.today(),
+        lat=parking_lot_data.lat,
+        lng=parking_lot_data.lng
+    )
 
     logging.info(
         "Creating parking lot with id %i and name '%s'", new_id, parking_lot.name
@@ -51,15 +65,14 @@ async def create_parking_lot(
     logging.info("Successfully created parking lot with id %i", new_id)
     return parking_lot
 
-
 # endregion
 
 
 # region GET
 # TODO: get all parking lots                        /parking-lots/
 @router.get("/parking-lots/")
-async def get_all_parking_lots(current_user: User = Depends(get_current_user)):
-    logging.info("User with id %i retrieving all parking lots", current_user.id)
+async def get_all_parking_lots():
+    logging.info("Retrieving all parking lots")
     parking_lots = parking_lot_model.get_all_parking_lots()
     if len(parking_lots) == 0:
         logging.warning("No parking lots found in the system")
