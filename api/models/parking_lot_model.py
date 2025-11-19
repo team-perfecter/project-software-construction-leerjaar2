@@ -24,6 +24,63 @@ class ParkingLotModel:
         lots = self.map_to_parking_lot(cursor)
         return lots[0] if lots else None
 
+    def find_parking_lots(
+        self,
+        lot_id: int = None,
+        name: str = None,
+        location: str = None,
+        city: str = None,
+        min_capacity: int = None,
+        max_capacity: int = None,
+        min_tariff: float = None,
+        max_tariff: float = None,
+        has_availability: bool = None,
+    ) -> List[Parking_lot]:
+        cursor = self.connection.cursor()
+
+        query = "SELECT * FROM parking_lots WHERE 1=1"
+        params = []
+
+        if lot_id is not None:
+            query += " AND id = %s"
+            params.append(lot_id)
+
+        if name is not None:
+            query += " AND name ILIKE %s"
+            params.append(f"%{name}%")
+
+        if location is not None:
+            query += " AND location ILIKE %s"
+            params.append(f"%{location}%")
+
+        if city is not None:
+            query += " AND address ILIKE %s"
+            params.append(f"%{city}%")
+
+        if min_capacity is not None:
+            query += " AND capacity >= %s"
+            params.append(min_capacity)
+
+        if max_capacity is not None:
+            query += " AND capacity <= %s"
+            params.append(max_capacity)
+
+        if min_tariff is not None:
+            query += " AND tariff >= %s"
+            params.append(min_tariff)
+
+        if max_tariff is not None:
+            query += " AND tariff <= %s"
+            params.append(max_tariff)
+
+        if has_availability is not None and has_availability:
+            query += " AND (capacity - reserved) > 0"
+
+        query += ";"
+
+        cursor.execute(query, params)
+        return self.map_to_parking_lot(cursor)
+
     def create_parking_lot(self, lot: Parking_lot) -> None:
         cursor = self.connection.cursor()
         cursor.execute(
