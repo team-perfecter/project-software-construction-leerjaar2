@@ -40,14 +40,13 @@ class Vehicle_model:
             VALUES (%s, %s, %s, %s, %s, %s)
         """, (user_id, vehicle.license_plate, vehicle.make, vehicle.model, vehicle.color, vehicle.year,))
 
-    def update_vehicle(self, vehicle):
+    def update_vehicle(self, vehicle, vehicle_id):
         cursor = self.connection.cursor()
         cursor.execute("""
             UPDATE vehicles
             SET license_plate=%s, make=%s, model=%s, color=%s, year=%s
             WHERE id=%s
-        """, (vehicle["license_plate"], vehicle["make"], vehicle["model"], vehicle["color"], vehicle["year"], vehicle["id"],))
-        cursor.fetchone()
+        """, (vehicle["license_plate"], vehicle["make"], vehicle["model"], vehicle["color"], vehicle["year"], vehicle_id,))
 
     #Delete a vehicle.
     def delete_vehicle(self, vehicle_id):
