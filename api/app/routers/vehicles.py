@@ -81,10 +81,12 @@ async def vehicle_create(vehicle: VehicleCreate, user: User = Depends(get_curren
 #Update a vehicle for an user.
 @router.put("/vehicles/update/{vehicle_id}")
 async def vehicle_update(vehicle_id: int, vehicle: dict = Body(...), user: User = Depends(get_current_user)):
+    #CHeck if vehicle exist.
     vehicle_check = vehicle_model.get_one_vehicle(vehicle_id)
     if vehicle_check == None:
         raise HTTPException(detail={"message": "This vehicle doesn't exist."}, status_code=404)
 
+    # Update vehicle
     if vehicle_check["user_id"] == user.id:
         vehicle_model.update_vehicle(vehicle, vehicle_id)
         return JSONResponse(content={"message": "Vehicle succesfully updated"}, status_code=201)
