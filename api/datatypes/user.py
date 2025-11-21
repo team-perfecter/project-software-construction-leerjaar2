@@ -2,6 +2,12 @@ from click import DateTime
 from pydantic import BaseModel
 from typing import Optional
 from datetime import date, datetime
+from enum import Enum
+
+class UserRole(str, Enum):
+    USER = "user"
+    ADMIN = "admin"
+    SUPERADMIN = "superadmin"
 
 class UserCreate(BaseModel):
     username: str
@@ -14,7 +20,7 @@ class UserCreate(BaseModel):
 class User(UserCreate):
     id: int
     created_at: datetime
-    role: str
+    role: UserRole
 
 class UserLogin(BaseModel):
     username: str

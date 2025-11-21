@@ -113,6 +113,15 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 """)
 
+cur.execute("""
+CREATE TABLE IF NOT EXISTS parking_lot_admins (
+    admin_user_id INTEGER REFERENCES users(id),
+    parking_lot_id INTEGER REFERENCES parking_lots(id),
+    PRIMARY KEY (admin_user_id, parking_lot_id)
+);
+""")
+
+
 conn.commit()
 cur.close()
 conn.close()
