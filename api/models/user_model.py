@@ -2,7 +2,7 @@ from datetime import datetime
 
 import psycopg2
 
-from api.datatypes.user import UserCreate, User, UserLogin, UserUpdate
+from api.datatypes.user import UserCreate, User, UserLogin, UserUpdate, AdminCreate
 
 
 class UserModel:
@@ -21,6 +21,14 @@ class UserModel:
             INSERT INTO users (username, password, name, email, phone, birth_year)
             VALUES (%s, %s, %s, %s, %s, %s);
         """, (user.username, user.password, user.name, user.email, user.phone, user.birth_year))
+        self.connection.commit()
+
+    def create_admin(self, user: AdminCreate) -> None:
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            INSERT INTO users (username, password, name, email, phone, birth_year, role)
+            VALUES (%s, %s, %s, %s, %s, %s, %s);
+        """, (user.username, user.password, user.name, user.email, user.phone, user.birth_year, "admin"))
         self.connection.commit()
 
     def get_user_by_id(self, user_id) -> User | None:
@@ -88,3 +96,23 @@ class UserModel:
             except Exception as e:
                 print("Failed to map row to User:", row_dict, e)
         return users
+    
+    def get_parking_lots_for_admin(self, user_id: int) -> list[int]:
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            SELECT parking_lot_id 
+            FROM parking_lot_admins 
+            WHERE admin_user_id = %s;
+        """, (user_id,))
+        rows = cursor.fetchall()
+        return [r[0] for r in rows]
+    
+    def add_parking_lot_access(self, admin_id: int, lot_id: int):
+        cursor = self.connection.cursor()
+
+        cursor.execute("""
+            INSERT INTO admin_parking_lots (admin_id, lot_id)
+            VALUES (%s, %s)
+            ON CONFLICT DO NOTHING;
+        """, (admin_id, lot_id))
+        self.connection.commit()
