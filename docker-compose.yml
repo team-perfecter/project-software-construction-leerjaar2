@@ -6,7 +6,6 @@ services:
       - "8000:8000"
     depends_on:
       - db_migration
-    command: sh -c "python scripts/create_super_admin.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     restart: always
 
   db_migration:
