@@ -88,7 +88,7 @@ async def logout(token: str = Depends(oauth2_scheme), user: User = Depends(get_c
 
 
 @router.put("/update_profile")
-async def update_me(update_data: UserUpdate, current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPERADMIN))):
+async def update_me(update_data: UserUpdate, current_user: User = Depends(get_current_user)):
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
     update_fields = update_data.dict(exclude_unset=True)
