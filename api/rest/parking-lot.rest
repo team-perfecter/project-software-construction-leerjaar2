@@ -1,8 +1,44 @@
 # POST
+
+
+### Register a user
+POST http://127.0.0.1:8000/register
+Content-Type: application/json
+
+{
+  "username": "test",
+  "password": "1234",
+  "name": "bob",
+  "email": "test@example.com",
+  "phone": "1234567890",
+  "birth_year": "2002"
+}
+
+
+### Login
+# @name login
+POST http://127.0.0.1:8000/login
+Content-Type: application/json
+
+{
+  "username": "test",
+  "password": "1234"
+}
+
+
+###
+@token = {{login.response.body.access_token}}
+
+
+### Logout
+POST http://127.0.0.1:8000/logout
+Authorization: Bearer {{token}}
+
+
 ### Create a new parking lot (requires admin token)
 POST http://localhost:8000/parking-lots
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjMzODA1MzJ9.nIn8r2HqIgZdWd9GApKgYQ4L72VLe6vHrncYwnxVaHs
+Authorization: Bearer {{token}}
 
 {
   "name": "Central Parking",
@@ -17,14 +53,27 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiL
 
 # GET
 
+
+### Get all sessions from parking lot (admin only)
+GET http://localhost:8000/parking-lots/1/sessions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+### Get user
+GET http://127.0.0.1:8000/get_user/1
+
+
 ### Get all parking lots
 GET http://localhost:8000/parking-lots/
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjMzODA1MzJ9.nIn8r2HqIgZdWd9GApKgYQ4L72VLe6vHrncYwnxVaHs
+Authorization: Bearer {{token}}
 
 
 ### Get parking lot by ID
 GET http://localhost:8000/parking-lots/1
+
+
 ### Get parking lot by ID (not found example)
 GET http://localhost:8000/parking-lots/999
 

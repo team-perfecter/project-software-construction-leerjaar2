@@ -55,7 +55,7 @@ async def create_parking_lot(
         daytariff=parking_lot_data.daytariff,
         created_at=date.today(),
         lat=parking_lot_data.lat,
-        lng=parking_lot_data.lng
+        lng=parking_lot_data.lng,
     )
 
     logging.info(
@@ -64,6 +64,7 @@ async def create_parking_lot(
     parking_lot_model.create_parking_lot(parking_lot)
     logging.info("Successfully created parking lot with id %i", new_id)
     return parking_lot
+
 
 # endregion
 
@@ -96,7 +97,7 @@ async def get_parking_lot_by_lid(
     logging.info(
         "User with id %i retrieving parking lot with id %i", current_user.id, lid
     )
-    parking_lot = parking_lot_model.get_parking_lot_by_id(lid)
+    parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
     if parking_lot:
         logging.info("Successfully retrieved parking lot with id %i", lid)
         return parking_lot
@@ -113,6 +114,47 @@ async def get_parking_lot_by_lid(
 
 
 # TODO: get all sessions lot by lid (admin only)    /parking-lots/{lid}/sessions
+@router.get("/parking-lots/{lid}/sessions")
+async def get_all_sessions_from_lot(
+    lid: int, current_user: User = Depends(get_current_user)
+):
+    logging.info(
+        "User with id %i retrieving all sessions from parking lot with id %i",
+        current_user.id,
+        lid,
+    )
+
+    # Check if user is admin
+    # if current_user.role != "ADMIN":
+    #     logging.warning(
+    #         "Access denied for user with id %i - not an admin", current_user.id
+    #     )
+    #     raise HTTPException(
+    #         status_code=403, detail="Access denied. Admin privileges required."
+    #     )
+
+    parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
+    if not parking_lot:
+        logging.warning("Parking lot with id %i does not exist", lid)
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "Parking lot not found",
+                "message": f"Parking lot with ID {lid} does not exist",
+                "code": "PARKING_LOT_NOT_FOUND",
+            },
+        )
+
+    logging.info("Retrieving all sessions for parking lot with id %i", lid)
+    sessions = parking_lot_model.get_all_sessions_from_lot(lid)
+    logging.info(
+        "Successfully retrieved %i sessions for parking lot with id %i",
+        len(sessions),
+        lid,
+    )
+    return sessions
+
+
 # TODO: get session by session sid (admin only)     /parking-lots/{lid}/sessions/{sid}
 # region extra
 # TODO? moet door Stelain een ok krijgen nadat server.py gerefactored is (versie 1.0 klaar is) hij zei oke
@@ -177,7 +219,7 @@ async def delete_parking_lot(
         )
 
     # Find parking lot
-    parking_lot = parking_lot_model.get_parking_lot_by_id(lid)
+    parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
 
     if not parking_lot:
         logging.warning("Parking lot with id %i does not exist", lid)
@@ -238,7 +280,7 @@ async def delete_parking_session(
         )
 
     # Check if parking lot exists
-    parking_lot = parking_lot_model.get_parking_lot_by_id(lid)
+    parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
 
     if not parking_lot:
         logging.warning("Parking lot with id %i does not exist", lid)

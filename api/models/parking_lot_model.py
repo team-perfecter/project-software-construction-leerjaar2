@@ -1,5 +1,6 @@
 import psycopg2
 from api.datatypes.parking_lot import Parking_lot
+from api.datatypes.session import Session
 from typing import List, Optional
 
 
@@ -18,11 +19,28 @@ class ParkingLotModel:
         cursor.execute("SELECT * FROM parking_lots;")
         return self.map_to_parking_lot(cursor)
 
-    def get_parking_lot_by_id(self, lot_id: int) -> Optional[Parking_lot]:
+    def get_parking_lot_by_lid(self, lot_id: int) -> Optional[Parking_lot]:
         cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM parking_lots WHERE id = %s;", (lot_id,))
         lots = self.map_to_parking_lot(cursor)
         return lots[0] if lots else None
+
+    def get_all_sessions_from_lot(self, lot_id: int) -> List[Session]:
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT * FROM sessions WHERE parking_lot_id = %s;", (lot_id,))
+        return self.map_to_session(cursor)
+
+    def map_to_session(self, cursor) -> List[Session]:
+        columns = [desc[0] for desc in cursor.description]
+        sessions = []
+        for row in cursor.fetchall():
+            row_dict = dict(zip(columns, row))
+            try:
+                session = Session.model_validate(row_dict)
+                sessions.append(session)
+            except Exception as e:
+                print("Failed to map row to Session:", row_dict, e)
+        return sessions
 
     def find_parking_lots(
         self,
@@ -141,7 +159,7 @@ class ParkingLotModel:
         for row in cursor.fetchall():
             row_dict = dict(zip(columns, row))
             try:
-                user = Parking_lot.parse_obj(row_dict)
+                user = Parking_lot.model_validate(row_dict)
                 parking_lots.append(user)
             except Exception as e:
                 print("Failed to map row to User:", row_dict, e)
