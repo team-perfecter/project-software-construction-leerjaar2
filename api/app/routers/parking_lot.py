@@ -115,7 +115,7 @@ async def get_parking_lot_by_lid(
 
 # TODO: get all sessions lot by lid (admin only)    /parking-lots/{lid}/sessions
 @router.get("/parking-lots/{lid}/sessions")
-async def get_all_sessions_from_lot(
+async def get_all_sessions_by_lid(
     lid: int, current_user: User = Depends(get_current_user)
 ):
     logging.info(
@@ -146,7 +146,7 @@ async def get_all_sessions_from_lot(
         )
 
     logging.info("Retrieving all sessions for parking lot with id %i", lid)
-    sessions = parking_lot_model.get_all_sessions_from_lot(lid)
+    sessions = parking_lot_model.get_all_sessions_by_lid(lid)
     logging.info(
         "Successfully retrieved %i sessions for parking lot with id %i",
         len(sessions),
@@ -156,6 +156,60 @@ async def get_all_sessions_from_lot(
 
 
 # TODO: get session by session sid (admin only)     /parking-lots/{lid}/sessions/{sid}
+@router.get("/parking-lots/{lid}/sessions/{sid}")
+async def get_session_by_lid_and_sid(
+    lid: int,
+    sid: int,
+    current_user: User = Depends(get_current_user),
+):
+    logging.info(
+        "User with id %i retrieving session %i from parking lot %i",
+        current_user.id,
+        sid,
+        lid,
+    )
+
+    # Check if user is admin
+    # if current_user.role != "ADMIN":
+    #     logging.warning(
+    #         "Access denied for user with id %i - not an admin", current_user.id
+    #     )
+    #     raise HTTPException(
+    #         status_code=403, detail="Access denied. Admin privileges required."
+    #     )
+
+    parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
+    if not parking_lot:
+        logging.warning("Parking lot with id %i does not exist", lid)
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "Parking lot not found",
+                "message": f"Parking lot with ID {lid} does not exist",
+                "code": "PARKING_LOT_NOT_FOUND",
+            },
+        )
+
+    logging.info("Retrieving session %i for parking lot with id %i", sid, lid)
+    session = parking_lot_model.get_session_by_lid_and_sid(lid, sid)
+    if session:
+        logging.info(
+            "Successfully retrieved session %i for parking lot with id %i", sid, lid
+        )
+        return session
+
+    logging.warning(
+        "Session %i does not exist for parking lot with id %i", sid, lid
+    )
+    raise HTTPException(
+        status_code=404,
+        detail={
+            "error": "Session not found",
+            "message": f"Session with ID {sid} does not exist for parking lot {lid}",
+            "code": "SESSION_NOT_FOUND",
+        },
+    )
+
 # region extra
 # TODO? moet door Stelain een ok krijgen nadat server.py gerefactored is (versie 1.0 klaar is) hij zei oke
 # TODO? PO ok maar eerst de rest: get parking lots availability               /parking-lots/availability

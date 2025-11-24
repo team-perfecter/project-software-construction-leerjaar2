@@ -14,6 +14,7 @@ class ParkingLotModel:
             password="password",
         )
 
+    # region get
     def get_all_parking_lots(self) -> List[Parking_lot]:
         cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM parking_lots;")
@@ -25,10 +26,21 @@ class ParkingLotModel:
         lots = self.map_to_parking_lot(cursor)
         return lots[0] if lots else None
 
-    def get_all_sessions_from_lot(self, lot_id: int) -> List[Session]:
+    def get_all_sessions_by_lid(self, lot_id: int) -> List[Session]:
         cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM sessions WHERE parking_lot_id = %s;", (lot_id,))
         return self.map_to_session(cursor)
+
+    def get_session_by_lid_and_sid(
+        self, lot_id: int, session_id: int
+    ) -> Optional[Session]:
+        cursor = self.connection.cursor()
+        cursor.execute(
+            "SELECT * FROM sessions WHERE parking_lot_id = %s AND id = %s;",
+            (lot_id, session_id),
+        )
+        sessions = self.map_to_session(cursor)
+        return sessions[0] if sessions else None
 
     def map_to_session(self, cursor) -> List[Session]:
         columns = [desc[0] for desc in cursor.description]
@@ -99,6 +111,7 @@ class ParkingLotModel:
         cursor.execute(query, params)
         return self.map_to_parking_lot(cursor)
 
+    # region post
     def create_parking_lot(self, lot: Parking_lot) -> None:
         cursor = self.connection.cursor()
         cursor.execute(
@@ -122,6 +135,7 @@ class ParkingLotModel:
         )
         self.connection.commit()
 
+    # region update
     def update_parking_lot(self, lot_id: int, lot: Parking_lot) -> bool:
         cursor = self.connection.cursor()
         cursor.execute(
@@ -147,6 +161,7 @@ class ParkingLotModel:
         self.connection.commit()
         return cursor.rowcount > 0
 
+    # region delete
     def delete_parking_lot(self, lot_id: int) -> bool:
         cursor = self.connection.cursor()
         cursor.execute("DELETE FROM parking_lots WHERE id = %s;", (lot_id,))
