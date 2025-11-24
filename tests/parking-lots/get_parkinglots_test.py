@@ -168,7 +168,7 @@ def test_get_all_parking_lots_empty(mock_db, valid_user_headers):
 
 # Tests voor GET /parking-lots/{id}
 @patch("db_get_parking_lot", side_effect=get_fake_parking_lot)
-def test_get_parking_lot_by_id_success(mock_db, valid_user_headers):
+def test_get_parking_lot_by_lid_success(mock_db, valid_user_headers):
     """Test: GET /parking-lots/{id} - Succesvol ophalen parking lot"""
     parking_lot_id = "1"
     response = client.get(f"/parking-lots/{parking_lot_id}", headers=valid_user_headers)
@@ -180,13 +180,13 @@ def test_get_parking_lot_by_id_success(mock_db, valid_user_headers):
     assert data["capacity"] == 335
 
 @patch("db_get_parking_lot", return_value=None)
-def test_get_parking_lot_by_id_not_found(mock_db, valid_user_headers):
+def test_get_parking_lot_by_lid_not_found(mock_db, valid_user_headers):
     """Test: GET /parking-lots/{id} - Niet bestaande parking lot"""
     invalid_id = "999999"
     response = client.get(f"/parking-lots/{invalid_id}", headers=valid_user_headers)
     assert response.status_code == 404
 
-def test_get_parking_lot_by_id_unauthorized():
+def test_get_parking_lot_by_lid_unauthorized():
     """Test: GET /parking-lots/{id} - Zonder authenticatie"""
     response = client.get("/parking-lots/1")
     assert response.status_code == 401

@@ -37,7 +37,7 @@ async def start_parking_session(
     )
 
     # parking lot check
-    parking_lot = parking_lot_model.get_parking_lot_by_id(lid)
+    parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
     if not parking_lot:
         logging.warning("Parking lot with id %i does not exist", lid)
         raise HTTPException(
