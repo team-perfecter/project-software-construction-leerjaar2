@@ -88,3 +88,13 @@ class UserModel:
             except Exception as e:
                 print("Failed to map row to User:", row_dict, e)
         return users
+    
+    def get_parking_lots_for_admin(self, user_id: int) -> list[int]:
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            SELECT parking_lot_id 
+            FROM parking_lot_admins 
+            WHERE admin_user_id = %s;
+        """, (user_id,))
+        rows = cursor.fetchall()
+        return [r[0] for r in rows]

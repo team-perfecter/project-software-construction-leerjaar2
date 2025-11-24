@@ -1,6 +1,9 @@
 import time
 import psycopg2
 import sys
+import os
+
+from api.utilities.Hasher import hash_string
 
 # Get database name from command line argument or default to "database"
 db_name = sys.argv[1] if len(sys.argv) > 1 else "database"
@@ -123,6 +126,29 @@ CREATE TABLE IF NOT EXISTS parking_lot_admins (
 
 
 conn.commit()
+
+# Check for superadmin
+cur.execute("SELECT id FROM users WHERE role = 'superadmin' LIMIT 1;")
+exists = cur.fetchone()
+
+if not exists:
+    try:
+        hashed_pw = hash_string("admin123")
+
+        cur.execute("""
+            INSERT INTO users (username, password, name, email, role)
+            VALUES ('superadmin', %s, 'Super Admin', 'super@admin.com', 'superadmin');
+        """, (hashed_pw,))
+
+        print("Default superadmin created.")
+        conn.commit()
+
+    except Exception as e:
+        conn.rollback()
+        print("Failed to create superadmin:", e)
+else:
+    print("Superadmin already exists.")
+
 cur.close()
 conn.close()
 
