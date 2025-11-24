@@ -123,3 +123,8 @@ async def register(user: UserCreate, current_user: User = Depends(require_role(U
         "A user has created a new profile with the name: %s", user.name)
 
     return JSONResponse(content={"message": "User created successfully"}, status_code=201)
+
+@router.post("/admin/{admin_id}/parking-lots/{lot_id}/assign")
+async def assign_lot_to_admin(admin_id: int, lot_id: int, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
+    UserModel.add_parking_lot_access(admin_id, lot_id)
+    return {"message": "Parking lot access added"}

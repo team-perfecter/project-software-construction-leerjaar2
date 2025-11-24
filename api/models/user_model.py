@@ -106,3 +106,13 @@ class UserModel:
         """, (user_id,))
         rows = cursor.fetchall()
         return [r[0] for r in rows]
+    
+    def add_parking_lot_access(self, admin_id: int, lot_id: int):
+        cursor = self.connection.cursor()
+
+        cursor.execute("""
+            INSERT INTO admin_parking_lots (admin_id, lot_id)
+            VALUES (%s, %s)
+            ON CONFLICT DO NOTHING;
+        """, (admin_id, lot_id))
+        self.connection.commit()
