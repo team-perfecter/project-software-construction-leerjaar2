@@ -1,10 +1,10 @@
 import logging
 from fastapi import APIRouter, HTTPException, Depends
-from api.datatypes.user import User
+from api.datatypes.user import User, UserRole
 from api.datatypes.payment import PaymentCreate
 from api.models.payment_model import PaymentModel
 from api.models.user_model import UserModel
-from api.auth_utils import get_current_user
+from api.auth_utils import get_current_user, require_role
 
 router = APIRouter(
     tags=["payments"]
@@ -43,7 +43,7 @@ async def get_payments_by_user(user_id: int):
     return payments_list
 
 @router.get("/payments/user/{user_id}/open") #readd currentuser check
-async def get_open_payments_by_user(user_id: int, current_user: User = Depends(get_current_user)):
+async def get_open_payments_by_user(user_id: int, current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPERADMIN))):
     payments_list = PaymentModel.get_open_payments_by_user(user_id)
     logging.info("Retrieved %i payments for user ID %i", len(payments_list), user_id)
     return payments_list

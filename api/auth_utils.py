@@ -83,3 +83,12 @@ def user_can_manage_lot(user: User, lot_id: int) -> bool:
     assigned_lots = UserModel.get_parking_lots_for_admin(user.id)
     return lot_id in assigned_lots
 
+def require_lot_access():
+    def wrapper(
+        lot_id: int,
+        current_user: User = Depends(get_current_user)
+    ):
+        if not user_can_manage_lot(current_user, lot_id):
+            raise HTTPException(403, "Not enough permissions for this lot")
+        return current_user
+    return wrapper

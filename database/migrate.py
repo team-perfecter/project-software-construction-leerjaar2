@@ -1,6 +1,16 @@
 import time
 import psycopg2
 import sys
+import hashlib
+# A function that hashes a string. use this instead of hashing inside a function somewhere else, so the hashing method can be changed when needed.
+def hash_string(string: str) -> str:
+
+    # For now passwords are stored in MD5 so there is no point in hashing with argon2.
+    #argon2_hasher = PasswordHasher()
+    #argon2_hashed_string = argon2_hasher.hash(string)
+
+    MD5_hashed_string = hashlib.md5(string.encode()).hexdigest()
+    return MD5_hashed_string
 
 # Get database name from command line argument or default to "database"
 db_name = sys.argv[1] if len(sys.argv) > 1 else "database"
@@ -123,6 +133,29 @@ CREATE TABLE IF NOT EXISTS parking_lot_admins (
 
 
 conn.commit()
+
+# Check for superadmin
+cur.execute("SELECT id FROM users WHERE role = 'superadmin' LIMIT 1;")
+exists = cur.fetchone()
+
+if not exists:
+    try:
+        hashed_pw = hash_string("admin123")
+
+        cur.execute("""
+            INSERT INTO users (username, password, name, email, role)
+            VALUES ('superadmin', %s, 'Super Admin', 'super@admin.com', 'superadmin');
+        """, (hashed_pw,))
+
+        print("Default superadmin created.")
+        conn.commit()
+
+    except Exception as e:
+        conn.rollback()
+        print("Failed to create superadmin:", e)
+else:
+    print("Superadmin already exists.")
+
 cur.close()
 conn.close()
 

@@ -11,8 +11,22 @@ Content-Type: application/json
   "birth_year": "2002"
 }
 
+### Register an admin
+POST http://127.0.0.1:8000/create_admin
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "username": "admin",
+  "password": "admin",
+  "name": "bob",
+  "email": "test@example.com",
+  "phone": "1234567890",
+  "birth_year": "2002"
+}
+
 ### Get user
-GET http://127.0.0.1:8000/get_user/1
+GET http://127.0.0.1:8000/get_user/3
 
 ### Login
 # @name login
@@ -22,6 +36,18 @@ Content-Type: application/json
 {
   "username": "jerrel",
   "password": "1234"
+}
+
+###
+@token = {{login.response.body.access_token}}### Login
+###
+# @name login
+POST http://127.0.0.1:8000/login
+Content-Type: application/json
+
+{
+  "username": "superadmin",
+  "password": "admin123"
 }
 
 ###
@@ -103,4 +129,6 @@ Authorization: Bearer {{token}}
 GET http://127.0.0.1:8000/payments/me
 Authorization: Bearer {{token}}
 
-
+###
+GET http://127.0.0.1:8000/payments/user/2/open
+Authorization: Bearer {{token}}

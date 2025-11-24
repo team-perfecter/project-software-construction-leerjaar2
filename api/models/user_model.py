@@ -2,7 +2,7 @@ from datetime import datetime
 
 import psycopg2
 
-from api.datatypes.user import UserCreate, User, UserLogin, UserUpdate
+from api.datatypes.user import UserCreate, User, UserLogin, UserUpdate, AdminCreate
 
 
 class UserModel:
@@ -21,6 +21,14 @@ class UserModel:
             INSERT INTO users (username, password, name, email, phone, birth_year)
             VALUES (%s, %s, %s, %s, %s, %s);
         """, (user.username, user.password, user.name, user.email, user.phone, user.birth_year))
+        self.connection.commit()
+
+    def create_admin(self, user: AdminCreate) -> None:
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            INSERT INTO users (username, password, name, email, phone, birth_year, role)
+            VALUES (%s, %s, %s, %s, %s, %s, %s);
+        """, (user.username, user.password, user.name, user.email, user.phone, user.birth_year, "admin"))
         self.connection.commit()
 
     def get_user_by_id(self, user_id) -> User | None:

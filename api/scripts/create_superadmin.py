@@ -1,4 +1,4 @@
-from utilities.Hasher import hash_string
+from api.utilities.Hasher import hash_string
 import psycopg2
 
 conn = psycopg2.connect(
