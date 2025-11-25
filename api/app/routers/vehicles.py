@@ -40,6 +40,7 @@ async def vehicles(vehicle_id: int, user: User = Depends(get_current_user)):
     #Get user vehicle.
     vehicle = vehicle_model.get_one_vehicle(vehicle_id)
     #Shows one vehicle if you are ADMIN or if it is the vehicle of the loggedin user.
+    logging.warning(vehicle)
     if user.role == "ADMIN" or user.id == vehicle["user_id"]:
         return vehicle
     else:
