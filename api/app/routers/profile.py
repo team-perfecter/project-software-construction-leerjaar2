@@ -40,7 +40,8 @@ async def register(user: UserCreate):
         logging.info(
             "A user tried to create a profile, but the name was already created: %s", user.name)
         raise HTTPException(status_code=409, detail="Name already taken")
-    hashed_password = hash_string(user.password)
+    # New users should have their passwords hashed with argon2
+    hashed_password = hash_string(user.password, True)
     user.password = hashed_password
     user_model.create_user(user)
     logging.info(
@@ -51,13 +52,19 @@ async def register(user: UserCreate):
 
 @router.post("/login")
 async def login(data: UserLogin):
-    user = user_model.get_user_by_username(data.username)
+    user: User = user_model.get_user_by_username(data.username)
     if user is None:
         logging.info("Login failed — username not found: %s", data.username)
         raise HTTPException(status_code=404, detail="Username not found")
-    if not verify_password(data.password, user.password):
+    if not verify_password(data.password, user.password, user.is_new_password):
         logging.info("Login failed — incorrect password for user: %s", data.username)
         raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    # updates password to use argon 2 when md5 is still used
+    if not user.is_new_password:
+        hashed_password = hash_string(data.password, True)
+        user_model.update_password(user.id, hashed_password)
+
     access_token = create_access_token({"sub": user.username})
     logging.info("User '%s' logged in successfully", user.username)
 
