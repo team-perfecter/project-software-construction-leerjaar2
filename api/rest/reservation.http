@@ -1,10 +1,10 @@
 # Create a reservation
 POST http://127.0.0.1:8000/create_reservation
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQwOTc2NzJ9.sjB26Zg3tBOJSCmDGdL2e6jd7JjYbM1lLifiSZqv6H8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQxMDE4NTN9._Px-KlyLkyMrvFNJJHvIEo1_gJKjk6hkoFle5qLw0f8
 
 {
-    "vehicle_id": 1,
+    "vehicle_id": 2,
     "parking_lot_id": 1,
     "start_date": "2025-11-26T09:00:00",
     "end_date": "2025-11-26T18:00:00"
@@ -12,4 +12,4 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiL
 
 ### Get all reservations by ID vehicle.
 GET http://127.0.0.1:8000/reservations/1
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQwOTc2NzJ9.sjB26Zg3tBOJSCmDGdL2e6jd7JjYbM1lLifiSZqv6H8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQxMDE4NTN9._Px-KlyLkyMrvFNJJHvIEo1_gJKjk6hkoFle5qLw0f8

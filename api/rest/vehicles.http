@@ -1,7 +1,7 @@
 # Create a vehicle for an user
 POST http://127.0.0.1:8000/vehicles/create
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQwOTc2NzJ9.sjB26Zg3tBOJSCmDGdL2e6jd7JjYbM1lLifiSZqv6H8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQxMDE4NTN9._Px-KlyLkyMrvFNJJHvIEo1_gJKjk6hkoFle5qLw0f8
 
 {
     "license_plate": "45-ASP-1",
@@ -13,23 +13,23 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiL
 
 ### Get all vehicles.
 GET http://127.0.0.1:8000/vehicles
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQwOTc2NzJ9.sjB26Zg3tBOJSCmDGdL2e6jd7JjYbM1lLifiSZqv6H8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQxMDE4NTN9._Px-KlyLkyMrvFNJJHvIEo1_gJKjk6hkoFle5qLw0f8
 
 ### Get one vehicle.
 GET http://127.0.0.1:8000/vehicles/1
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQwOTc2NzJ9.sjB26Zg3tBOJSCmDGdL2e6jd7JjYbM1lLifiSZqv6H8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQxMDE4NTN9._Px-KlyLkyMrvFNJJHvIEo1_gJKjk6hkoFle5qLw0f8
 
 ### Get vehicles of an user. (only for Admin)
 GET http://127.0.0.1:8000/vehicles/user/1
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQwOTc2NzJ9.sjB26Zg3tBOJSCmDGdL2e6jd7JjYbM1lLifiSZqv6H8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQxMDE4NTN9._Px-KlyLkyMrvFNJJHvIEo1_gJKjk6hkoFle5qLw0f8
 
 ### Users must see the history of the vehicles reservations.
 GET http://127.0.0.1:8000/vehicles/history-reservations
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQwOTc2NzJ9.sjB26Zg3tBOJSCmDGdL2e6jd7JjYbM1lLifiSZqv6H8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQxMDE4NTN9._Px-KlyLkyMrvFNJJHvIEo1_gJKjk6hkoFle5qLw0f8
 
 ### Update a vehicle.
 PUT http://127.0.0.1:8000/vehicles/update/1
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQwOTc2NzJ9.sjB26Zg3tBOJSCmDGdL2e6jd7JjYbM1lLifiSZqv6H8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQxMDE4NTN9._Px-KlyLkyMrvFNJJHvIEo1_gJKjk6hkoFle5qLw0f8
 Content-Type: application/json
 
 {
@@ -42,4 +42,4 @@ Content-Type: application/json
 
 ### Delete a vehicle.
 DELETE http://127.0.0.1:8000/vehicles/delete/1
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQwOTc2NzJ9.sjB26Zg3tBOJSCmDGdL2e6jd7JjYbM1lLifiSZqv6H8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQxMDE4NTN9._Px-KlyLkyMrvFNJJHvIEo1_gJKjk6hkoFle5qLw0f8

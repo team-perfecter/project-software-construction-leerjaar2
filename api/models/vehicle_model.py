@@ -25,10 +25,11 @@ class Vehicle_model:
         return cursor.fetchall()
     
     #Return a vehicle.
-    def get_one_vehicle(self, vehicle_id):
+    def get_one_vehicle(self, vehicle_id: int):
         cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM vehicles WHERE id = %s", (vehicle_id,))
         row = cursor.fetchone()
+        print(row, vehicle_id, flush=True)
         columns = [desc[0] for desc in cursor.description]
         return dict(zip(columns, row))
 

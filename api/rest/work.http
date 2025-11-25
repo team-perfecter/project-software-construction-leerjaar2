@@ -1,0 +1,78 @@
+### Register a user
+POST http://127.0.0.1:8000/register
+Content-Type: application/json
+
+{
+  "username": "jerrel",
+  "password": "1234",
+  "name": "bob",
+  "email": "test@example.com",
+  "phone": "1234567890",
+  "birth_year": "2002"
+}
+
+### Get user
+GET http://127.0.0.1:8000/get_user/2
+
+### Login
+# @name login
+POST http://127.0.0.1:8000/login
+Content-Type: application/json
+
+{
+  "username": "jerrel",
+  "password": "1234"
+}
+
+###
+@token = {{login.response.body.access_token}}
+
+### Create a vehicle for an user
+POST http://127.0.0.1:8000/vehicles/create
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "license_plate": "45-ASP-1",
+    "make": "Opal",
+    "model": "308",
+    "color": "Blue",
+    "year": 2022
+}
+
+### Get a vehicle. (run deze eerst dit werkt wel) (Fuck my life)
+GET http://127.0.0.1:8000/vehicles/1
+Authorization: Bearer {{token}}
+
+### Create a new parking lot (requires admin token)
+POST http://localhost:8000/parking-lots
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Central Parking",
+  "location": "Amsterdam",
+  "address": "Damrak 1, 1012 LG Amsterdam",
+  "capacity": 150,
+  "tariff": 3.5,
+  "daytariff": 25.0,
+  "lat": 52.3676,
+  "lng": 4.9041
+}
+
+### Get all parking lots
+GET http://localhost:8000/parking-lots/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### Create a reservation
+POST http://127.0.0.1:8000/create_reservation_rework
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "vehicle_id": 1,
+    "parking_lot_id": 1,
+    "start_date": "2025-11-26T09:00:00",
+    "end_date": "2025-11-26T18:00:00"
+}

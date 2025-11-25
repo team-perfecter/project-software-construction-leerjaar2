@@ -30,7 +30,6 @@ logging.basicConfig(
 @router.get("/vehicles")
 async def vehicles(user: User = Depends(get_current_user)):
     #Get all vehicles if you are Admin or get all your owned vehicles if you are user.
-    print()
     vehicles = vehicle_model.get_all_vehicles_of_user(user.id)
     return JSONResponse(content={"message": "Vehicles not found"}, status_code=201) if vehicles == [] else vehicles
 

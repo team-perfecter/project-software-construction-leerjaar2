@@ -2,7 +2,7 @@
 ### Create a new parking lot (requires admin token)
 POST http://localhost:8000/parking-lots
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQwOTc2NzJ9.sjB26Zg3tBOJSCmDGdL2e6jd7JjYbM1lLifiSZqv6H8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQxMDE4NTN9._Px-KlyLkyMrvFNJJHvIEo1_gJKjk6hkoFle5qLw0f8
 
 {
   "name": "Central Parking",
@@ -20,7 +20,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiL
 ### Get all parking lots
 GET http://localhost:8000/parking-lots/
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQwOTc2NzJ9.sjB26Zg3tBOJSCmDGdL2e6jd7JjYbM1lLifiSZqv6H8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQxMDE4NTN9._Px-KlyLkyMrvFNJJHvIEo1_gJKjk6hkoFle5qLw0f8
 
 
 ### Get parking lot by ID

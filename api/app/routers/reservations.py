@@ -48,9 +48,11 @@ async def reservations(vehicle_id: int, user: User = Depends(get_current_user)):
 
 
 
-@router.post("/create_reservation", status_code=status.HTTP_201_CREATED)
-async def create_reservation(reservation: ReservationCreate, user: User = Depends(get_current_user)):
-    print(reservation)
+@router.post("/create_reservation")
+async def create_reservation(reservation: ReservationCreate = Body(...), user: User = Depends(get_current_user)):
+    # In deze print zie je dat alles word meegestuurd dus ik snap het niet (Fuck my life)
+    print(reservation, flush=True)
+
     # check for missing fields
     missing_fields: list[str] = []
     if not reservation.vehicle_id:
@@ -63,13 +65,14 @@ async def create_reservation(reservation: ReservationCreate, user: User = Depend
         missing_fields.append("end date")
     if len(missing_fields) > 0:
         raise HTTPException(status_code = 400, detail = {"missing_fields": missing_fields})
-    
+
     # check if the vehicle and parking lot exist
 
     parking_lot = parkingLot_model.get_parking_lot_by_id(reservation.parking_lot_id)
     if parking_lot == None:
         raise HTTPException(status_code = 404, detail = {"message": f"Parking lot does not exist"})
 
+    # Dit is kapot vraag me niet waarom want probeer maar eens deze route te runnen: @router.get("/vehicles/{vehicle_id}")
     vehicle = vehicle_model.get_one_vehicle(reservation.vehicle_id)
     if vehicle == None:
         raise HTTPException(status_code = 404, detail = {"message": f"Vehicle does not exist"})
@@ -85,20 +88,20 @@ async def create_reservation(reservation: ReservationCreate, user: User = Depend
 
     # check if the vehicle already has a reservation around that time
     conflicting_time: bool = False
-    vehicle_reservations: list[Reservation] = reservation_model.get_reservation_by_vehicle(vehicle.id)
+    vehicle_reservations: list[Reservation] = reservation_model.get_reservation_by_vehicle(vehicle["id"])
     for reservation in vehicle_reservations:
-        if reservation.start_date < reservation.end_date and reservation.end_date > reservation.start_date:
+        if reservation["start_date"] < reservation["end_date"] and reservation["end_date"] > reservation["start_date"]:
             conflicting_time = True
             break
     if conflicting_time:
         raise HTTPException(status_code = 401, detail = {"message": f"Requested date has an overlap with another reservation for this vehicle"})
 
     # check if start date is later than the current date
-    if start_date <= datetime.now:
-        raise HTTPException(status_code = 403, detail = {"message": f"invalid start date. The start date cannot be earlier than the current date. current date: {datetime.now}, received date: {start_date}"})
+    if datetime.fromisoformat(reservation.start_date) <= datetime.now:
+        raise HTTPException(status_code = 403, detail = {"message": f"invalid start date. The start date cannot be earlier than the current date. current date: {datetime.now}, received date: {datetime.fromisoformat(reservation.start_date)}"})
 
     # check if the end date is later than the start date
-    if start_date >= end_date:
+    if datetime.fromisoformat(reservation.start_date) >= datetime.fromisoformat(reservation.end_date):
         raise HTTPException(status_code = 403, detail = {"message": f"invalid start date. The start date cannot be later than the end date start date: {start_date}, end date: {end_date}"})
 
     # create a new reservation
@@ -109,7 +112,19 @@ async def create_reservation(reservation: ReservationCreate, user: User = Depend
 
 
 
+@router.post("/create_reservation_rework")
+async def create_reservation(reservation: ReservationCreate = Body(...), user: User = Depends(get_current_user)):
+    print(reservation.vehicle_id, flush=True)
+    parking_lot = parkingLot_model.get_parking_lot_by_id(reservation.parking_lot_id)
+    if parking_lot == None:
+        raise HTTPException(status_code = 404, detail = {"message": f"Parking lot does not exist"})
 
+    vehicle = vehicle_model.get_one_vehicle(reservation.vehicle_id)
+    if vehicle == None:
+        raise HTTPException(status_code = 404, detail = {"message": f"Vehicle does not exist"})
+
+    HTTPException(status_code = 201, detail = {"message": f"Vehicle and Parkinglot does exist {parking_lot}, {vehicle}"})
+    
 
 
 
