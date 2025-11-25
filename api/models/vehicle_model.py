@@ -24,14 +24,22 @@ class Vehicle_model:
         cursor.execute("SELECT * FROM vehicles WHERE user_id = %s", (user_id,))
         return cursor.fetchall()
     
-    #Return a vehicle.
-    def get_one_vehicle(self, vehicle_id: int):
+    # #Return a vehicle.
+    def get_one_vehicle(self, id):
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM vehicles WHERE id = %s", (vehicle_id,))
+        cursor.execute("SELECT id, license_plate FROM vehicles")
+        print("ALL VEHICLES (inside reservation):", cursor.fetchall(), flush=True)
+        print("vehicle_id type:", type(id), "value:", id, flush=True)
+
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            SELECT * FROM vehicles WHERE id = %s;
+                       """, (id,))
         row = cursor.fetchone()
-        print(row, vehicle_id, flush=True)
-        columns = [desc[0] for desc in cursor.description]
-        return dict(zip(columns, row))
+        if row:
+            columns = [desc[0] for desc in cursor.description]
+            return dict(zip(columns, row))
+        return None
 
     #Create a vehicle.
     def create_vehicle(self, user_id, vehicle: VehicleCreate):
@@ -40,6 +48,7 @@ class Vehicle_model:
             INSERT INTO vehicles (user_id, license_plate, make, model, color, year)
             VALUES (%s, %s, %s, %s, %s, %s)
         """, (user_id, vehicle.license_plate, vehicle.make, vehicle.model, vehicle.color, vehicle.year,))
+        self.connection.commit()
 
     def update_vehicle(self, vehicle, vehicle_id):
         cursor = self.connection.cursor()
