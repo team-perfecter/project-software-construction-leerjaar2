@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import date
 
 class VehicleCreate(BaseModel):
     user_id: int
@@ -11,3 +12,4 @@ class VehicleCreate(BaseModel):
 
 class Vehicle(BaseModel):
     id: int
+    created_at: date
