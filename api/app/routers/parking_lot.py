@@ -237,6 +237,7 @@ async def update_parking_lot(
     pass
 
 # TODO: update parking lot status (admin only)    /parking-lots/{lid}/status
+# TODO: update parking lot capacity +1/-1         /parking-lots/{lid}/capacity/increase | decrease
 
 
 # endregion

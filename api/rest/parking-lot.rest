@@ -42,7 +42,7 @@ Authorization: Bearer {{token}}
 
 {
   "name": "Central Parking",
-  "location": "Amsterdam",
+  "location": "train station",
   "address": "Damrak 1, 1012 LG Amsterdam",
   "capacity": 150,
   "tariff": 3.5,
@@ -57,6 +57,14 @@ Authorization: Bearer {{token}}
 ### Get all sessions from parking lot (admin only)
 GET http://localhost:8000/parking-lots/1/sessions
 Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+### get parking lots by location
+GET http://localhost:8000/parking-lots/location/Amsterdam
+Authorization: Bearer {{token}}
+### get parking lots by location
+GET http://localhost:8000/parking-lots/location/Rotterdam
 Authorization: Bearer {{token}}
 
 
