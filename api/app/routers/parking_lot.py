@@ -61,7 +61,6 @@ async def create_parking_lot(
 
 
 # region GET
-# TODO: get all parking lots                        /parking-lots/
 @router.get("/parking-lots/")
 async def get_all_parking_lots():
     logging.info("Retrieving all parking lots")
@@ -80,7 +79,6 @@ async def get_all_parking_lots():
     return parking_lots
 
 
-# TODO: get parking lot by lid                      /parking-lots/{lid}
 @router.get("/parking-lots/{lid}")
 async def get_parking_lot_by_lid(
     lid: int, current_user: User = Depends(get_current_user)
@@ -104,7 +102,6 @@ async def get_parking_lot_by_lid(
     )
 
 
-# TODO: get all sessions lot by lid (admin only)    /parking-lots/{lid}/sessions
 @router.get("/parking-lots/{lid}/sessions")
 async def get_all_sessions_by_lid(
     lid: int, current_user: User = Depends(require_lot_access)
@@ -137,7 +134,6 @@ async def get_all_sessions_by_lid(
     return sessions
 
 
-# TODO: get session by session sid (admin only)     /parking-lots/{lid}/sessions/{sid}
 @router.get("/parking-lots/{lid}/sessions/{sid}")
 async def get_session_by_lid_and_sid(
     lid: int,
@@ -188,7 +184,7 @@ async def get_session_by_lid_and_sid(
 # TODO? PO ok maar eerst de rest: get parking lot availability by id          /parking-lots/{id}/availability
 # TODO? PO ok maar eerst de rest: search parking lots                         /parking-lots/search
 # TODO? PO ok maar eerst de rest: get parking lots by city                    /parking-lots/city/{city}
-# TODO? PO ok maar eerst de rest: get parking lots by location                /parking-lots/location/{location}
+
 @router.get("/parking-lots/location/{location}")
 async def get_parking_lots_by_location(
     location: str, current_user: User = Depends(get_current_user)
@@ -240,12 +236,13 @@ async def update_parking_lot(
     # TODO: Implement update logic
     pass
 
+# TODO: update parking lot status (admin only)    /parking-lots/{lid}/status
+
 
 # endregion
 
 
 # region DELETE
-# TODO: delete parking lot by lid (admin only)      /parking-lots/{lid}
 @router.delete("/parking-lots/{lid}")
 async def delete_parking_lot(
     lid: int,
