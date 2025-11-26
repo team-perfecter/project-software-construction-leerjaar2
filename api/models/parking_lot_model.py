@@ -84,7 +84,6 @@ class ParkingLotModel:
             params.append(f"%{location}%")
 
         if city is not None:
-            # Extract city name from address (after postal code)
             query += " AND SPLIT_PART(address, ' ', -1) ILIKE %s"
             params.append(f"%{city}%")
 
@@ -118,8 +117,8 @@ class ParkingLotModel:
         cursor.execute(
             """
             INSERT INTO parking_lots 
-            (name, location, address, capacity, reserved, tariff, daytariff, created_at, lat, lng)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+            (name, location, address, capacity, reserved, tariff, daytariff, created_at, lat, lng, status, closed_reason, closed_date)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
         """,
             (
                 lot.name,
@@ -132,6 +131,9 @@ class ParkingLotModel:
                 lot.created_at,
                 lot.lat,
                 lot.lng,
+                lot.status,
+                lot.closed_reason,
+                lot.closed_date,
             ),
         )
         self.connection.commit()
@@ -143,7 +145,8 @@ class ParkingLotModel:
             """
             UPDATE parking_lots 
             SET name = %s, location = %s, address = %s, capacity = %s, 
-                reserved = %s, tariff = %s, daytariff = %s, lat = %s, lng = %s
+                reserved = %s, tariff = %s, daytariff = %s, lat = %s, lng = %s,
+                status = %s, closed_reason = %s, closed_date = %s
             WHERE id = %s;
         """,
             (
@@ -156,6 +159,9 @@ class ParkingLotModel:
                 lot.daytariff,
                 lot.lat,
                 lot.lng,
+                lot.status,
+                lot.closed_reason,
+                lot.closed_date,
                 lot_id,
             ),
         )
