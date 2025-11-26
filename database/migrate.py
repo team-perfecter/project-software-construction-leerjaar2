@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
     model VARCHAR,
     color VARCHAR,
     year INTEGER,
-    created_at DATE
+    created_at TIMESTAMP DEFAULT NOW() 
 );
 """)
 

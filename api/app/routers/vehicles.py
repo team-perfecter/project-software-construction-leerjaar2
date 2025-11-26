@@ -1,9 +1,10 @@
-from api.auth_utils import get_current_user
+from api.auth_utils import get_current_user, require_role
 from api.datatypes.user import User
 from fastapi import FastAPI, HTTPException, Body, Depends, APIRouter
 from api.storage.profile_storage import Profile_storage
 from api.models.vehicle_model import Vehicle_model
 from api.datatypes.vehicle import Vehicle, VehicleCreate
+from api.datatypes.user import UserRole
 import logging
 from starlette.responses import JSONResponse
 
@@ -33,17 +34,14 @@ async def vehicles(user: User = Depends(get_current_user)):
     vehicles = vehicle_model.get_all_vehicles_of_user(user.id)
     return JSONResponse(content={"message": "Vehicles not found"}, status_code=201) if vehicles == [] else vehicles
 
-#Get one vehicle of an user. (User and Admin)
+#Get one vehicle of an user. (Admin and up only)
 @router.get("/vehicles/{vehicle_id}")
-async def vehicles(vehicle_id: int, user: User = Depends(get_current_user)):
+async def vehicles(vehicle_id: int, user: User = require_role(UserRole.ADMIN, UserRole.SUPERADMIN)):
     #Get user vehicle.
     vehicle = vehicle_model.get_one_vehicle(vehicle_id)
     #Shows one vehicle if you are ADMIN or if it is the vehicle of the loggedin user.
     logging.warning(vehicle)
-    if user.role == "ADMIN" or user.id == vehicle["user_id"]:
-        return vehicle
-    else:
-        raise HTTPException(detail={"message": "Something went wrong."}, status_code=404)
+    return vehicle
 
 #Get vehicles of an user. (Admin)
 @router.get("/vehicles/user/{user_id}")
@@ -63,7 +61,12 @@ async def vehicles_user(user_id: int, user: User = Depends(get_current_user)):
 @router.post("/vehicles/create")
 async def vehicle_create(vehicle: VehicleCreate, user: User = Depends(get_current_user)):
     #Create vehicle.
-    vehicle_model.create_vehicle(user.id, vehicle)
+    print(vehicle)
+    vehicle.user_id = user.id
+    print(vehicle)
+    created = vehicle_model.create_vehicle(vehicle)
+    if not created:
+        raise HTTPException(status_code=500, detail="Failed to create vehicle")
     return JSONResponse(content={"message": "Vehicle successfully created."}, status_code=201)
 
 

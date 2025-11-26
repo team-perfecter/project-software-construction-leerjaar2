@@ -20,8 +20,8 @@ POST http://127.0.0.1:8000/login
 Content-Type: application/json
 
 {
-  "username": "jerrel",
-  "password": "1234"
+  "username": "superadmin",
+  "password": "admin123"
 }
 
 ###
@@ -33,6 +33,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
+    "user_id": 1,
     "license_plate": "45-ASP-1",
     "make": "Opal",
     "model": "308",

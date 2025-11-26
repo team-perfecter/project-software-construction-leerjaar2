@@ -36,19 +36,23 @@ class Vehicle_model:
             SELECT * FROM vehicles WHERE id = %s;
                        """, (id,))
         row = cursor.fetchone()
+        print(row)
         if row:
             columns = [desc[0] for desc in cursor.description]
             return dict(zip(columns, row))
         return None
 
     #Create a vehicle.
-    def create_vehicle(self, user_id, vehicle: VehicleCreate):
+    def create_vehicle(self, vehicle: VehicleCreate):
         cursor = self.connection.cursor()
         cursor.execute("""
             INSERT INTO vehicles (user_id, license_plate, make, model, color, year)
             VALUES (%s, %s, %s, %s, %s, %s)
-        """, (user_id, vehicle.license_plate, vehicle.make, vehicle.model, vehicle.color, vehicle.year,))
+            RETURNING id;
+        """, (vehicle.user_id, vehicle.license_plate, vehicle.make, vehicle.model, vehicle.color, vehicle.year))
+        created = cursor.fetchone()
         self.connection.commit()
+        return created is not None
 
     def update_vehicle(self, vehicle, vehicle_id):
         cursor = self.connection.cursor()

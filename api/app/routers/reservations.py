@@ -122,6 +122,8 @@ async def create_reservation(reservation: ReservationCreate, user: User = Depend
     
     
     vehicle = vehicle_model.get_one_vehicle(reservation.vehicle_id)
+    print("FINAL CHECK:")
+    print(vehicle)
     if vehicle == None:
         raise HTTPException(status_code = 404, detail = {"message": f"Vehicle does not exist"})
 
