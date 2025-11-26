@@ -4,8 +4,8 @@ from datetime import date, datetime
 from api.models.parking_lot_model import ParkingLotModel
 from api.storage_utils import *
 from api.datatypes.parking_lot import Parking_lot, Parking_lot_create
-from api.datatypes.user import User
-from api.auth_utils import get_current_user
+from api.datatypes.user import User, UserRole
+from api.auth_utils import get_current_user, require_lot_access, require_role
 from fastapi import APIRouter, HTTPException, status, Depends
 
 logging.basicConfig(
@@ -24,20 +24,11 @@ parking_lot_model: ParkingLotModel = ParkingLotModel()
 @router.post("/parking-lots", status_code=status.HTTP_201_CREATED)
 async def create_parking_lot(
     parking_lot_data: Parking_lot_create,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_lot_access),
 ):
     logging.info(
         "User with id %i attempting to create a new parking lot", current_user.id
     )
-
-    # # Check if user is admin
-    # if current_user.role != "ADMIN":
-    #     logging.warning(
-    #         "Access denied for user with id %i - not an admin", current_user.id
-    #     )
-    #     raise HTTPException(
-    #         status_code=403, detail="Access denied. Admin privileges required."
-    #     )
 
     # later validatie toevoegen?
     parking_lots = parking_lot_model.get_all_parking_lots()
@@ -116,22 +107,13 @@ async def get_parking_lot_by_lid(
 # TODO: get all sessions lot by lid (admin only)    /parking-lots/{lid}/sessions
 @router.get("/parking-lots/{lid}/sessions")
 async def get_all_sessions_by_lid(
-    lid: int, current_user: User = Depends(get_current_user)
+    lid: int, current_user: User = Depends(require_lot_access)
 ):
     logging.info(
         "User with id %i retrieving all sessions from parking lot with id %i",
         current_user.id,
         lid,
     )
-
-    # Check if user is admin
-    # if current_user.role != "ADMIN":
-    #     logging.warning(
-    #         "Access denied for user with id %i - not an admin", current_user.id
-    #     )
-    #     raise HTTPException(
-    #         status_code=403, detail="Access denied. Admin privileges required."
-    #     )
 
     parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
     if not parking_lot:
@@ -160,7 +142,7 @@ async def get_all_sessions_by_lid(
 async def get_session_by_lid_and_sid(
     lid: int,
     sid: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_lot_access),
 ):
     logging.info(
         "User with id %i retrieving session %i from parking lot %i",
@@ -168,15 +150,6 @@ async def get_session_by_lid_and_sid(
         sid,
         lid,
     )
-
-    # Check if user is admin
-    # if current_user.role != "ADMIN":
-    #     logging.warning(
-    #         "Access denied for user with id %i - not an admin", current_user.id
-    #     )
-    #     raise HTTPException(
-    #         status_code=403, detail="Access denied. Admin privileges required."
-    #     )
 
     parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
     if not parking_lot:
@@ -198,9 +171,7 @@ async def get_session_by_lid_and_sid(
         )
         return session
 
-    logging.warning(
-        "Session %i does not exist for parking lot with id %i", sid, lid
-    )
+    logging.warning("Session %i does not exist for parking lot with id %i", sid, lid)
     raise HTTPException(
         status_code=404,
         detail={
@@ -210,6 +181,7 @@ async def get_session_by_lid_and_sid(
         },
     )
 
+
 # region extra
 # TODO? moet door Stelain een ok krijgen nadat server.py gerefactored is (versie 1.0 klaar is) hij zei oke
 # TODO? PO ok maar eerst de rest: get parking lots availability               /parking-lots/availability
@@ -217,6 +189,36 @@ async def get_session_by_lid_and_sid(
 # TODO? PO ok maar eerst de rest: search parking lots                         /parking-lots/search
 # TODO? PO ok maar eerst de rest: get parking lots by city                    /parking-lots/city/{city}
 # TODO? PO ok maar eerst de rest: get parking lots by location                /parking-lots/location/{location}
+@router.get("/parking-lots/location/{location}")
+async def get_parking_lots_by_location(
+    location: str, current_user: User = Depends(get_current_user)
+):
+    logging.info(
+        "User with id %i retrieving parking lots in location: %s",
+        current_user.id,
+        location,
+    )
+    parking_lots = parking_lot_model.find_parking_lots(location=location)
+
+    if len(parking_lots) == 0:
+        logging.warning("No parking lots found in location: %s", location)
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "Not Found",
+                "message": f"No parking lots found in location: {location}",
+                "code": "PARKING_LOT_NOT_FOUND",
+            },
+        )
+
+    logging.info(
+        "Successfully retrieved %i parking lots in location: %s",
+        len(parking_lots),
+        location,
+    )
+    return parking_lots
+
+
 # TODO? PO ok maar eerst de rest: get parking lot reservations                /parking-lots/{id}/reservations
 # TODO? PO ok maar eerst de rest: get parking lot stats (admin only)          /parking-lots/{id}/stats
 # endregion
@@ -227,22 +229,13 @@ async def get_session_by_lid_and_sid(
 # TODO: update parking lot by lid (admin only)      /parking-lots/{lid}
 @router.put("/parking-lots/{lid}")
 async def update_parking_lot(
-    lid: int, updated_lot: Parking_lot, current_user: User = Depends(get_current_user)
+    lid: int, updated_lot: Parking_lot, current_user: User = Depends(require_lot_access)
 ):
     logging.info(
         "User with id %i attempting to update parking lot with id %i",
         current_user.id,
         lid,
     )
-
-    # Check if user is admin
-    if current_user.role != "ADMIN":
-        logging.warning(
-            "Access denied for user with id %i - not an admin", current_user.id
-        )
-        raise HTTPException(
-            status_code=403, detail="Access denied. Admin privileges required."
-        )
 
     # TODO: Implement update logic
     pass
@@ -256,7 +249,7 @@ async def update_parking_lot(
 @router.delete("/parking-lots/{lid}")
 async def delete_parking_lot(
     lid: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(UserRole.SUPERADMIN)),
 ):
     logging.info(
         "User with id %i attempting to delete parking lot with id %i",
@@ -264,16 +257,8 @@ async def delete_parking_lot(
         lid,
     )
 
-    # # Check if user is admin
-    # if current_user.role != "ADMIN":
-    #     logging.warning(
-    #         "Access denied for user with id %i - not an admin", current_user.id
-    #     )
-    #     raise HTTPException(
-    #         status_code=403, detail="Access denied. Admin privileges required."
-    #     )
-
     # Check if parking lot exists
+    logging.debug("Checking if parking lot %i exists", lid)
     parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
     if not parking_lot:
         logging.warning("Parking lot with id %i does not exist", lid)
@@ -287,8 +272,10 @@ async def delete_parking_lot(
         )
 
     # Check if parking lot has active sessions
+    logging.debug("Checking for active sessions in parking lot %i", lid)
     sessions = parking_lot_model.get_all_sessions_by_lid(lid)
     active_sessions = [s for s in sessions if s.end_time is None]
+
     if active_sessions:
         logging.warning(
             "Cannot delete parking lot with id %i - has %i active sessions",
@@ -304,10 +291,16 @@ async def delete_parking_lot(
             },
         )
 
+    logging.info(
+        "No active sessions found, proceeding with deletion of parking lot %i", lid
+    )
+
     # Delete the parking lot
+    logging.debug("Attempting to delete parking lot %i from database", lid)
     success = parking_lot_model.delete_parking_lot(lid)
+
     if not success:
-        logging.error("Failed to delete parking lot with id %i", lid)
+        logging.error("Failed to delete parking lot with id %i from database", lid)
         raise HTTPException(
             status_code=500,
             detail={
@@ -329,8 +322,8 @@ async def delete_parking_lot(
 async def delete_parking_session(
     lid: int,
     sid: int,
-    current_user: User = Depends(get_current_user),
-): # dit is van session zelf
+    current_user: User = Depends(require_lot_access),
+):  # dit is van session zelf
     pass
 
 
