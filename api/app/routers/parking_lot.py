@@ -264,49 +264,63 @@ async def delete_parking_lot(
         lid,
     )
 
-    if current_user.role != "ADMIN":
-        logging.warning(
-            "Access denied for user with id %i - not an admin", current_user.id
-        )
-        raise HTTPException(
-            status_code=403, detail="Access denied. Admin privileges required."
-        )
+    # # Check if user is admin
+    # if current_user.role != "ADMIN":
+    #     logging.warning(
+    #         "Access denied for user with id %i - not an admin", current_user.id
+    #     )
+    #     raise HTTPException(
+    #         status_code=403, detail="Access denied. Admin privileges required."
+    #     )
 
-    # Find parking lot
+    # Check if parking lot exists
     parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
-
     if not parking_lot:
         logging.warning("Parking lot with id %i does not exist", lid)
         raise HTTPException(
             status_code=404,
             detail={
-                "error": "Parking lot not found",
+                "error": "Not Found",
                 "message": f"Parking lot with ID {lid} does not exist",
                 "code": "PARKING_LOT_NOT_FOUND",
             },
         )
 
-    # Check if there are active sessions for this parking lot
-    # If sessions file doesn't exist or can't be read, continue with deletion
+    # Check if parking lot has active sessions
+    sessions = parking_lot_model.get_all_sessions_by_lid(lid)
+    active_sessions = [s for s in sessions if s.end_time is None]
+    if active_sessions:
+        logging.warning(
+            "Cannot delete parking lot with id %i - has %i active sessions",
+            lid,
+            len(active_sessions),
+        )
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "error": "Conflict",
+                "message": f"Cannot delete parking lot with active sessions. Found {len(active_sessions)} active sessions.",
+                "code": "ACTIVE_SESSIONS_EXIST",
+            },
+        )
 
-    # Remove parking lot from the list
-    # Delete parking lot
-    logging.info("Deleting parking lot '%s' with id %i", parking_lot.name, lid)
+    # Delete the parking lot
     success = parking_lot_model.delete_parking_lot(lid)
     if not success:
         logging.error("Failed to delete parking lot with id %i", lid)
-        raise HTTPException(status_code=500, detail="Failed to delete parking lot")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Internal Server Error",
+                "message": "Failed to delete parking lot",
+                "code": "DELETE_FAILED",
+            },
+        )
 
-    logging.info(
-        "Successfully deleted parking lot '%s' with id %i", parking_lot.name, lid
-    )
+    logging.info("Successfully deleted parking lot with id %i", lid)
     return {
-        "message": f"Parking lot '{parking_lot.name}' with ID {lid} has been successfully deleted",
-        "deleted_parking_lot": {
-            "id": parking_lot.id,
-            "name": parking_lot.name,
-            "location": parking_lot.location,
-        },
+        "message": "Parking lot deleted successfully",
+        "parking_lot_id": lid,
     }
 
 
@@ -316,48 +330,8 @@ async def delete_parking_session(
     lid: int,
     sid: int,
     current_user: User = Depends(get_current_user),
-):
-    logging.info(
-        "User with id %i attempting to delete session %i from parking lot %i",
-        current_user.id,
-        sid,
-        lid,
-    )
-
-    # Check if user is admin
-    if current_user.role != "ADMIN":
-        logging.warning(
-            "Access denied for user with id %i - not an admin", current_user.id
-        )
-        raise HTTPException(
-            status_code=403, detail="Access denied. Admin privileges required."
-        )
-
-    # Check if parking lot exists
-    parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
-
-    if not parking_lot:
-        logging.warning("Parking lot with id %i does not exist", lid)
-        raise HTTPException(
-            status_code=404,
-            detail={
-                "error": "Parking lot not found",
-                "message": f"Parking lot with ID {lid} does not exist",
-                "code": "PARKING_LOT_NOT_FOUND",
-            },
-        )
-
-    logging.info("Deleting session %i from parking lot %i", sid, lid)
-    # Load sessions for this parking lot
-    # Check if session exists
-    # Get session details before deletion
-    # Remove session
-    # Save updated sessions back to file
-
-    # return {
-    #     "message": f"Session {sid} has been successfully deleted from parking lot {lid}",
-    #     "deleted_session": deleted_session,
-    # }
+): # dit is van session zelf
+    pass
 
 
 # endregion
