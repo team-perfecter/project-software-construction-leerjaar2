@@ -43,7 +43,7 @@ async def vehicles(vehicle_id: int, user: User = Depends(get_current_user)):
     if user.role == "ADMIN" or user.id == vehicle["user_id"]:
         return vehicle
     else:
-        return HTTPException(detail={"message": "Something went wrong."}, status_code=404)
+        raise HTTPException(detail={"message": "Something went wrong."}, status_code=404)
 
 #Get vehicles of an user. (Admin)
 @router.get("/vehicles/user/{user_id}")
@@ -53,7 +53,7 @@ async def vehicles_user(user_id: int, user: User = Depends(get_current_user)):
         vehicles_user = vehicle_model.get_all_user_vehicles(user_id)
         return JSONResponse(content={"message": "Vehicles not found"}, status_code=201) if vehicles_user == [] else vehicles_user
     else:
-        return HTTPException(detail={"message": "You are not autorized to this."}, status_code=404)
+        raise HTTPException(detail={"message": "You are not autorized to this."}, status_code=404)
 
 
 
@@ -65,7 +65,7 @@ async def vehicle_create(vehicle: VehicleCreate, user: User = Depends(get_curren
     #Create vehicle.
     vehicle_model.create_vehicle(user.id, vehicle)
     return JSONResponse(content={"message": "Vehicle successfully created."}, status_code=201)
-    
+
 
 
 #Users must see the history of the vehicles reservations. (User)
@@ -75,13 +75,23 @@ async def vehicle_create(vehicle: VehicleCreate, user: User = Depends(get_curren
 #    return "Your vehicle reservations are not found." if vehicles_user == [] else vehicles_user
 
 
+
 #Put:
 
 #Update a vehicle for an user.
 @router.put("/vehicles/update/{vehicle_id}")
-async def vehicle_update(vehicle_id: int, vehicle: dict = Body(...)):
-    print("update vehicle of a user.")
-    return JSONResponse(content={"message": "This request is under construction."}, status_code=201)
+async def vehicle_update(vehicle_id: int, vehicle: dict = Body(...), user: User = Depends(get_current_user)):
+    #CHeck if vehicle exist.
+    vehicle_check = vehicle_model.get_one_vehicle(vehicle_id)
+    if vehicle_check == None:
+        raise HTTPException(detail={"message": "This vehicle doesn't exist."}, status_code=404)
+
+    # Update vehicle
+    if vehicle_check["user_id"] == user.id:
+        vehicle_model.update_vehicle(vehicle, vehicle_id)
+        return JSONResponse(content={"message": "Vehicle succesfully updated"}, status_code=201)
+    else:
+        raise HTTPException(detail={"message": "Something went wrong."}, status_code=404)
 
 
 

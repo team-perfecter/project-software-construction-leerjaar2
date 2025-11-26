@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from api.datatypes.user import User
+from api.datatypes.user import User, UserRole
 from fastapi import HTTPException, status, Depends
 from fastapi import HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
@@ -67,3 +67,28 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         return user
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
+    
+
+def require_role(*allowed_roles):
+    def wrapper(current_user = Depends(get_current_user)):
+        if current_user.role not in allowed_roles:
+            raise HTTPException(403, "Not enough permissions")
+        return current_user
+    return wrapper
+
+def user_can_manage_lot(user: User, lot_id: int) -> bool:
+    if user.role == UserRole.SUPERADMIN:
+        return True
+
+    assigned_lots = UserModel.get_parking_lots_for_admin(user.id)
+    return lot_id in assigned_lots
+
+def require_lot_access():
+    def wrapper(
+        lot_id: int,
+        current_user: User = Depends(get_current_user)
+    ):
+        if not user_can_manage_lot(current_user, lot_id):
+            raise HTTPException(403, "Not enough permissions for this lot")
+        return current_user
+    return wrapper
