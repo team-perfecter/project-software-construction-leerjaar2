@@ -84,7 +84,8 @@ class ParkingLotModel:
             params.append(f"%{location}%")
 
         if city is not None:
-            query += " AND address ILIKE %s"
+            # Extract city name from address (after postal code)
+            query += " AND SPLIT_PART(address, ' ', -1) ILIKE %s"
             params.append(f"%{city}%")
 
         if min_capacity is not None:
