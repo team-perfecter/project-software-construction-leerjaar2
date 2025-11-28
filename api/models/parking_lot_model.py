@@ -112,6 +112,7 @@ class ParkingLotModel:
         return self.map_to_parking_lot(cursor)
 
     # region post
+
     def create_parking_lot(self, lot: Parking_lot) -> None:
         cursor = self.connection.cursor()
         cursor.execute(
@@ -139,6 +140,7 @@ class ParkingLotModel:
         self.connection.commit()
 
     # region update
+
     def update_parking_lot(self, lot_id: int, lot: Parking_lot) -> bool:
         cursor = self.connection.cursor()
         cursor.execute(

@@ -30,23 +30,24 @@ async def create_parking_lot(
         "User with id %i attempting to create a new parking lot", current_user.id
     )
 
-    # later validatie toevoegen?
     parking_lots = parking_lot_model.get_all_parking_lots()
     new_id = max([lot.id for lot in parking_lots], default=0) + 1
 
-    # Maak een volledig Parking_lot object met gegenereerde velden
     parking_lot = Parking_lot(
         id=new_id,
         name=parking_lot_data.name,
         location=parking_lot_data.location,
         address=parking_lot_data.address,
         capacity=parking_lot_data.capacity,
-        reserved=0,  # Nieuwe parking lot start met 0 reserveringen
+        reserved=0,
         tariff=parking_lot_data.tariff,
         daytariff=parking_lot_data.daytariff,
         created_at=date.today(),
         lat=parking_lot_data.lat,
         lng=parking_lot_data.lng,
+        status=parking_lot_data.status,
+        closed_reason=parking_lot_data.closed_reason,
+        closed_date=parking_lot_data.closed_date,
     )
 
     logging.info(
@@ -185,6 +186,7 @@ async def get_session_by_lid_and_sid(
 # TODO? PO ok maar eerst de rest: search parking lots                         /parking-lots/search
 # TODO? PO ok maar eerst de rest: get parking lots by city                    /parking-lots/city/{city}
 
+
 @router.get("/parking-lots/location/{location}")
 async def get_parking_lots_by_location(
     location: str, current_user: User = Depends(get_current_user)
@@ -222,7 +224,6 @@ async def get_parking_lots_by_location(
 
 
 # region PUT
-# TODO: update parking lot by lid (admin only)      /parking-lots/{lid}
 @router.put("/parking-lots/{lid}")
 async def update_parking_lot(
     lid: int, updated_lot: Parking_lot, current_user: User = Depends(require_lot_access)
@@ -233,11 +234,160 @@ async def update_parking_lot(
         lid,
     )
 
-    # TODO: Implement update logic
-    pass
+    logging.debug("Checking if parking lot %i exists", lid)
+    parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
+    if not parking_lot:
+        logging.warning("Parking lot with id %i does not exist", lid)
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "Not Found",
+                "message": f"Parking lot with ID {lid} does not exist",
+                "code": "PARKING_LOT_NOT_FOUND",
+            },
+        )
 
-# TODO: update parking lot status (admin only)    /parking-lots/{lid}/status
-# TODO: update parking lot capacity +1/-1         /parking-lots/{lid}/capacity/increase | decrease
+    if parking_lot.capacity != updated_lot.capacity:
+        logging.info(
+            "Updating parking lot '%s' (capacity: %i -> %i)",
+            parking_lot.name,
+            parking_lot.capacity,
+            updated_lot.capacity,
+        )
+
+    updated_lot.id = lid
+    logging.debug("Attempting database update for parking lot %i", lid)
+
+    try:
+        success = parking_lot_model.update_parking_lot(lid, updated_lot)
+        if not success:
+            logging.error(
+                "Database update failed for parking lot %i - no rows affected", lid
+            )
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    "error": "Internal Server Error",
+                    "message": "Failed to update parking lot",
+                    "code": "UPDATE_FAILED",
+                },
+            )
+
+        logging.info("Successfully updated parking lot with id %i", lid)
+        return {
+            "message": "Parking lot updated successfully",
+            "parking_lot_id": lid,
+            "updated_lot": updated_lot,
+        }
+
+    except Exception as e:
+        logging.error("Exception during parking lot %i update: %s", lid, str(e))
+        raise HTTPException(status_code=500, detail="Database error occurred")
+
+
+@router.put("/parking-lots/{lid}/status")
+async def update_parking_lot_status(
+    lid: int,
+    status: str,
+    closed_reason: str = None,
+    closed_date: date = None,
+    current_user: User = Depends(require_lot_access),
+):
+    logging.info(
+        "User with id %i attempting to update status of parking lot %i to '%s'",
+        current_user.id,
+        lid,
+        status,
+    )
+
+    parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
+    if not parking_lot:
+        logging.warning("Parking lot with id %i does not exist", lid)
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "Not Found",
+                "message": f"Parking lot with ID {lid} does not exist",
+                "code": "PARKING_LOT_NOT_FOUND",
+            },
+        )
+
+    valid_statuses = ["open", "closed", "deleted", "maintenance", "full"]
+    if status not in valid_statuses:
+        logging.warning("Invalid status '%s' provided for parking lot %i", status, lid)
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "Bad Request",
+                "message": f"Invalid status. Must be one of: {valid_statuses}",
+                "code": "INVALID_STATUS",
+            },
+        )
+
+    if status == "closed":
+        if not closed_reason:
+            logging.warning(
+                "Closed reason required when setting status to closed for parking lot %i",
+                lid,
+            )
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "Bad Request",
+                    "message": "closed_reason is required when status is 'closed'",
+                    "code": "MISSING_CLOSED_REASON",
+                },
+            )
+        if not closed_date:
+            closed_date = date.today()
+
+    updated_lot = parking_lot
+    updated_lot.status = status
+    updated_lot.closed_reason = closed_reason if status == "closed" else None
+    updated_lot.closed_date = closed_date if status == "closed" else None
+
+    success = parking_lot_model.update_parking_lot(lid, updated_lot)
+    if not success:
+        logging.error("Failed to update status for parking lot %i", lid)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Internal Server Error",
+                "message": "Failed to update parking lot status",
+                "code": "UPDATE_FAILED",
+            },
+        )
+
+    logging.info("Successfully updated parking lot %i status to '%s'", lid, status)
+    return {
+        "message": "Parking lot status updated successfully",
+        "parking_lot_id": lid,
+        "new_status": status,
+        "closed_reason": closed_reason,
+        "closed_date": closed_date,
+    }
+
+
+def update_parking_lot_reserved_count(lid: int, action: str) -> bool:
+    try:
+        parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
+        if not parking_lot:
+            return False
+
+        if action == "increase":
+            if parking_lot.reserved >= parking_lot.capacity:
+                return False  # Parking lot is vol
+            parking_lot.reserved += 1
+        elif action == "decrease":
+            if parking_lot.reserved > 0:
+                parking_lot.reserved -= 1
+
+        return parking_lot_model.update_parking_lot(lid, parking_lot)
+    except Exception as e:
+        logging.error(
+            "Failed to update reserved count for parking lot %i: %s", lid, str(e)
+        )
+        return False
 
 
 # endregion
