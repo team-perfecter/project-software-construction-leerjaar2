@@ -69,3 +69,13 @@ async def update_payment(payment_id: int, p: PaymentUpdate, current_user: User =
     if not update:
         raise HTTPException(status_code=500, detail="Payment has failed")
     return {"message": "Payment updated successfully"}
+
+@router.delete("/payments/{payment_id}")
+async def delete_payment(payment_id: int, current_user: User = Depends(require_role(UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
+    payment = PaymentModel.get_payment_by_payment_id(payment_id)
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    delete = PaymentModel.delete_payment(payment_id)
+    if not delete:
+        raise HTTPException(status_code=500, detail="Payment has failed")
+    return {"message": "Payment deleted successfully"}

@@ -116,6 +116,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
+  "user_id": 6,
   "license_plate": "ABC123",
   "make": "Toyota",
   "model": "Corolla",
@@ -128,30 +129,30 @@ GET http://localhost:8000/vehicles
 Authorization: Bearer {{token}}
 
 ### Start a session
-POST http://localhost:8000/parking-lots/1/sessions/start?vehicle_id=1
+POST http://localhost:8000/parking-lots/1/sessions/start?vehicle_id=2
 Authorization: Bearer {{token}}
 
 ### Get current sessions
 GET http://localhost:8000/sessions/active
 Authorization: Bearer {{token}}
 ### Stop a session
-POST http://localhost:8000/parking-lots/1/sessions/stop?vehicle_id=1
+POST http://localhost:8000/parking-lots/1/sessions/stop?vehicle_id=2
 Authorization: Bearer {{token}}
 
 ### Get current user payments
 GET http://127.0.0.1:8000/payments/me/open
 Authorization: Bearer {{token}}
 ###
-PUT http://127.0.0.1:8000/payments/1
+PUT http://127.0.0.1:8000/payments/2
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "user_id": 1,
+  "user_id": 6,
   "transaction": "TXN-ABC-123",
   "amount": 12.50,
   "hash": "somehashvalue123",
-  "method": "CHECK",
+  "method": "CHECK2",
   "issuer": "Rabobank",
   "bank": "RABO",
   "completed": false
@@ -175,4 +176,8 @@ Authorization: Bearer {{token}}
 ###
 GET http://127.0.0.1:8000/payments/user/2/open
 Authorization: Bearer {{token}}
+###
+DELETE http://127.0.0.1:8000/payments/2
+Authorization: Bearer {{token}}
+###
 

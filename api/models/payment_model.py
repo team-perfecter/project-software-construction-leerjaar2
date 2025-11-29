@@ -95,12 +95,12 @@ class PaymentModel:
         cls.connection.commit()
         return updated is not None
 
-
-    def delete_payment(self, id):
-        cursor = self.connection.cursor()
+    @classmethod
+    def delete_payment(cls, id):
+        cursor = cls.connection.cursor()
         cursor.execute("DELETE FROM payments WHERE id = %s RETURNING id;", (id,))
         deleted = cursor.fetchone()
-        self.connection.commit()
+        cls.connection.commit()
         return deleted is not None
 
         
