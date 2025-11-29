@@ -1,5 +1,13 @@
 from fastapi import FastAPI
 from api.app.routers import parking_lot, sessions, payments, profile, reservations, vehicles
+import os
+from api.data_converter import DataConverter
+
+
+if os.getenv("MIGRATE_JSON", "false").lower() == "true":
+    data_converter: DataConverter = DataConverter()
+    data_converter.convert()
+
 
 app = FastAPI()
 

@@ -39,7 +39,7 @@ cur = conn.cursor()
 cur.execute("""
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    username VARCHAR,
+    username VARCHAR UNIQUE,
     password VARCHAR,
     name VARCHAR,
     email VARCHAR,
@@ -47,7 +47,8 @@ CREATE TABLE IF NOT EXISTS users (
     role VARCHAR DEFAULT 'user',
     created_at TIMESTAMP DEFAULT NOW(),
     birth_year INTEGER,
-    active BOOLEAN DEFAULT TRUE
+    active BOOLEAN DEFAULT TRUE,
+    old_hash BOOLEAN DEFAULT FALSE
 );
 """)
 
@@ -134,27 +135,7 @@ CREATE TABLE IF NOT EXISTS parking_lot_admins (
 
 conn.commit()
 
-# Check for superadmin
-cur.execute("SELECT id FROM users WHERE role = 'superadmin' LIMIT 1;")
-exists = cur.fetchone()
 
-if not exists:
-    try:
-        hashed_pw = hash_string("admin123")
-
-        cur.execute("""
-            INSERT INTO users (username, password, name, email, role)
-            VALUES ('superadmin', %s, 'Super Admin', 'super@admin.com', 'superadmin');
-        """, (hashed_pw,))
-
-        print("Default superadmin created.")
-        conn.commit()
-
-    except Exception as e:
-        conn.rollback()
-        print("Failed to create superadmin:", e)
-else:
-    print("Superadmin already exists.")
 
 cur.close()
 conn.close()
