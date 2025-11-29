@@ -26,19 +26,19 @@ async def create_payment(p: PaymentCreate, current_user: User = Depends(require_
     return {"message": "Payment created successfully"}
 
 @router.get("/payments/me") # only check if it works 
-async def get_my_payments(current_user: User = Depends(require_role(UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
+async def get_my_payments(current_user: User = Depends(get_current_user)):
     payments_list = PaymentModel.get_payments_by_user(current_user.id)
     logging.info("Retrieved %i payments for user ID %i", len(payments_list), current_user.id)
     return payments_list
 
 @router.get("/payments/me/open") #readd currentuser check
-async def get_open_payments_by_user(current_user: User = Depends(require_role(UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
+async def get_my_open_payments(current_user: User = Depends(get_current_user)):
     payments_list = PaymentModel.get_open_payments_by_user(current_user.id)
     logging.info("Retrieved %i payments for user ID %i", len(payments_list), current_user.id)
     return payments_list
 
 @router.get("/payments/user/{user_id}") #readd current user check
-async def get_payments_by_user(user_id: int):
+async def get_payments_by_user(user_id: int, current_user: User = Depends(require_role(UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
     payments_list = PaymentModel.get_payments_by_user(user_id)
     logging.info("Retrieved %i payments for user ID %i", len(payments_list), user_id)
     return payments_list
@@ -108,3 +108,5 @@ async def get_refund_requests(user_id: int | None = None, current_user: User = D
             raise HTTPException(status_code=404, detail="User not found")
     refunds = PaymentModel.get_refund_requests(user_id)
     return refunds
+
+### grand refund method
