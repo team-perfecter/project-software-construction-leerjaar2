@@ -129,14 +129,14 @@ GET http://localhost:8000/vehicles
 Authorization: Bearer {{token}}
 
 ### Start a session
-POST http://localhost:8000/parking-lots/1/sessions/start?vehicle_id=2
+POST http://localhost:8000/parking-lots/1/sessions/start?vehicle_id=1
 Authorization: Bearer {{token}}
 
 ### Get current sessions
 GET http://localhost:8000/sessions/active
 Authorization: Bearer {{token}}
 ### Stop a session
-POST http://localhost:8000/parking-lots/1/sessions/stop?vehicle_id=2
+POST http://localhost:8000/parking-lots/1/sessions/stop?vehicle_id=1
 Authorization: Bearer {{token}}
 
 ### Get current user payments
