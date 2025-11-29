@@ -96,7 +96,7 @@ async def update_me(update_data: UserUpdate, current_user: User = Depends(get_cu
     return {"message": "Profile updated"}
 
 @router.post("/create_admin")
-async def register(user: UserCreate, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
+async def create_admin(user: AdminCreate, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
     missing_fields: list[str] = []
     if not user.name:
         missing_fields.append("name")
@@ -118,7 +118,7 @@ async def register(user: UserCreate, current_user: User = Depends(require_role(U
         raise HTTPException(status_code=409, detail="Name already taken")
     hashed_password = hash_string(user.password)
     user.password = hashed_password
-    user_model.create_user(user)
+    user_model.create_admin(user)
     logging.info(
         "A user has created a new profile with the name: %s", user.name)
 

@@ -17,16 +17,32 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "username": "admin",
+  "username": "admin2",
   "password": "admin",
   "name": "bob",
   "email": "test@example.com",
   "phone": "1234567890",
-  "birth_year": "2002"
+  "birth_year": "2002",
+  "role": "admin"
+}
+
+### Register a paymentadmin
+POST http://127.0.0.1:8000/create_admin
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "username": "paymentadmin3",
+  "password": "admin",
+  "name": "bob",
+  "email": "test@example.com",
+  "phone": "1234567890",
+  "birth_year": "2002",
+  "role": "paymentadmin"
 }
 
 ### Get user
-GET http://127.0.0.1:8000/get_user/3
+GET http://127.0.0.1:8000/get_user/6
 
 ### Login
 # @name login
@@ -48,6 +64,18 @@ Content-Type: application/json
 {
   "username": "superadmin",
   "password": "admin123"
+}
+
+###
+@token = {{login.response.body.access_token}}
+###
+# @name login
+POST http://127.0.0.1:8000/login
+Content-Type: application/json
+
+{
+  "username": "paymentadmin3",
+  "password": "admin"
 }
 
 ###
@@ -113,7 +141,22 @@ Authorization: Bearer {{token}}
 ### Get current user payments
 GET http://127.0.0.1:8000/payments/me/open
 Authorization: Bearer {{token}}
+###
+PUT http://127.0.0.1:8000/payments/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
 
+{
+  "user_id": 1,
+  "transaction": "TXN-ABC-123",
+  "amount": 12.50,
+  "hash": "somehashvalue123",
+  "method": "CHECK",
+  "issuer": "Rabobank",
+  "bank": "RABO",
+  "completed": false
+}
+###
 ###
 POST http://127.0.0.1:8000/payments/1/pay
 Content-Type: application/json
@@ -132,3 +175,4 @@ Authorization: Bearer {{token}}
 ###
 GET http://127.0.0.1:8000/payments/user/2/open
 Authorization: Bearer {{token}}
+

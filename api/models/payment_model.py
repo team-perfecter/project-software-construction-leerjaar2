@@ -2,7 +2,7 @@ from datetime import date
 
 import psycopg2
 
-from api.datatypes.payment import PaymentCreate, Payment
+from api.datatypes.payment import PaymentCreate, PaymentUpdate
 
 
 class PaymentModel:
@@ -66,19 +66,20 @@ class PaymentModel:
         result = [dict(zip(columns, row)) for row in rows]
         return result
     
-    def update_payment(self, id, p: PaymentCreate):
-        cursor = self.connection.cursor()
+    @classmethod
+    def update_payment(cls, id, p: PaymentUpdate):
+        cursor = cls.connection.cursor()
         cursor.execute("""
             UPDATE payments 
             SET user_id = %s, transaction = %s, amount = %s, 
-                hash = %s, method = %s, issuer = %s, bank = %s
+                hash = %s, method = %s, issuer = %s, bank = %s, completed = %s, date = NOW()
             WHERE id = %s
             RETURNING id;
         """, (p.user_id, p.transaction, p.amount, 
             p.hash, p.method, 
-              p.issuer, p.bank, id,))
+              p.issuer, p.bank, p.completed, id,))
         updated = cursor.fetchone()
-        self.connection.commit()
+        cls.connection.commit()
         return updated is not None
     
     @classmethod

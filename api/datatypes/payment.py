@@ -15,3 +15,13 @@ class Payment(PaymentCreate):
   id: int
   date: date
   completed: bool
+
+class PaymentUpdate(BaseModel):
+  user_id: int
+  transaction: Optional[str] = None
+  amount: float
+  hash: Optional[str] = None
+  method: Optional[str] = None
+  issuer: Optional[str] = None
+  bank: Optional[str] = None
+  completed: Optional[bool] = None

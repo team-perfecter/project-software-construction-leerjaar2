@@ -28,7 +28,7 @@ class UserModel:
         cursor.execute("""
             INSERT INTO users (username, password, name, email, phone, birth_year, role)
             VALUES (%s, %s, %s, %s, %s, %s, %s);
-        """, (user.username, user.password, user.name, user.email, user.phone, user.birth_year, "admin"))
+        """, (user.username, user.password, user.name, user.email, user.phone, user.birth_year, user.role))
         self.connection.commit()
 
     def get_user_by_id(self, user_id) -> User | None:

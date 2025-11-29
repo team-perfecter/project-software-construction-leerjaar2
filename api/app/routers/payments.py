@@ -1,7 +1,7 @@
 import logging
 from fastapi import APIRouter, HTTPException, Depends
 from api.datatypes.user import User, UserRole
-from api.datatypes.payment import PaymentCreate
+from api.datatypes.payment import PaymentCreate, PaymentUpdate, Payment
 from api.models.payment_model import PaymentModel
 from api.models.user_model import UserModel
 from api.auth_utils import get_current_user, require_role
@@ -49,7 +49,7 @@ async def get_open_payments_by_user(user_id: int, current_user: User = Depends(r
     return payments_list
 
 @router.post("/payments/{payment_id}/pay") #readd current user check
-async def pay_payment(payment_id: int, current_user: User = Depends(get_current_user)):
+async def pay_payment(payment_id: int, p: Payment, current_user: User = Depends(get_current_user)):
     payment = PaymentModel.get_payment_by_payment_id(payment_id)
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
@@ -59,3 +59,13 @@ async def pay_payment(payment_id: int, current_user: User = Depends(get_current_
     if not update:
         raise HTTPException(status_code=500, detail="Payment has failed")
     return {"message": "Payment completed successfully"}
+
+@router.put("/payments/{payment_id}")
+async def update_payment(payment_id: int, p: PaymentUpdate, current_user: User = Depends(require_role(UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
+    payment = PaymentModel.get_payment_by_payment_id(payment_id)
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    update = PaymentModel.update_payment(payment_id, p)
+    if not update:
+        raise HTTPException(status_code=500, detail="Payment has failed")
+    return {"message": "Payment updated successfully"}
