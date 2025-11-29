@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 
 import psycopg2
@@ -39,32 +40,25 @@ class DataConverter:
     def insert_user(self, data):
         cursor = self.connection.cursor()
         for user in data:
-            # Try to insert new user
-            cursor.execute("""
-                           INSERT INTO users (username, password, name, email, phone, birth_year, active, old_hash)
-                           VALUES (%s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (username) DO NOTHING;
-                           """, (
-                               user['username'], user['password'], user['name'], user['email'],
-                               user['phone'], user['birth_year'], True, True
-                           ))
+            # Count existing users with the same username
+            cursor.execute("SELECT COUNT(*) FROM users WHERE username = %s", (user["username"],))
+            count = cursor.fetchone()[0]
 
-            # If insert did nothing (username exists), insert as inactive
+            is_active = count == 0  # First occurrence = active=True, duplicates=False
+
             cursor.execute("""
-                           INSERT INTO users (username, password, name, email, phone, birth_year, active, old_hash)
-                           SELECT %s,
-                                  %s,
-                                  %s,
-                                  %s,
-                                  %s,
-                                  %s,
-                                  %s,
-                                  %s WHERE NOT EXISTS (
-                    SELECT 1 FROM users WHERE username = %s
-                               );
+                           INSERT INTO users (id, username, password, name, email, phone, birth_year, active, old_hash)
+                           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                            """, (
-                               user['username'], user['password'], user['name'], user['email'],
-                               user['phone'], user['birth_year'], False, True,  # active=False
-                               user['username']
+                               user["id"],
+                               user["username"],
+                               user["password"],
+                               user["name"],
+                               user["email"],
+                               user["phone"],
+                               user["birth_year"],
+                               is_active,
+                               True
                            ))
         self.connection.commit()
         cursor.close()
@@ -93,6 +87,31 @@ class DataConverter:
         else:
             print("Superadmin already exists.")
 
+    def insert_vehicle(self, data):
+        cursor = self.connection.cursor()
+
+        for vehicle in data:
+            try:
+                created_at = datetime.strptime(vehicle["created_at"], "%Y-%m-%d").date()
+                user_id = vehicle.get("user_id")
+                cursor.execute("""
+                               INSERT INTO vehicles (user_id, license_plate, make, model, color, year, created_at)
+                               VALUES (%s, %s, %s, %s, %s, %s, %s)
+                               """, (
+                                   user_id,
+                                   vehicle["license_plate"],
+                                   vehicle["make"],
+                                   vehicle["model"],
+                                   vehicle["color"],
+                                   vehicle["year"],
+                                   created_at
+                               ))
+            except Exception as e:
+                logging.error(f"Failed to insert vehicle {vehicle}: {e}")
+        self.connection.commit()
+        cursor.close()
+
+
     def convert(self):
         user_data = self.read_data('users')
         if not user_data:
@@ -100,5 +119,13 @@ class DataConverter:
             return
         logging.info("Read the user data from json")
         self.insert_user(user_data)
+        logging.info("Users successfully inserted")
+
+        vehicle_data = self.read_data('vehicles')
+        if not vehicle_data:
+            logging.info("No vehicle data found, aborting conversion")
+            return
+        self.insert_vehicle(vehicle_data)
+
 
 

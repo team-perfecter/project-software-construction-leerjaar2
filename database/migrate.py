@@ -39,7 +39,7 @@ cur = conn.cursor()
 cur.execute("""
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    username VARCHAR UNIQUE,
+    username VARCHAR,
     password VARCHAR,
     name VARCHAR,
     email VARCHAR,
