@@ -15,6 +15,7 @@ class Payment(PaymentCreate):
   id: int
   date: date
   completed: bool
+  refund_requested: bool
 
 class PaymentUpdate(BaseModel):
   user_id: int
@@ -24,4 +25,5 @@ class PaymentUpdate(BaseModel):
   method: Optional[str] = None
   issuer: Optional[str] = None
   bank: Optional[str] = None
-  completed: Optional[bool] = None
+  completed: bool
+  refund_requested: bool

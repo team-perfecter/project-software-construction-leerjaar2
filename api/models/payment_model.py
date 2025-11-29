@@ -72,12 +72,12 @@ class PaymentModel:
         cursor.execute("""
             UPDATE payments 
             SET user_id = %s, transaction = %s, amount = %s, 
-                hash = %s, method = %s, issuer = %s, bank = %s, completed = %s, date = NOW()
+                hash = %s, method = %s, issuer = %s, bank = %s, completed = %s, date = NOW(), refund_requested = %s
             WHERE id = %s
             RETURNING id;
         """, (p.user_id, p.transaction, p.amount, 
             p.hash, p.method, 
-              p.issuer, p.bank, p.completed, id,))
+              p.issuer, p.bank, p.completed, p.refund_requested, id,))
         updated = cursor.fetchone()
         cls.connection.commit()
         return updated is not None
@@ -94,6 +94,40 @@ class PaymentModel:
         updated = cursor.fetchone()
         cls.connection.commit()
         return updated is not None
+    
+    @classmethod
+    def mark_refund_request(cls, id):
+        cursor = cls.connection.cursor()
+        cursor.execute("""
+            UPDATE payments
+            SET refund_requested = TRUE
+            WHERE id = %s
+            RETURNING id;
+        """, (id,))
+        updated = cursor.fetchone()
+        cls.connection.commit()
+        return updated is not None
+
+    @classmethod
+    def get_refund_requests(cls, user_id: int | None = None):
+        cursor = cls.connection.cursor()
+
+        query = """
+            SELECT *
+            FROM payments
+            WHERE refund_requested = TRUE
+        """
+        user_ids = []
+
+        if user_id is not None:
+            query += " AND user_id = %s"
+            user_ids.append(user_id)
+
+        cursor.execute(query, user_ids)
+        rows = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        result = [dict(zip(columns, row)) for row in rows]
+        return result
 
     @classmethod
     def delete_payment(cls, id):

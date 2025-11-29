@@ -32,7 +32,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "username": "paymentadmin3",
+  "username": "paymentadmin",
   "password": "admin",
   "name": "bob",
   "email": "test@example.com",
@@ -74,7 +74,7 @@ POST http://127.0.0.1:8000/login
 Content-Type: application/json
 
 {
-  "username": "paymentadmin3",
+  "username": "paymentadmin",
   "password": "admin"
 }
 
@@ -116,7 +116,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "user_id": 6,
+  "user_id": 2,
   "license_plate": "ABC123",
   "make": "Toyota",
   "model": "Corolla",
@@ -143,29 +143,40 @@ Authorization: Bearer {{token}}
 GET http://127.0.0.1:8000/payments/me/open
 Authorization: Bearer {{token}}
 ###
-PUT http://127.0.0.1:8000/payments/2
+PUT http://127.0.0.1:8000/payments/1
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "user_id": 6,
+  "user_id": 1,
   "transaction": "TXN-ABC-123",
   "amount": 12.50,
   "hash": "somehashvalue123",
   "method": "CHECK2",
   "issuer": "Rabobank",
   "bank": "RABO",
-  "completed": false
+  "completed": false,
+  "refund_requested": false
 }
 ###
-###
-POST http://127.0.0.1:8000/payments/1/pay
+POST http://127.0.0.1:8000/payments/3/pay
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
+{}
+###
+POST http://127.0.0.1:8000/payments/3/request_refund
+Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {}
 ###
+GET http://127.0.0.1:8000/payments/refunds
+Authorization: Bearer {{token}}
+###
+GET http://127.0.0.1:8000/payments/refunds?user_id=1
+Authorization: Bearer {{token}}
+
 ### Get current user payments
 GET http://127.0.0.1:8000/payments/me/open
 Authorization: Bearer {{token}}

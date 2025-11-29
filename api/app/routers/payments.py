@@ -49,7 +49,7 @@ async def get_open_payments_by_user(user_id: int, current_user: User = Depends(r
     return payments_list
 
 @router.post("/payments/{payment_id}/pay") #readd current user check
-async def pay_payment(payment_id: int, p: Payment, current_user: User = Depends(get_current_user)):
+async def pay_payment(payment_id: int, current_user: User = Depends(get_current_user)):
     payment = PaymentModel.get_payment_by_payment_id(payment_id)
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
@@ -62,6 +62,10 @@ async def pay_payment(payment_id: int, p: Payment, current_user: User = Depends(
 
 @router.put("/payments/{payment_id}")
 async def update_payment(payment_id: int, p: PaymentUpdate, current_user: User = Depends(require_role(UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
+    user_model: UserModel = UserModel()
+    user = user_model.get_user_by_id(p.user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
     payment = PaymentModel.get_payment_by_payment_id(payment_id)
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
@@ -79,3 +83,27 @@ async def delete_payment(payment_id: int, current_user: User = Depends(require_r
     if not delete:
         raise HTTPException(status_code=500, detail="Payment has failed")
     return {"message": "Payment deleted successfully"}
+
+@router.post("/payments/{payment_id}/request_refund")
+async def request_refund(payment_id: int, current_user: User = Depends(get_current_user)):
+    payment = PaymentModel.get_payment_by_payment_id(payment_id)
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    if not payment["completed"]:
+        raise HTTPException(status_code=400, detail="Payment has not yet been paid")
+    if payment["refund_requested"]:
+        raise HTTPException(status_code=400, detail="Refund has already been requested")
+    update = PaymentModel.mark_refund_request(payment_id)
+    if not update:
+        raise HTTPException(status_code=500, detail="Request has failed")
+    return {"message": "Refund reuested successfully"}
+
+@router.get("/payments/refunds")
+async def get_refund_requests(user_id: int | None = None, current_user: User = Depends(require_role(UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
+    if user_id:    
+        user_model: UserModel = UserModel()
+        user = user_model.get_user_by_id(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+    refunds = PaymentModel.get_refund_requests(user_id)
+    return refunds

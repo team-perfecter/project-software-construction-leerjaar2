@@ -91,7 +91,8 @@ CREATE TABLE IF NOT EXISTS payments (
     method VARCHAR,
     issuer VARCHAR,
     bank VARCHAR,
-    date TIMESTAMP DEFAULT NOW()
+    date TIMESTAMP DEFAULT NOW(),
+    refund_requested BOOLEAN DEFAULT FALSE
 );
 """)
 
