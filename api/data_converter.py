@@ -111,6 +111,41 @@ class DataConverter:
         self.connection.commit()
         cursor.close()
 
+    def insert_parking_lots(self, data):
+        cursor = self.connection.cursor()
+
+        for key, lot in data.items():
+            try:
+                created_at = datetime.strptime(lot["created_at"], "%Y-%m-%d").date()
+
+                lat = lot.get("coordinates", {}).get("lat")
+                lng = lot.get("coordinates", {}).get("lng")
+
+                cursor.execute("""
+                               INSERT INTO parking_lots
+                               (id, name, location, address, capacity, reserved, tariff, daytariff, created_at, lat,
+                                lng)
+                               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                               """, (
+                                   lot["id"],
+                                   lot["name"],
+                                   lot["location"],
+                                   lot["address"],
+                                   lot["capacity"],
+                                   lot["reserved"],
+                                   lot["tariff"],
+                                   lot["daytariff"],
+                                   created_at,
+                                   lat,
+                                   lng
+                               ))
+
+            except Exception as e:
+                logging.error(f"Failed to insert parking lot {lot}: {e}")
+
+        self.connection.commit()
+        cursor.close()
+
 
     def convert(self):
         user_data = self.read_data('users')
@@ -126,6 +161,13 @@ class DataConverter:
             logging.info("No vehicle data found, aborting conversion")
             return
         self.insert_vehicle(vehicle_data)
+        logging.info("Vehicles successfully inserted")
+
+        parking_lot_data = self.read_data('parking-lots')
+        if not parking_lot_data:
+            logging.info("No parking lots data found, aborting conversion")
+            return
+        self.insert_parking_lots(parking_lot_data)
 
 
 
