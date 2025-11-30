@@ -8,8 +8,15 @@ Content-Type: application/json
   "password": "1234"
 }
 
+
 ###
 @token = {{login.response.body.access_token}}
+
+
+### Logout
+POST http://127.0.0.1:8000/logout
+Authorization: Bearer {{token}}
+
 
 ### Create a new parking lot (admin only)
 POST http://127.0.0.1:8000/parking-lots
@@ -27,25 +34,31 @@ Authorization: Bearer {{token}}
   "lng": 4.9041
 }
 
+
 ### Get all parking lots
 GET http://127.0.0.1:8000/parking-lots/
 Authorization: Bearer {{token}}
+
 
 ### Get parking lot by ID
 GET http://127.0.0.1:8000/parking-lots/1
 Authorization: Bearer {{token}}
 
+
 ### Get parking lots by location
 GET http://127.0.0.1:8000/parking-lots/location/Amsterdam
 Authorization: Bearer {{token}}
+
 
 ### Get all sessions for a parking lot (admin only)
 GET http://127.0.0.1:8000/parking-lots/1/sessions
 Authorization: Bearer {{token}}
 
+
 ### Get specific session from parking lot (admin only)
 GET http://127.0.0.1:8000/parking-lots/1/sessions/1
 Authorization: Bearer {{token}}
+
 
 ### Update parking lot (admin only)
 PUT http://127.0.0.1:8000/parking-lots/1
@@ -66,14 +79,12 @@ Authorization: Bearer {{token}}
   "status": "open"
 }
 
+
 ### Update parking lot status (admin only)
 PUT http://127.0.0.1:8000/parking-lots/1/status?status=closed&closed_reason=Maintenance&closed_date=2024-01-01
 Authorization: Bearer {{token}}
 
+
 ### Delete parking lot (superadmin only)
 DELETE http://127.0.0.1:8000/parking-lots/1
-Authorization: Bearer {{token}}
-
-### Logout
-POST http://127.0.0.1:8000/logout
 Authorization: Bearer {{token}}
