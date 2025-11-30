@@ -68,14 +68,15 @@
 
 # #     # check if the vehicle and parking lot exist
 
-# #     parking_lot = parkingLot_model.get_parking_lot_by_id(reservation.parking_lot_id)
-# #     if parking_lot == None:
-# #         raise HTTPException(status_code = 404, detail = {"message": f"Parking lot does not exist"})
-
-# #     # Dit is kapot vraag me niet waarom want probeer maar eens deze route te runnen: @router.get("/vehicles/{vehicle_id}")
-# #     vehicle = vehicle_model.get_one_vehicle(reservation.vehicle_id)
-# #     if vehicle == None:
-# #         raise HTTPException(status_code = 404, detail = {"message": f"Vehicle does not exist"})
+    parking_lot = parking_lot_storage.get_parking_lot_by_lid(parking_lot_id)
+    if parking_lot == None:
+        logging.warning("A user with the id of %i tried to create a new reservation, but the requested parking lot does not exist: %i", current_user.id, parking_lot_id)
+        raise HTTPException(status_code = 404, detail = {"message": f"Parking lot does not exist"})
+    
+    vehicle: Vehicle = vehicle_storage.get_one_vehicle(vehicle_id)
+    if vehicle == None:
+        logging.warning("A user with the id of %i tried to create a new reservation, but the requested vehicle does not exist: %i", current_user.id, vehicle_id)
+        raise HTTPException(status_code = 404, detail = {"message": f"Vehicle does not exist"})
 
 
 # #     # check if the vehicle belongs to the user

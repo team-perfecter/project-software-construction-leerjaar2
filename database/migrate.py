@@ -74,7 +74,10 @@ CREATE TABLE IF NOT EXISTS parking_lots (
     daytariff FLOAT,
     created_at DATE,
     lat FLOAT,
-    lng FLOAT
+    lng FLOAT,
+    status VARCHAR(50),
+    closed_reason TEXT,
+    closed_date DATE
 );
 """)
 

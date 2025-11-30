@@ -5,6 +5,9 @@ _selecteer wat van toepassing is [x] of [ ]_
 - [ ] Bug fixes
 - [ ] Anders: 
 
+## Trello kaart
+_(link naar de relevante Trello kaart)_
+
 ## Omschrijving
 - 
 - 
