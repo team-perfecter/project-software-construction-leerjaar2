@@ -10,6 +10,6 @@ class VehicleCreate(BaseModel):
     year: int
 
 
-class Vehicle(BaseModel):
+class Vehicle(VehicleCreate):
     id: int
     created_at: date
