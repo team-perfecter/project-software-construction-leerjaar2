@@ -1,6 +1,6 @@
 POST http://127.0.0.1:8000/payments/
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjMzNzQ1ODh9.TASeGhd5BGRC6A18opKmFsHm5KteZ6glhwv5qv8JJ1c
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQxMDE4NTN9._Px-KlyLkyMrvFNJJHvIEo1_gJKjk6hkoFle5qLw0f8
 
 {
   "user_id": 1,
@@ -13,18 +13,18 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiL
 }
 ###
 GET http://127.0.0.1:8000/payments/user/1
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjMzNzQ1ODh9.TASeGhd5BGRC6A18opKmFsHm5KteZ6glhwv5qv8JJ1c
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQxMDE4NTN9._Px-KlyLkyMrvFNJJHvIEo1_gJKjk6hkoFle5qLw0f8
 ###
 GET http://127.0.0.1:8000/payments/me
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjMzNzQ1ODh9.TASeGhd5BGRC6A18opKmFsHm5KteZ6glhwv5qv8JJ1c
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQxMDE4NTN9._Px-KlyLkyMrvFNJJHvIEo1_gJKjk6hkoFle5qLw0f8
 ###
 GET http://127.0.0.1:8000/payments/user/1/open
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjMzNzQ1ODh9.TASeGhd5BGRC6A18opKmFsHm5KteZ6glhwv5qv8JJ1c
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQxMDE4NTN9._Px-KlyLkyMrvFNJJHvIEo1_gJKjk6hkoFle5qLw0f8
 
 ###
 POST http://127.0.0.1:8000/payments/1/pay
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjMzNzQ1ODh9.TASeGhd5BGRC6A18opKmFsHm5KteZ6glhwv5qv8JJ1c
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXJyZWwiLCJleHAiOjE3NjQxMDE4NTN9._Px-KlyLkyMrvFNJJHvIEo1_gJKjk6hkoFle5qLw0f8
 
 
 {}

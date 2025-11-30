@@ -7,6 +7,7 @@ from enum import Enum
 class UserRole(str, Enum):
     USER = "user"
     ADMIN = "admin"
+    PAYMENTADMIN = "paymentadmin"
     SUPERADMIN = "superadmin"
 
 class UserCreate(BaseModel):
