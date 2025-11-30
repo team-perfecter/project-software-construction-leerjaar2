@@ -85,6 +85,18 @@ class UserModel:
         """, values)
         self.connection.commit()
 
+    def update_password(self, user_id: int, updated_password: str) -> bool:
+        cursor = self.connection.cursor()
+        cursor.execute(f"""
+            UPDATE users
+            SET password
+            WHERE id = %s;
+        """, (user_id,))
+        self.connection.commit()
+        return True
+
+
+
     def map_to_user(self, cursor):
         columns = [desc[0] for desc in cursor.description]
         users = []

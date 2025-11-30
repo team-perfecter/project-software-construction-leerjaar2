@@ -1,16 +1,13 @@
 import time
 import psycopg2
 import sys
-import hashlib
+from argon2 import PasswordHasher
 # A function that hashes a string. use this instead of hashing inside a function somewhere else, so the hashing method can be changed when needed.
 def hash_string(string: str) -> str:
 
-    # For now passwords are stored in MD5 so there is no point in hashing with argon2.
-    #argon2_hasher = PasswordHasher()
-    #argon2_hashed_string = argon2_hasher.hash(string)
+    argon2_hasher = PasswordHasher()
+    return argon2_hasher.hash(string)
 
-    MD5_hashed_string = hashlib.md5(string.encode()).hexdigest()
-    return MD5_hashed_string
 
 # Get database name from command line argument or default to "database"
 db_name = sys.argv[1] if len(sys.argv) > 1 else "database"
@@ -48,6 +45,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT NOW(),
     birth_year INTEGER,
     active BOOLEAN DEFAULT TRUE
+    is_new_password BOOLEAN DEFAULT FALSE
 );
 """)
 
