@@ -10,3 +10,10 @@ class Reservation(BaseModel):
   status: str
   created_at: datetime
   cost: int
+
+class ReservationCreate(BaseModel):
+    user_id: int
+    vehicle_id: int
+    parking_lot_id: int
+    start_time: datetime
+    end_time: datetime | None

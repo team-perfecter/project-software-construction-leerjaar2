@@ -90,3 +90,10 @@ class UserModel:
             except Exception as e:
                 print("Failed to map row to User:", row_dict, e)
         return users
+
+    def delete_user(self, user_id: int) -> bool:
+        cursor = self.connection.cursor()
+        cursor.execute("DELETE FROM users WHERE id = %s RETURNING id;", (user_id,))
+        deleted = cursor.fetchone()
+        self.connection.commit()
+        return deleted is not None
