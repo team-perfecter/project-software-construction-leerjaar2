@@ -103,8 +103,4 @@ PUT http://127.0.0.1:8000/parking-lots/1/status?status=closed&closed_reason=Main
 Authorization: Bearer {{token}}
 
 
-### Delete parking lot (superadmin only)
-DELETE http://127.0.0.1:8000/parking-lots/1
-Authorization: Bearer {{token}}
-
 ### 
