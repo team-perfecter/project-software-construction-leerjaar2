@@ -26,7 +26,6 @@ logging.basicConfig(
 @router.get("/reservations/vehicle/{vehicle_id}")
 async def reservations(vehicle_id: int, user: User = Depends(get_current_user)):
     vehicle = vehicle_model.get_one_vehicle(vehicle_id)
-    print(vehicle, flush=True)
     if vehicle is None:
         raise HTTPException(status_code=404, detail="Vehicle not found")
 
@@ -64,9 +63,7 @@ async def create_reservation(reservation: ReservationCreate, user: User = Depend
     # check if the end date is later than the start date
     if reservation.start_date >= reservation.end_date:
         raise HTTPException(status_code = 403, detail = {"message": f"invalid start date. The start date cannot be later than the end date start date: {reservation.start_date}, end date: {reservation.end_date}"})
-    print(vehicle_reservations, flush=True)
     reservation_data = {"user_id": user.id, "parking_lot_id": reservation.parking_lot_id, "vehicle_id": reservation.vehicle_id, "start_time": reservation.start_date, "end_time": reservation.end_date, "status": True}
-    print(reservation_data, flush=True)
     # create a new reservation
     reservation_create = reservation_model.create_reservation(reservation_data)
     raise HTTPException(status_code = 201, detail = {"message": f"reservation created: {reservation_create}"})
@@ -75,7 +72,6 @@ async def create_reservation(reservation: ReservationCreate, user: User = Depend
 async def delete_reservation(reservation_id: int, user: User = Depends(get_current_user)):
     # Controleer of de reservatie bestaat
     reservation: Reservation | None = reservation_model.get_reservation_by_id(reservation_id)
-    print(reservation, flush=True)
     if reservation is None:
         logging.warning("User with id %i tried to delete a reservation that does not exist: %i", user.id, reservation_id)
         raise HTTPException(status_code=404, detail={"message": "Reservation not found"})

@@ -23,14 +23,12 @@ class Reservation_model:
         cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM reservations WHERE id = %s", (reservation_id,))
         row = cursor.fetchone()
-        print(row)
         if row:
             columns = [desc[0] for desc in cursor.description]
             return dict(zip(columns, row))
         return None
     
     def create_reservation(self, reservation) -> None:
-        print(reservation["parking_lot_id"], flush=True)
         cursor = self.connection.cursor()
         cursor.execute("""
             INSERT INTO reservations (user_id, parking_lot_id, vehicle_id, start_time, end_time, status, created_at, cost)
