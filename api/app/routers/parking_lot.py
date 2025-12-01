@@ -132,8 +132,7 @@ async def get_parking_lot_by_lid(
 @router.get("/parking-lots/{lid}/sessions")
 async def get_all_sessions_by_lid(
     lid: int,
-    current_user: User = Depends(get_current_user),
-    _: None = Depends(require_lot_access),  # Access check only
+    current_user: User = Depends(require_lot_access()),
 ):
     # logging.info(
     #     "User with id %i retrieving all sessions from parking lot with id %i",
