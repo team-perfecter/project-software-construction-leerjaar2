@@ -166,8 +166,7 @@ async def get_all_sessions_by_lid(
 async def get_session_by_lid_and_sid(
     lid: int,
     sid: int,
-    current_user: User = Depends(get_current_user),
-    _: None = Depends(require_lot_access),  # Access check only
+    current_user: User = Depends(require_lot_access()),
 ):
     # logging.info(
     #     "User with id %i retrieving session %i from parking lot %i",
