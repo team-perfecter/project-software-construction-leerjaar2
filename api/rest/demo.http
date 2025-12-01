@@ -42,7 +42,7 @@ Authorization: Bearer {{token}}
 }
 
 ### Get user
-GET http://127.0.0.1:8000/get_user/6
+GET http://127.0.0.1:8000/get_user/1
 
 ### Login
 # @name login
