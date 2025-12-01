@@ -2,11 +2,13 @@ import time
 import psycopg2
 import sys
 from argon2 import PasswordHasher
+import hashlib
 # A function that hashes a string. use this instead of hashing inside a function somewhere else, so the hashing method can be changed when needed.
 def hash_string(string: str) -> str:
 
-    argon2_hasher = PasswordHasher()
-    return argon2_hasher.hash(string)
+    # argon2_hasher = PasswordHasher()
+    # return argon2_hasher.hash(string)
+    return hashlib.md5(string.encode()).hexdigest()
 
 
 # Get database name from command line argument or default to "database"
