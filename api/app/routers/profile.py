@@ -41,7 +41,7 @@ async def register(user: UserCreate):
             "A user tried to create a profile, but the name was already created: %s", user.name)
         raise HTTPException(status_code=409, detail="Name already taken")
     # New users should have their passwords hashed with argon2
-    hashed_password = hash_string(user.password, True)
+    hashed_password = hash_string(user.password)
     user.password = hashed_password
     user_model.create_user(user)
     logging.info(
@@ -61,9 +61,9 @@ async def login(data: UserLogin):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     # updates password to use argon 2 when md5 is still used
-    if not user.is_new_password:
-        hashed_password = hash_string(data.password, True)
-        user_model.update_password(user.id, hashed_password)
+    # if not user.is_new_password:
+    #     hashed_password = hash_string(data.password, True)
+    #     user_model.update_password(user.id, hashed_password)
 
     access_token = create_access_token({"sub": user.username})
     logging.info("User '%s' logged in successfully", user.username)
@@ -133,5 +133,5 @@ async def create_admin(user: AdminCreate, current_user: User = Depends(require_r
 
 @router.post("/admin/{admin_id}/parking-lots/{lot_id}/assign")
 async def assign_lot_to_admin(admin_id: int, lot_id: int, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
-    UserModel.add_parking_lot_access(admin_id, lot_id)
+    user_model.add_parking_lot_access(admin_id, lot_id)
     return {"message": "Parking lot access added"}

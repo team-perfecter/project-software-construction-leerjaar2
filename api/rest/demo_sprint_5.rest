@@ -1,6 +1,6 @@
 ### Login
 # @name login
-POST http://178.84.109.122:8000/login
+POST http://127.0.0.1:8000/login
 Content-Type: application/json
 
 {
@@ -106,3 +106,5 @@ Authorization: Bearer {{token}}
 ### Delete parking lot (superadmin only)
 DELETE http://127.0.0.1:8000/parking-lots/1
 Authorization: Bearer {{token}}
+
+### 

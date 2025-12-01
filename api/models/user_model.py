@@ -87,11 +87,11 @@ class UserModel:
 
     def update_password(self, user_id: int, updated_password: str) -> bool:
         cursor = self.connection.cursor()
-        cursor.execute(f"""
+        cursor.execute("""
             UPDATE users
-            SET password
+            SET password = %s
             WHERE id = %s;
-        """, (user_id,))
+        """, (updated_password, user_id))
         self.connection.commit()
         return True
 
@@ -123,7 +123,7 @@ class UserModel:
         cursor = self.connection.cursor()
 
         cursor.execute("""
-            INSERT INTO admin_parking_lots (admin_id, lot_id)
+            INSERT INTO parking_lot_admins (admin_user_id, parking_lot_id)
             VALUES (%s, %s)
             ON CONFLICT DO NOTHING;
         """, (admin_id, lot_id))
