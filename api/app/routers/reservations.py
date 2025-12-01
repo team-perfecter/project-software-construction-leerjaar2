@@ -38,7 +38,7 @@ async def reservations(vehicle_id: int, user: User = Depends(get_current_user)):
 
 @router.post("/reservations/create")
 async def create_reservation(reservation: ReservationCreate, user: User = Depends(get_current_user)):
-    parking_lot = parkingLot_model.get_parking_lot_by_id(reservation.parking_lot_id)
+    parking_lot = parkingLot_model.get_parking_lot_by_lid(reservation.parking_lot_id)
     if parking_lot == None:
         raise HTTPException(status_code = 404, detail = {"message": f"Parking lot does not exist"})
     
