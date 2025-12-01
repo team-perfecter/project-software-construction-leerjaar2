@@ -194,3 +194,31 @@ Authorization: Bearer {{token}}
 ### Get current user payments
 GET http://127.0.0.1:8000/payments/me
 Authorization: Bearer {{token}}
+
+
+###---------------------------------------------------reservation------------------------------------------------
+
+
+### Create a reservation
+POST http://127.0.0.1:8000/reservations/create
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "vehicle_id": 1,
+  "parking_lot_id": 1,
+  "start_date": "2025-12-10T09:00:00",
+  "end_date": "2025-12-10T18:00:00"
+}
+
+
+### get reservations by car
+GET http://127.0.0.1:8000/reservations/vehicle/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+### Delete a reservation
+DELETE http://127.0.0.1:8000/reservations/delete/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
