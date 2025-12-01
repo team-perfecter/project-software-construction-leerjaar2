@@ -79,7 +79,7 @@ def user_can_manage_lot(user: User, lot_id: int) -> bool:
     if user.role == UserRole.SUPERADMIN:
         return True
 
-    assigned_lots = UserModel.get_parking_lots_for_admin(user.id)
+    assigned_lots = user_model.get_parking_lots_for_admin(user.id)
     return lot_id in assigned_lots
 
 def require_lot_access():

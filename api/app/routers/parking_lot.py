@@ -23,8 +23,7 @@ parking_lot_model: ParkingLotModel = ParkingLotModel()
 @router.post("/parking-lots", status_code=status.HTTP_201_CREATED)
 async def create_parking_lot(
     parking_lot_data: Parking_lot_create,
-    current_user: User = Depends(get_current_user),
-    _: None = Depends(require_lot_access),  # Access check only
+    current_user: User = Depends(require_role(UserRole.SUPERADMIN)),
 ):
     # logging.info(
     #     "User with id %i attempting to create a new parking lot", current_user.id
@@ -35,9 +34,13 @@ async def create_parking_lot(
     new_id = max([lot.id for lot in parking_lots], default=0) + 1
     logging.debug("Generated new parking lot ID: %i", new_id)
 
-    logging.debug("Creating parking lot object with data: name='%s', location='%s', capacity=%i", 
-                 parking_lot_data.name, parking_lot_data.location, parking_lot_data.capacity)
-    
+    logging.debug(
+        "Creating parking lot object with data: name='%s', location='%s', capacity=%i",
+        parking_lot_data.name,
+        parking_lot_data.location,
+        parking_lot_data.capacity,
+    )
+
     parking_lot = Parking_lot(
         id=new_id,
         name=parking_lot_data.name,
@@ -56,14 +59,16 @@ async def create_parking_lot(
     )
 
     logging.info(
-        "Creating parking lot with id %i and name '%s' at location '%s'", 
-        new_id, parking_lot.name, parking_lot.location
+        "Creating parking lot with id %i and name '%s' at location '%s'",
+        new_id,
+        parking_lot.name,
+        parking_lot.location,
     )
-    
+
     try:
         parking_lot_model.create_parking_lot(parking_lot)
         logging.info("Successfully created parking lot with id %i in database", new_id)
-        
+
     except Exception as e:
         logging.error("Failed to create parking lot in database: %s", str(e))
         raise HTTPException(
@@ -77,6 +82,7 @@ async def create_parking_lot(
 
     # logging.info("Parking lot creation completed successfully for user %i", current_user.id)
     return parking_lot
+
 
 # endregion
 
@@ -251,9 +257,8 @@ async def get_parking_lots_by_location(
 async def update_parking_lot(
     lid: int,
     updated_lot: Parking_lot,
-    current_user: User = Depends(get_current_user),
-    _: None = Depends(require_lot_access),  # Access check only
-):
+    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPERADMIN)),
+):  
     # logging.info(
     #     "User with id %i attempting to update parking lot with id %i",
     #     current_user.id,
