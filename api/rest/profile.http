@@ -1,0 +1,109 @@
+### Register a user
+POST http://127.0.0.1:8000/register
+Content-Type: application/json
+
+{
+  "username": "jerrel",
+  "password": "1234",
+  "name": "bob",
+  "email": "test@example.com",
+  "phone": "1234567890",
+  "birth_year": "2002"
+}
+
+### Get user
+GET http://127.0.0.1:8000/get_user/2
+
+### Login
+# @name login
+POST http://127.0.0.1:8000/login
+Content-Type: application/json
+
+{
+  "username": "jerrel",
+  "password": "1234"
+}
+
+###
+@token = {{login.response.body.access_token}}
+
+### Logout
+POST http://127.0.0.1:8000/logout
+Authorization: Bearer {{token}}
+
+### Get current user
+GET http://localhost:8000/profile
+Authorization: Bearer {{token}}
+
+### Create a parking lot
+POST http://localhost:8000/parking-lots
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Central Parking",
+  "location": "Amsterdam",
+  "address": "Damrak 1, 1012 LG Amsterdam",
+  "capacity": 150,
+  "tariff": 3.5,
+  "daytariff": 25.0,
+  "lat": 52.3676,
+  "lng": 4.9041
+}
+
+### Get all parking lots
+GET http://localhost:8000/parking-lots/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+### Create a vehicle
+POST http://127.0.0.1:8000/vehicles/create
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "license_plate": "ABC123",
+  "make": "Toyota",
+  "model": "Corolla",
+  "color": "Blue",
+  "year": 2020
+}
+
+### Get current user's vehicles
+GET http://localhost:8000/vehicles
+Authorization: Bearer {{token}}
+
+### Start a session
+POST http://localhost:8000/parking-lots/1/sessions/start?vehicle_id=1
+Authorization: Bearer {{token}}
+
+### Get current sessions
+GET http://localhost:8000/sessions/active
+Authorization: Bearer {{token}}
+### Stop a session
+POST http://localhost:8000/parking-lots/1/sessions/stop?vehicle_id=1
+Authorization: Bearer {{token}}
+
+### Get current user payments
+GET http://127.0.0.1:8000/payments/me/open
+Authorization: Bearer {{token}}
+
+###
+POST http://127.0.0.1:8000/payments/1/pay
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+{}
+###
+### Get current user payments
+GET http://127.0.0.1:8000/payments/me/open
+Authorization: Bearer {{token}}
+### Get current user payments
+GET http://127.0.0.1:8000/payments/me
+Authorization: Bearer {{token}}
+
+
+
+

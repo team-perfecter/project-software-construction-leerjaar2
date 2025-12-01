@@ -1,0 +1,52 @@
+services:
+  parking-api:
+    build: 
+      context: ./api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db_migration
+    restart: always
+
+  db_migration:
+    build:
+      context: ./database
+    depends_on:
+      - db
+    command: ["python", "migrate.py"]
+    restart: "no"
+
+  #db_migration_test:
+  #  build:
+  #    context: ./database
+  #  depends_on:
+  #    - test_db
+  #  command: [ "python", "migrate.py", "test_database" ]
+ 
+  db:
+    image: postgres:16
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: database
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  #test_db:
+  #  image: postgres:16
+  #  container_name: postgres_test
+  #  restart: always
+  #  environment:
+  #    POSTGRES_USER: user
+  #    POSTGRES_PASSWORD: password
+  #    POSTGRES_DB: test_database
+  #  ports:
+  #    - "5433:5432"
+
+volumes:
+  postgres-data:
+  test-db-data:
