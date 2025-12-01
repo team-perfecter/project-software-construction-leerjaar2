@@ -1,5 +1,6 @@
 import psycopg2
 from api.datatypes.reservation import Reservation
+from datetime import datetime
 
 #eventually the database queries / JSON write/read will be here.
 
@@ -26,9 +27,12 @@ class Reservation_model:
     def create_reservation(self, reservation: Reservation) -> None:
         cursor = self.connection.cursor()
         cursor.execute("""
-            INSERT INTO vehicles (user_id, license_plate, make, model, color, year)
+            INSERT INTO reservations (user_id, parking_lot_id, vehicle_id, start_time, end_time, status, created_at, cost)
             VALUES (%s, %s, %s, %s, %s, %s)
-        """, (user_id,))
+        """, (reservation["user_id"], reservation["parking_lot_id"], reservation["vehicle_id"], reservation["start_time"], reservation["end_time"], reservation["status"], datetime.now(), 1))
+        created = cursor.fetchone()
+        self.connection.commit()
+        return created is not None
 
     def get_reservation_by_vehicle(self, vehicle_id: int) -> list[Reservation]:
         cursor = self.connection.cursor()

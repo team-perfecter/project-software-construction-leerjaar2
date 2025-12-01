@@ -114,20 +114,37 @@ async def create_reservation(reservation: ReservationCreate = Body(...), user: U
 
 @router.post("/create_reservation_rework")
 async def create_reservation(reservation: ReservationCreate, user: User = Depends(get_current_user)):
-    print("check 1")
-    print(reservation.vehicle_id, flush=True)
     parking_lot = parkingLot_model.get_parking_lot_by_id(reservation.parking_lot_id)
     if parking_lot == None:
         raise HTTPException(status_code = 404, detail = {"message": f"Parking lot does not exist"})
     
     
     vehicle = vehicle_model.get_one_vehicle(reservation.vehicle_id)
-    print("FINAL CHECK:")
-    print(vehicle)
     if vehicle == None:
         raise HTTPException(status_code = 404, detail = {"message": f"Vehicle does not exist"})
+    
+    conflicting_time: bool = False
+    vehicle_reservations: list[Reservation] = reservation_model.get_reservation_by_vehicle(vehicle["id"])
+    for reservation in vehicle_reservations:
+        if reservation["start_date"] < reservation["end_date"] and reservation["end_date"] > reservation["start_date"]:
+            conflicting_time = True
+            break
+    if conflicting_time:
+        raise HTTPException(status_code = 401, detail = {"message": f"Requested date has an overlap with another reservation for this vehicle"})
 
-    HTTPException(status_code = 201, detail = {"message": f"Vehicle and Parkinglot does exist {parking_lot}, {vehicle}"})
+    # check if start date is later than the current date
+    if reservation.start_date < datetime.now():
+        raise HTTPException(status_code = 403, detail = {"message": f"invalid start date. The start date cannot be earlier than the current date. current date: {datetime.now()}, received date: {reservation.start_date}"})
+
+    # check if the end date is later than the start date
+    if reservation.start_date >= reservation.end_date:
+        raise HTTPException(status_code = 403, detail = {"message": f"invalid start date. The start date cannot be later than the end date start date: {reservation.start_date}, end date: {reservation.end_date}"})
+    print(vehicle_reservations, flush=True)
+    reservation_data = {"user_id": user.id, "parking_lot_id": reservation.parking_lot_id, "vehicle_id": reservation.vehicle_id, "start_time": reservation.start_date, "end_time": reservation.end_date, "status": True}
+
+    # create a new reservation
+    reservation_create = reservation_model.create_reservation(reservation_data)
+    raise HTTPException(status_code = 201, detail = {"message": f"reservation created: {reservation_create}"})
     
 
 
