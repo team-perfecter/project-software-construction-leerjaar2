@@ -45,15 +45,11 @@ async def vehicles(vehicle_id: int, user: User = require_role(UserRole.ADMIN, Us
 
 #Get vehicles of an user. (Admin)
 @router.get("/vehicles/user/{user_id}")
-async def vehicles_user(user_id: int, user: User = Depends(get_current_user)):
+async def vehicles_user(user_id: int, user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPERADMIN))):
     #Get user vehicles.
-    if user.role == "ADMIN":
-        vehicles_user = vehicle_model.get_all_user_vehicles(user_id)
-        return JSONResponse(content={"message": "Vehicles not found"}, status_code=201) if vehicles_user == [] else vehicles_user
-    else:
-        raise HTTPException(detail={"message": "You are not autorized to this."}, status_code=404)
 
-
+    vehicles_user = vehicle_model.get_all_user_vehicles(user_id)
+    return JSONResponse(content={"message": "Vehicles not found"}, status_code=201) if vehicles_user == [] else vehicles_user
 
 #Post:
 
@@ -69,15 +65,11 @@ async def vehicle_create(vehicle: VehicleCreate, user: User = Depends(get_curren
         raise HTTPException(status_code=500, detail="Failed to create vehicle")
     return JSONResponse(content={"message": "Vehicle successfully created."}, status_code=201)
 
-
-
 #Users must see the history of the vehicles reservations. (User)
 #@router.get("/vehicles/history-reservations")
 #async def vehicles_user():
 #    vehicles_user = vehicle_model.get_all_Reservations_history_vehicles(get_current_user().id)
 #    return "Your vehicle reservations are not found." if vehicles_user == [] else vehicles_user
-
-
 
 #Put:
 
@@ -95,8 +87,6 @@ async def vehicle_update(vehicle_id: int, vehicle: dict = Body(...), user: User 
         return JSONResponse(content={"message": "Vehicle succesfully updated"}, status_code=201)
     else:
         raise HTTPException(detail={"message": "Something went wrong."}, status_code=404)
-
-
 
 #delete:
 
