@@ -34,6 +34,9 @@ POST http://127.0.0.1:8000/logout
 Authorization: Bearer {{token}}
 
 
+###---------------------------------------------------parking lot------------------------------------------------
+
+
 ### Create a new parking lot (admin only)
 POST http://127.0.0.1:8000/parking-lots
 Content-Type: application/json
@@ -51,128 +54,8 @@ Authorization: Bearer {{token}}
 }
 
 
-### Create a vehicle
-POST http://127.0.0.1:8000/vehicles/create
-Content-Type: application/json
-Authorization: Bearer {{token}}
-
-{
-  "user_id": 1,
-  "license_plate": "ABC123",
-  "make": "Toyota",
-  "model": "Corolla",
-  "color": "Blue",
-  "year": 2020
-}
-
-
-### Get current user's vehicles
-GET http://localhost:8000/vehicles
-Authorization: Bearer {{token}}
-
-
-### Start a session
-POST http://localhost:8000/parking-lots/1/sessions/start?vehicle_id=1
-Authorization: Bearer {{token}}
-
-
-### Get current sessions
-GET http://localhost:8000/sessions/active
-Authorization: Bearer {{token}}
-
-
-### Stop a session
-POST http://localhost:8000/parking-lots/1/sessions/stop?vehicle_id=1
-Authorization: Bearer {{token}}
-
-
-### Get current user payments
-GET http://127.0.0.1:8000/payments/me/open
-Authorization: Bearer {{token}}
-
-
-###
-POST http://127.0.0.1:8000/payments/1/pay
-Content-Type: application/json
-Authorization: Bearer {{token}}
-
-{}
-
-
-### Get current user payments
-GET http://127.0.0.1:8000/payments/me
-Authorization: Bearer {{token}}
-
-
-###
-POST http://127.0.0.1:8000/payments/1/request_refund
-Content-Type: application/json
-Authorization: Bearer {{token}}
-
-{}
-
-
-###
-GET http://127.0.0.1:8000/payments/refunds
-Authorization: Bearer {{token}}
-
-
-###
-GET http://127.0.0.1:8000/payments/refunds?user_id=1
-Authorization: Bearer {{token}}
-
-
-###
-PUT http://127.0.0.1:8000/payments/1
-Content-Type: application/json
-Authorization: Bearer {{token}}
-
-{
-  "user_id": 1,
-  "transaction": "TXN-ABC-123",
-  "amount": 12.50,
-  "hash": "somehashvalue123",
-  "method": "CHECK2",
-  "issuer": "Rabobank",
-  "bank": "RABO",
-  "completed": false,
-  "refund_requested": false
-}
-
-
-###
-DELETE http://127.0.0.1:8000/payments/1
-Authorization: Bearer {{token}}
-
-
-### Assign parking lot to admin (superadmin only)
-POST http://127.0.0.1:8000/admin/2/parking-lots/1/assign
-Content-Type: application/json
-Authorization: Bearer {{token}}
-
-{}
-### Login
-# @name login
-POST http://127.0.0.1:8000/login
-Content-Type: application/json
-
-{
-  "username": "admin2",
-  "password": "admin"
-}
-
-
-###
-@token = {{login.response.body.access_token}}
-
-
-### Get all parking lots
+### Get all parking lots        oud
 GET http://127.0.0.1:8000/parking-lots/
-Authorization: Bearer {{token}}
-
-
-### Get parking lot by ID
-GET http://127.0.0.1:8000/parking-lots/1
 Authorization: Bearer {{token}}
 
 
@@ -182,7 +65,7 @@ Authorization: Bearer {{token}}
 
 
 ### Get all sessions for a parking lot (admin only)
-GET http://127.0.0.1:8000/parking-lots/2/sessions
+GET http://127.0.0.1:8000/parking-lots/1/sessions
 Authorization: Bearer {{token}}
 
 
@@ -216,6 +99,135 @@ PUT http://127.0.0.1:8000/parking-lots/1/status?status=closed&closed_reason=Main
 Authorization: Bearer {{token}}
 
 
+###---------------------------------------------------vehicle------------------------------------------------
+
+
+### Create a vehicle                   oud
+POST http://127.0.0.1:8000/vehicles/create
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "user_id": 1,
+  "license_plate": "ABC123",
+  "make": "Toyota",
+  "model": "Corolla",
+  "color": "Blue",
+  "year": 2020
+}
+
+
+### Get current user's vehicles         oud 
+GET http://localhost:8000/vehicles
+Authorization: Bearer {{token}}
+
+
+###---------------------------------------------------session------------------------------------------------
+
+
+### Start a session
+POST http://localhost:8000/parking-lots/1/sessions/start?vehicle_id=1
+Authorization: Bearer {{token}}
+
+
+### Get current sessions
+GET http://localhost:8000/sessions/active
+Authorization: Bearer {{token}}
+
+
+### Stop a session
+POST http://localhost:8000/parking-lots/1/sessions/stop?vehicle_id=1
+Authorization: Bearer {{token}}
+
+
+###---------------------------------------------------payment------------------------------------------------
+
+
+### Get current user payments
+GET http://127.0.0.1:8000/payments/me/open
+Authorization: Bearer {{token}}
+
+
+###
+POST http://127.0.0.1:8000/payments/1/pay
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{}
+
+
+### Get current user payments
+GET http://127.0.0.1:8000/payments/me
+Authorization: Bearer {{token}}
+
+
+###
+POST http://127.0.0.1:8000/payments/1/request_refund
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{}
+
+
+###             oud
+GET http://127.0.0.1:8000/payments/refunds
+Authorization: Bearer {{token}}
+
+
+###
+GET http://127.0.0.1:8000/payments/refunds?user_id=1
+Authorization: Bearer {{token}}
+
+
+###
+PUT http://127.0.0.1:8000/payments/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "user_id": 1,
+  "transaction": "TXN-ABC-123",
+  "amount": 12.50,
+  "hash": "somehashvalue123",
+  "method": "CHECK2",
+  "issuer": "Rabobank",
+  "bank": "RABO",
+  "completed": false,
+  "refund_requested": false
+}
+
+
+###
+DELETE http://127.0.0.1:8000/payments/1
+Authorization: Bearer {{token}}
+
+
+###---------------------------------------------------user dingen------------------------------------------------
+
+
+### Assign parking lot to admin (superadmin only)
+POST http://127.0.0.1:8000/admin/2/parking-lots/1/assign
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{}
+
+
+### Login
+# @name login
+POST http://127.0.0.1:8000/login
+Content-Type: application/json
+
+{
+  "username": "admin2",
+  "password": "admin"
+}
+
+
+###
+@token = {{login.response.body.access_token}}
+
+
 ### Register a user
 POST http://127.0.0.1:8000/register
 Content-Type: application/json
@@ -228,6 +240,7 @@ Content-Type: application/json
   "phone": "1234567890",
   "birth_year": "2002"
 }
+
 
 ### Login
 # @name login
