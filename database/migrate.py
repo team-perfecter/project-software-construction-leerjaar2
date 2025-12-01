@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS users (
     role VARCHAR DEFAULT 'user',
     created_at TIMESTAMP DEFAULT NOW(),
     birth_year INTEGER,
-    active BOOLEAN DEFAULT TRUE
+    active BOOLEAN DEFAULT TRUE,
     is_new_password BOOLEAN DEFAULT FALSE
 );
 """)
@@ -75,8 +75,8 @@ CREATE TABLE IF NOT EXISTS parking_lots (
     created_at DATE,
     lat FLOAT,
     lng FLOAT,
-    status VARCHAR(50),
-    closed_reason TEXT,
+    status VARCHAR,
+    closed_reason VARCHAR,
     closed_date DATE
 );
 """)
