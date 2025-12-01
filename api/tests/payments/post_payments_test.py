@@ -18,4 +18,3 @@ def test_create_payment_with_superadmin():
     
     assert response.status_code == 201
     assert response.json() == {"message": "Payment created successfully"}
-D
