@@ -37,7 +37,7 @@ async def start_parking_session(
     )
 
     # parking lot check
-    parking_lot = parking_lot_model.get_parking_lot_by_id(lid)
+    parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
     if not parking_lot:
         logging.warning("Parking lot with id %i does not exist", lid)
         raise HTTPException(
@@ -50,7 +50,9 @@ async def start_parking_session(
 
     # vehicle en user check
     vehicle = vehicle_model.get_one_vehicle(vehicle_id)
-    if not vehicle or vehicle.user_id != current_user.id:
+    print("CHECK 1")
+    print(vehicle)
+    if not vehicle or vehicle["user_id"] != current_user.id:
         if not vehicle:
             logging.warning("Vehicle with id %i does not exist", vehicle_id)
             raise HTTPException(
@@ -109,7 +111,7 @@ async def start_parking_session(
         "message": "Session started successfully",
         "parking_lot_id": lid,
         "vehicle_id": vehicle_id,
-        "license_plate": vehicle.license_plate,
+        "license_plate": vehicle["license_plate"],
     }
 
 @router.post("/parking-lots/{lid}/sessions/stop")

@@ -7,6 +7,7 @@ from enum import Enum
 class UserRole(str, Enum):
     USER = "user"
     ADMIN = "admin"
+    PAYMENTADMIN = "paymentadmin"
     SUPERADMIN = "superadmin"
 
 class UserCreate(BaseModel):
@@ -30,6 +31,7 @@ class User(UserCreate):
     id: int
     created_at: datetime
     role: UserRole
+    is_new_password: bool
 
 class UserLogin(BaseModel):
     username: str

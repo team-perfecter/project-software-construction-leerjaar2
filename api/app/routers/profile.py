@@ -40,6 +40,7 @@ async def register(user: UserCreate):
         logging.info(
             "A user tried to create a profile, but the name was already created: %s", user.name)
         raise HTTPException(status_code=409, detail="Name already taken")
+    # New users should have their passwords hashed with argon2
     hashed_password = hash_string(user.password)
     user.password = hashed_password
     user_model.create_user(user)
@@ -51,13 +52,19 @@ async def register(user: UserCreate):
 
 @router.post("/login")
 async def login(data: UserLogin):
-    user = user_model.get_user_by_username(data.username)
+    user: User = user_model.get_user_by_username(data.username)
     if user is None:
         logging.info("Login failed — username not found: %s", data.username)
         raise HTTPException(status_code=404, detail="Username not found")
-    if not verify_password(data.password, user.password):
+    if not verify_password(data.password, user.password, user.is_new_password):
         logging.info("Login failed — incorrect password for user: %s", data.username)
         raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    # updates password to use argon 2 when md5 is still used
+    # if not user.is_new_password:
+    #     hashed_password = hash_string(data.password, True)
+    #     user_model.update_password(user.id, hashed_password)
+
     access_token = create_access_token({"sub": user.username})
     logging.info("User '%s' logged in successfully", user.username)
 
@@ -96,7 +103,7 @@ async def update_me(update_data: UserUpdate, current_user: User = Depends(get_cu
     return {"message": "Profile updated"}
 
 @router.post("/create_admin")
-async def register(user: UserCreate, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
+async def create_admin(user: AdminCreate, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
     missing_fields: list[str] = []
     if not user.name:
         missing_fields.append("name")
@@ -118,7 +125,7 @@ async def register(user: UserCreate, current_user: User = Depends(require_role(U
         raise HTTPException(status_code=409, detail="Name already taken")
     hashed_password = hash_string(user.password)
     user.password = hashed_password
-    user_model.create_user(user)
+    user_model.create_admin(user)
     logging.info(
         "A user has created a new profile with the name: %s", user.name)
 
@@ -126,5 +133,5 @@ async def register(user: UserCreate, current_user: User = Depends(require_role(U
 
 @router.post("/admin/{admin_id}/parking-lots/{lot_id}/assign")
 async def assign_lot_to_admin(admin_id: int, lot_id: int, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
-    UserModel.add_parking_lot_access(admin_id, lot_id)
+    user_model.add_parking_lot_access(admin_id, lot_id)
     return {"message": "Parking lot access added"}
