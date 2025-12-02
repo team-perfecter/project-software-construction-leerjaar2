@@ -1,11 +1,13 @@
 import time
 import psycopg2
 import sys
-from argon2 import PasswordHasher
 import hashlib
-# A function that hashes a string. use this instead of hashing inside a function somewhere else, so the hashing method can be changed when needed.
-def hash_string(string: str) -> str:
+# A function that hashes a string.
+# use this instead of hashing inside a function somewhere else,
+# so the hashing method can be changed when needed.
 
+
+def hash_string(string: str) -> str:
     # argon2_hasher = PasswordHasher()
     # return argon2_hasher.hash(string)
     return hashlib.md5(string.encode()).hexdigest()
@@ -60,7 +62,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
     model VARCHAR,
     color VARCHAR,
     year INTEGER,
-    created_at TIMESTAMP DEFAULT NOW() 
+    created_at TIMESTAMP DEFAULT NOW()
 );
 """)
 
@@ -148,7 +150,8 @@ if not exists:
 
         cur.execute("""
             INSERT INTO users (username, password, name, email, role)
-            VALUES ('superadmin', %s, 'Super Admin', 'super@admin.com', 'superadmin');
+            VALUES ('superadmin', %s, 'Super Admin',
+                    'super@admin.com', 'superadmin');
         """, (hashed_pw,))
 
         print("Default superadmin created.")
@@ -162,7 +165,8 @@ if not exists:
         conn.commit()
         cur.execute("""
             INSERT INTO users (username, password, name, email, role)
-            VALUES ('paymentadmin', %s, 'testuser', 'payment@admin.com', 'paymentadmin');
+            VALUES ('paymentadmin', %s, 'testuser',
+                    'payment@admin.com', 'paymentadmin');
         """, (hashed_pw,))
 
         conn.commit()
