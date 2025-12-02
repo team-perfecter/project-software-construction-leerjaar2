@@ -154,6 +154,24 @@ if not exists:
         print("Default superadmin created.")
         conn.commit()
 
+        cur.execute("""
+            INSERT INTO users (username, password, name, email, role)
+            VALUES ('admin', %s, 'Admin', 'admin@admin.com', 'admin');
+        """, (hashed_pw,))
+
+        conn.commit()
+        cur.execute("""
+            INSERT INTO users (username, password, name, email, role)
+            VALUES ('paymentadmin', %s, 'testuser', 'payment@admin.com', 'paymentadmin');
+        """, (hashed_pw,))
+
+        conn.commit()
+        cur.execute("""
+            INSERT INTO users (username, password, name, email, role)
+            VALUES ('user', %s, 'testuser', 'test@user.com', 'user');
+        """, (hashed_pw,))
+
+        conn.commit()
     except Exception as e:
         conn.rollback()
         print("Failed to create superadmin:", e)
