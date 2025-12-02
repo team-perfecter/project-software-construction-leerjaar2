@@ -16,7 +16,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-@router.post("/payments", status_code=201) #readd currentuser
+@router.post("/payments", status_code=201)
 async def create_payment(p: PaymentCreate, current_user: User = Depends(require_role(UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
     print("CREATED CHECK CHECK CHECK")
     created = PaymentModel.create_payment(p)
@@ -25,31 +25,31 @@ async def create_payment(p: PaymentCreate, current_user: User = Depends(require_
     logging.info("Created new payment for user_id %i", p.user_id)
     return {"message": "Payment created successfully"}
 
-@router.get("/payments/me") # only check if it works 
+@router.get("/payments/me")
 async def get_my_payments(current_user: User = Depends(get_current_user)):
     payments_list = PaymentModel.get_payments_by_user(current_user.id)
     logging.info("Retrieved %i payments for user ID %i", len(payments_list), current_user.id)
     return payments_list
 
-@router.get("/payments/me/open") #readd currentuser check
+@router.get("/payments/me/open")
 async def get_my_open_payments(current_user: User = Depends(get_current_user)):
     payments_list = PaymentModel.get_open_payments_by_user(current_user.id)
     logging.info("Retrieved %i payments for user ID %i", len(payments_list), current_user.id)
     return payments_list
 
-@router.get("/payments/user/{user_id}") #readd current user check
+@router.get("/payments/user/{user_id}")
 async def get_payments_by_user(user_id: int, current_user: User = Depends(require_role(UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
     payments_list = PaymentModel.get_payments_by_user(user_id)
     logging.info("Retrieved %i payments for user ID %i", len(payments_list), user_id)
     return payments_list
 
-@router.get("/payments/user/{user_id}/open") #readd currentuser check
+@router.get("/payments/user/{user_id}/open")
 async def get_open_payments_by_user(user_id: int, current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPERADMIN))):
     payments_list = PaymentModel.get_open_payments_by_user(user_id)
     logging.info("Retrieved %i payments for user ID %i", len(payments_list), user_id)
     return payments_list
 
-@router.post("/payments/{payment_id}/pay") #readd current user check
+@router.post("/payments/{payment_id}/pay")
 async def pay_payment(payment_id: int, current_user: User = Depends(get_current_user)):
     payment = PaymentModel.get_payment_by_payment_id(payment_id)
     if not payment:

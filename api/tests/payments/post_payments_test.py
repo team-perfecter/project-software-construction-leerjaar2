@@ -23,6 +23,16 @@ def test_create_payment_with_paymentadmin(client_with_token):
     response = client.post("/payments", json=fake_payment, headers=headers)
     assert response.status_code == 201
 
+def test_create_payment_without_authorization(client_with_token):
+    client, headers = client_with_token("user")
+    fake_payment = {
+        "user_id": 1,
+        "amount": 100,
+        "method": "credit_card"
+    }
+    response = client.post("/payments", json=fake_payment, headers=headers)
+    assert response.status_code == 403
+
 def test_create_payment_no_token(client):
     fake_payment = {
         "user_id": 1,
