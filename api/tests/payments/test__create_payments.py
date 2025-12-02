@@ -3,6 +3,7 @@ from api.main import app
 
 client = TestClient(app)
 
+
 def test_create_payment_with_superadmin(client_with_token):
     client, headers = client_with_token("superadmin")
     fake_payment = {
@@ -12,6 +13,7 @@ def test_create_payment_with_superadmin(client_with_token):
     }
     response = client.post("/payments", json=fake_payment, headers=headers)
     assert response.status_code == 201
+
 
 def test_create_payment_with_paymentadmin(client_with_token):
     client, headers = client_with_token("paymentadmin")
@@ -23,6 +25,7 @@ def test_create_payment_with_paymentadmin(client_with_token):
     response = client.post("/payments", json=fake_payment, headers=headers)
     assert response.status_code == 201
 
+
 def test_create_payment_without_authorization(client_with_token):
     client, headers = client_with_token("user")
     fake_payment = {
@@ -33,6 +36,7 @@ def test_create_payment_without_authorization(client_with_token):
     response = client.post("/payments", json=fake_payment, headers=headers)
     assert response.status_code == 403
 
+
 def test_create_payment_no_token(client):
     fake_payment = {
         "user_id": 1,
@@ -42,6 +46,7 @@ def test_create_payment_no_token(client):
     response = client.post("/payments", json=fake_payment)
     assert response.status_code == 401
 
+
 def test_create_payment_missing_field(client_with_token):
     client, headers = client_with_token("superadmin")
     fake_payment = {
@@ -50,6 +55,7 @@ def test_create_payment_missing_field(client_with_token):
     }
     response = client.post("/payments", json=fake_payment, headers=headers)
     assert response.status_code == 422
+
 
 def test_create_payment_wrong_data_type(client_with_token):
     client, headers = client_with_token("superadmin")
