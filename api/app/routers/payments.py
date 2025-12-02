@@ -10,6 +10,8 @@ router = APIRouter(
     tags=["payments"]
 )
 
+user_model: UserModel = UserModel()
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -18,35 +20,55 @@ logging.basicConfig(
 
 @router.post("/payments", status_code=201)
 async def create_payment(p: PaymentCreate, current_user: User = Depends(require_role(UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
-    print("CREATED CHECK CHECK CHECK")
     created = PaymentModel.create_payment(p)
     if not created:
+        logging.info("Admin ID %i tried to create a payment, but failed", current_user.id)
         raise HTTPException(status_code=500, detail="Failed to create payment")
-    logging.info("Created new payment for user_id %i", p.user_id)
+    logging.info("Admin ID %i created new payment for user_id %i", current_user.id, p.user_id)
     return {"message": "Payment created successfully"}
 
 @router.get("/payments/me")
 async def get_my_payments(current_user: User = Depends(get_current_user)):
     payments_list = PaymentModel.get_payments_by_user(current_user.id)
-    logging.info("Retrieved %i payments for user ID %i", len(payments_list), current_user.id)
+    if not payments_list:
+        logging.info("User ID %i tried retrieving their own payments, but none were found", current_user.id)
+        raise HTTPException(status_code=404, detail="No payments not found")
+    logging.info("User ID %i retrieved their own payments", current_user.id)
     return payments_list
 
 @router.get("/payments/me/open")
 async def get_my_open_payments(current_user: User = Depends(get_current_user)):
     payments_list = PaymentModel.get_open_payments_by_user(current_user.id)
-    logging.info("Retrieved %i payments for user ID %i", len(payments_list), current_user.id)
+    if not payments_list:
+        logging.info("User ID %i tried retrieving their own payments, but none were found", current_user.id)
+        raise HTTPException(status_code=404, detail="No payments not found")
+    logging.info("User ID %i retrieved their own payments", current_user.id)
     return payments_list
 
 @router.get("/payments/user/{user_id}")
 async def get_payments_by_user(user_id: int, current_user: User = Depends(require_role(UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
+    user = user_model.get_user_by_id(user_id)
+    if not user:
+        logging.info("Admin ID %i tried searching for nonexistent User ID %i", current_user.id, user_id)
+        raise HTTPException(status_code=404, detail="No user not found")
     payments_list = PaymentModel.get_payments_by_user(user_id)
-    logging.info("Retrieved %i payments for user ID %i", len(payments_list), user_id)
+    if not payments_list:
+        logging.info("Admin ID %i tried retrieving payments from User ID %i, but none were found", current_user.id, user_id)
+        raise HTTPException(status_code=404, detail="No payments not found")
+    logging.info("Admin ID %i retrieved payments of User ID %i", current_user.id, user_id)
     return payments_list
 
 @router.get("/payments/user/{user_id}/open")
 async def get_open_payments_by_user(user_id: int, current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPERADMIN))):
+    user = user_model.get_user_by_id(user_id)
+    if not user:
+        logging.info("Admin ID %i tried searching for nonexistent User ID %i", current_user.id, user_id)
+        raise HTTPException(status_code=404, detail="No user not found")
     payments_list = PaymentModel.get_open_payments_by_user(user_id)
-    logging.info("Retrieved %i payments for user ID %i", len(payments_list), user_id)
+    if not payments_list:
+        logging.info("Admin ID %i tried retrieving payments from User ID %i, but none were found", current_user.id, user_id)
+        raise HTTPException(status_code=404, detail="No payments not found")
+    logging.info("Admin ID %i retrieved payments of User ID %i", current_user.id, user_id)
     return payments_list
 
 @router.post("/payments/{payment_id}/pay")
@@ -63,7 +85,6 @@ async def pay_payment(payment_id: int, current_user: User = Depends(get_current_
 
 @router.put("/payments/{payment_id}")
 async def update_payment(payment_id: int, p: PaymentUpdate, current_user: User = Depends(require_role(UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
-    user_model: UserModel = UserModel()
     user = user_model.get_user_by_id(p.user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -102,7 +123,6 @@ async def request_refund(payment_id: int, current_user: User = Depends(get_curre
 @router.get("/payments/refunds")
 async def get_refund_requests(user_id: int | None = None, current_user: User = Depends(require_role(UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
     if user_id:    
-        user_model: UserModel = UserModel()
         user = user_model.get_user_by_id(user_id)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
