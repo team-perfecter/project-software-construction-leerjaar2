@@ -96,14 +96,26 @@ async def update_payment(payment_id: int, p: PaymentUpdate, current_user: User =
         raise HTTPException(status_code=500, detail="Payment has failed")
     return {"message": "Payment updated successfully"}
 
+@router.get("/payments/{payment_id}")
+async def get_payment_by_id(payment_id: int, current_user: User = Depends(require_role(UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
+    payment = PaymentModel.get_payment_by_payment_id(payment_id)
+    if not payment:
+        logging.info("Admin ID %i tried to delete nonexistent Payment ID %i", current_user.id, payment_id)
+        raise HTTPException(status_code=404, detail="Payment not found")
+    logging.info("Admin ID %i retrieved Payment ID %i", current_user.id, payment_id)
+    return payment
+
 @router.delete("/payments/{payment_id}")
 async def delete_payment(payment_id: int, current_user: User = Depends(require_role(UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
     payment = PaymentModel.get_payment_by_payment_id(payment_id)
     if not payment:
+        logging.info("Admin ID %i tried to delete nonexistent Payment ID %i", current_user.id, payment_id)
         raise HTTPException(status_code=404, detail="Payment not found")
     delete = PaymentModel.delete_payment(payment_id)
     if not delete:
-        raise HTTPException(status_code=500, detail="Payment has failed")
+        logging.info("Admin ID %i tried to delete Payment ID %i, but failed", current_user.id, payment_id)
+        raise HTTPException(status_code=500, detail="Deletion has failed")
+    logging.info("Admin ID %i deleted Payment ID %i", current_user.id, payment_id)
     return {"message": "Payment deleted successfully"}
 
 @router.post("/payments/{payment_id}/request_refund")
