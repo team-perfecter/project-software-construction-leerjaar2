@@ -2,8 +2,7 @@ import logging
 from datetime import datetime
 
 from api.auth_utils import get_current_user
-from api.datatypes.payment import Payment, PaymentCreate
-from api.datatypes.session import Session, SessionCreate
+from api.datatypes.payment import PaymentCreate
 from api.datatypes.user import User
 from api.models.parking_lot_model import ParkingLotModel
 from api.models.payment_model import PaymentModel

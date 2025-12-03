@@ -1,7 +1,6 @@
 from api.auth_utils import get_current_user, require_role
 from api.datatypes.user import User
 from fastapi import FastAPI, HTTPException, Body, Depends, APIRouter
-from api.storage.profile_storage import Profile_storage
 from api.models.vehicle_model import Vehicle_model
 from api.datatypes.vehicle import Vehicle, VehicleCreate
 from api.datatypes.user import UserRole
