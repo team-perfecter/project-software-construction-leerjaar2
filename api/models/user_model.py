@@ -2,7 +2,7 @@ from datetime import datetime
 
 import psycopg2
 
-from api.datatypes.user import UserCreate, User, UserLogin, UserUpdate
+from api.datatypes.user import UserCreate, User, UserLogin, UserUpdate, AdminCreate
 
 
 class UserModel:
@@ -23,6 +23,14 @@ class UserModel:
         """, (user.username, user.password, user.name, user.email, user.phone, user.birth_year))
         self.connection.commit()
 
+    def create_admin(self, user: AdminCreate) -> None:
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            INSERT INTO users (username, password, name, email, phone, birth_year, role)
+            VALUES (%s, %s, %s, %s, %s, %s, %s);
+        """, (user.username, user.password, user.name, user.email, user.phone, user.birth_year, user.role))
+        self.connection.commit()
+
     def get_user_by_id(self, user_id) -> User | None:
         cursor = self.connection.cursor()
         cursor.execute("""
@@ -37,7 +45,6 @@ class UserModel:
 
 
     def get_user_by_username(self, username: str) -> User | None:
-        print(repr(username))
         if username is None:
             return None
         cursor = self.connection.cursor()
@@ -45,7 +52,6 @@ class UserModel:
             SELECT * FROM users WHERE username = %s;
             """, (username,))
         user_list = self.map_to_user(cursor)
-        print(user_list)
         if len(user_list) > 0:
             return user_list[0]
         else:
@@ -79,6 +85,18 @@ class UserModel:
         """, values)
         self.connection.commit()
 
+    def update_password(self, user_id: int, updated_password: str) -> bool:
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            UPDATE users
+            SET password = %s
+            WHERE id = %s;
+        """, (updated_password, user_id))
+        self.connection.commit()
+        return True
+
+
+
     def map_to_user(self, cursor):
         columns = [desc[0] for desc in cursor.description]
         users = []
@@ -90,6 +108,27 @@ class UserModel:
             except Exception as e:
                 print("Failed to map row to User:", row_dict, e)
         return users
+    
+    def get_parking_lots_for_admin(self, user_id: int) -> list[int]:
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            SELECT parking_lot_id 
+            FROM parking_lot_admins 
+            WHERE admin_user_id = %s;
+        """, (user_id,))
+        rows = cursor.fetchall()
+        return [r[0] for r in rows]
+    
+    def add_parking_lot_access(self, admin_id: int, lot_id: int):
+        cursor = self.connection.cursor()
+
+        cursor.execute("""
+            INSERT INTO parking_lot_admins (admin_user_id, parking_lot_id)
+            VALUES (%s, %s)
+            ON CONFLICT DO NOTHING;
+        """, (admin_id, lot_id))
+        self.connection.commit()
+
 
     def delete_user(self, user_id: int) -> bool:
         cursor = self.connection.cursor()

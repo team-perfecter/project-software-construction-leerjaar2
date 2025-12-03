@@ -1,6 +1,15 @@
 import time
 import psycopg2
 import sys
+from argon2 import PasswordHasher
+import hashlib
+# A function that hashes a string. use this instead of hashing inside a function somewhere else, so the hashing method can be changed when needed.
+def hash_string(string: str) -> str:
+
+    # argon2_hasher = PasswordHasher()
+    # return argon2_hasher.hash(string)
+    return hashlib.md5(string.encode()).hexdigest()
+
 
 # Get database name from command line argument or default to "database"
 db_name = sys.argv[1] if len(sys.argv) > 1 else "database"
@@ -37,7 +46,8 @@ CREATE TABLE IF NOT EXISTS users (
     role VARCHAR DEFAULT 'user',
     created_at TIMESTAMP DEFAULT NOW(),
     birth_year INTEGER,
-    active BOOLEAN DEFAULT TRUE
+    active BOOLEAN DEFAULT TRUE,
+    is_new_password BOOLEAN DEFAULT FALSE
 );
 """)
 
@@ -50,7 +60,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
     model VARCHAR,
     color VARCHAR,
     year INTEGER,
-    created_at DATE
+    created_at TIMESTAMP DEFAULT NOW() 
 );
 """)
 
@@ -66,7 +76,10 @@ CREATE TABLE IF NOT EXISTS parking_lots (
     daytariff FLOAT,
     created_at DATE,
     lat FLOAT,
-    lng FLOAT
+    lng FLOAT,
+    status VARCHAR,
+    closed_reason VARCHAR,
+    closed_date DATE
 );
 """)
 
@@ -81,7 +94,8 @@ CREATE TABLE IF NOT EXISTS payments (
     method VARCHAR,
     issuer VARCHAR,
     bank VARCHAR,
-    date TIMESTAMP DEFAULT NOW()
+    date TIMESTAMP DEFAULT NOW(),
+    refund_requested BOOLEAN DEFAULT FALSE
 );
 """)
 
@@ -113,7 +127,39 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 """)
 
+cur.execute("""
+CREATE TABLE IF NOT EXISTS parking_lot_admins (
+    admin_user_id INTEGER REFERENCES users(id),
+    parking_lot_id INTEGER REFERENCES parking_lots(id),
+    PRIMARY KEY (admin_user_id, parking_lot_id)
+);
+""")
+
+
 conn.commit()
+
+# Check for superadmin
+cur.execute("SELECT id FROM users WHERE role = 'superadmin' LIMIT 1;")
+exists = cur.fetchone()
+
+if not exists:
+    try:
+        hashed_pw = hash_string("admin123")
+
+        cur.execute("""
+            INSERT INTO users (username, password, name, email, role)
+            VALUES ('superadmin', %s, 'Super Admin', 'super@admin.com', 'superadmin');
+        """, (hashed_pw,))
+
+        print("Default superadmin created.")
+        conn.commit()
+
+    except Exception as e:
+        conn.rollback()
+        print("Failed to create superadmin:", e)
+else:
+    print("Superadmin already exists.")
+
 cur.close()
 conn.close()
 
