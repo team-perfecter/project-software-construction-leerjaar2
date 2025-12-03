@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS reservations (
     start_time TIMESTAMP,
     end_time TIMESTAMP,
     status VARCHAR,
-    created_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW(),
     cost INTEGER
 );
 """)
