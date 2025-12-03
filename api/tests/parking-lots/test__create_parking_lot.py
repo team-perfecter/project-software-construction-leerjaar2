@@ -7,17 +7,21 @@ def test_create_parking_lot_with_superadmin(client_with_token):
     """Test: POST /parking-lots - Succesvol aanmaken parking lot"""
     client, headers = client_with_token("superadmin")
     fake_parking_lot = {
-        "name": "test",
-        "location": "here",
-        "address": "",
+        "name": "Bedrijventerrein Almere Parkeergarage",
+        "location": "Industrial Zone",
+        "address": "Schanssingel 337, 2421 BS Almere",
         "capacity": 1,
         "tariff": 0.5,
         "daytariff": 0.5,
         "lat": 0,
         "lng": 0
     }
+
     response = client.post("/parking-lots", json=fake_parking_lot, headers=headers)
     assert response.status_code == 201
+
+    data = response.json()
+    assert data["name"] == "Bedrijventerrein Almere Parkeergarage"
 
 def test_create_parking_lot_with_admin(client_with_token):
     client, headers = client_with_token("admin")
@@ -32,7 +36,7 @@ def test_create_parking_lot_with_admin(client_with_token):
         "lng": 0
     }
     response = client.post("/parking-lots", json=fake_parking_lot, headers=headers)
-    assert response.status_code == 401
+    assert response.status_code == 403
 
 def test_create_parking_lot_with_user(client_with_token):
     client, headers = client_with_token("user")
@@ -47,7 +51,7 @@ def test_create_parking_lot_with_user(client_with_token):
         "lng": 0
     }
     response = client.post("/parking-lots", json=fake_parking_lot, headers=headers)
-    assert response.status_code == 401
+    assert response.status_code == 403
 
 
 def test_create_parking_lot_invalid_data(client_with_token):
