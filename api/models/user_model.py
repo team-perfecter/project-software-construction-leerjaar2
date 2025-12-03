@@ -116,3 +116,11 @@ class UserModel:
             ON CONFLICT DO NOTHING;
         """, (admin_id, lot_id))
         self.connection.commit()
+
+
+    def delete_user(self, user_id: int) -> bool:
+        cursor = self.connection.cursor()
+        cursor.execute("DELETE FROM users WHERE id = %s RETURNING id;", (user_id,))
+        deleted = cursor.fetchone()
+        self.connection.commit()
+        return deleted is not None

@@ -4,6 +4,9 @@ from api.app.routers import profile, reservations, vehicles
 
 app = FastAPI()
 
+app.include_router(admin_user_routes.router)
+app.include_router(admin_reservation_routes.router)
+#app.include_router(reservations.router)
 app.include_router(profile.router)
 app.include_router(vehicles.router)
 app.include_router(reservations.router)
