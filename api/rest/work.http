@@ -67,13 +67,28 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 ### Create a reservation
-POST http://127.0.0.1:8000/create_reservation_rework
+POST http://127.0.0.1:8000/reservations/create
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
     "vehicle_id": 1,
     "parking_lot_id": 1,
-    "start_date": "2025-11-26T09:00:00",
-    "end_date": "2025-11-26T18:00:00"
+    "start_date": "2025-12-10T09:00:00",
+    "end_date": "2025-12-10T18:00:00"
 }
+
+### get reservations by car
+GET http://127.0.0.1:8000/reservations/vehicle/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### Get vehicles of an user. (only for Admin)
+GET http://127.0.0.1:8000/vehicles/user/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### Delete a reservation
+DELETE http://127.0.0.1:8000/reservations/delete/1
+Content-Type: application/json
+Authorization: Bearer {{token}}

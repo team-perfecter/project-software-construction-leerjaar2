@@ -3,7 +3,7 @@ import psycopg2
 from api.datatypes.reservation import ReservationCreate, Reservation
 
 
-# #eventually the database queries / JSON write/read will be here.
+#eventually the database queries / JSON write/read will be here.
 
 class Reservation_model:
     def __init__(self):
@@ -15,10 +15,10 @@ class Reservation_model:
             password="password",
         )
 
-#     def get_all_reservations(self) -> list[Reservation]:
-#         cursor = self.connection.cursor()
-#         cursor.execute("SELECT * FROM reservations")
-#         return cursor.fetchall()
+    def get_all_reservations(self) -> list[Reservation]:
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT * FROM reservations")
+        return cursor.fetchall()
     
     def get_reservation_by_id(self, reservation_id) -> Reservation | None:
         cursor = self.connection.cursor()
