@@ -147,7 +147,8 @@ async def update_payment(payment_id: int,
     user = user_model.get_user_by_id(p.user_id)
     if not user:
         logging.info("Admin ID %i tried changing Payment ID %i to User ID %i, "
-        "but user does not exist.", current_user.id, payment_id, p["user_id"])
+                     "but user does not exist.",
+                     current_user.id, payment_id, p["user_id"])
         raise HTTPException(status_code=404,
                             detail="User not found")
     update = PaymentModel.update_payment(payment_id, p)
@@ -170,11 +171,11 @@ async def get_refund_requests(user_id: int | None = None,
                          "nonexistent User ID %i",
                          current_user.id, user_id)
             raise HTTPException(status_code=404,
-                                detail="User not found")    
+                                detail="User not found")
     refunds = PaymentModel.get_refund_requests(user_id)
     if not refunds:
-        logging.info("Admin ID %i tried getting refunds,"
-        " but none were found", current_user.id)
+        logging.info("Admin ID %i tried getting refunds, "
+                     "but none were found", current_user.id)
         raise HTTPException(status_code=404,
                             detail="No refunds found")
     logging.info("Admin ID %i retrieved refunds",
