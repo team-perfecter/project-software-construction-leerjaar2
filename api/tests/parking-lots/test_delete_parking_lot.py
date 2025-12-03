@@ -1,28 +1,7 @@
-from unittest.mock import patch
-from datetime import datetime, timedelta
-import pytest
-import jwt
 from fastapi.testclient import TestClient
-from ../../app import app
-
-'''
-DELETE /parking-lots/{lid} endpoint tests
-
-Each endpoint will check if the token is valid. If not valid, return 401
-The validity of a token is checked in the get_user(token: str = Depends(oauth2_scheme)) function.
-
-delete_parking_lot(lid: str) deletes the parking lot with the given parking lot id. 
-This happens with the function db_delete_parking_lot(id: str)
-
-delete_parking_lot returns status code 200 (deleted) or 404 (not found) or 403 (access denied)
-Only admin users can delete parking lots.
-'''
+from api.main import app
 
 client = TestClient(app)
-
-# Secret key en algorithm voor token creation
-SECRET_KEY = "test-secret-key"
-ALGORITHM = "HS256"
 
 def create_test_token(username: str, role: str = "USER"):
     expire = datetime.utcnow() + timedelta(minutes=30)

@@ -1,24 +1,5 @@
-from unittest.mock import patch
-from datetime import datetime, timedelta
-import pytest
-import jwt
 from fastapi.testclient import TestClient
-from ../../app import app
-
-'''
-Parking lots will be in a separate class. The input of this class will be 
-the authorization token of the user. Each endpoint will check if the token 
-is valid. If not valid, return 401.
-
-The validity of a token is checked in the 
-get_user(token: str = Depends(oauth2_scheme)) function.
-
-get_parking_lot(lid: int) returns the parking lot with the given parking lot id. 
-This happens with the function db_get_parking_lot(id: int)
-
-get_parking_lot returns the following:
-{"parking_lot": db_get_parking_lot(id: int)}
-'''
+from api.main import app
 
 client = TestClient(app)
 
