@@ -50,9 +50,9 @@ def test_get_parking_lot_by_lid_success(client_with_token):
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, dict)
-    assert data["name"] == "Bedrijventerrein Almere Parkeergarage"
-    assert data["location"] == "Industrial Zone"
-    assert data["capacity"] == 100
+    assert data["name"] == "Vlaardingen Evenementenhal Parkeerterrein"
+    assert data["location"] == "Event Center"
+    assert data["capacity"] == 50
 
 def test_get_parking_lot_by_lid_not_found():
     """Test: GET /parking-lots/{id} - Niet bestaande parking lot"""
