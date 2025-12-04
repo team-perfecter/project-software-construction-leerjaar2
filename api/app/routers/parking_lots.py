@@ -20,6 +20,27 @@ router = APIRouter(tags=["parking lot"])
 
 parking_lot_model: ParkingLotModel = ParkingLotModel()
 
+def get_lot_if_exists(lid: int):
+    """
+    Gets a parking lot based on a specific is. if the parking lot cannot be found, it raises a 404 exception.
+    @param: lid
+    @return: ParkingLot or 404 exception
+
+    """
+    parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
+    if parking_lot:
+        logging.info("Successfully retrieved parking lot with id %i", lid)
+        return parking_lot
+
+    logging.warning("Parking lot with id %i does not exist", lid)
+    raise HTTPException(
+        status_code=404,
+        detail={
+            "error": "Not Found",
+            "message": f"Parking lot with ID {lid} does not exist",
+            "code": "PARKING_LOT_NOT_FOUND",
+        }
+    )
 
 # region POST
 @router.post("/parking-lots", status_code=status.HTTP_201_CREATED)
@@ -129,20 +150,9 @@ async def get_parking_lot_by_lid(lid: int):
     # logging.info(
     #     "User with id %i retrieving parking lot with id %i", current_user.id, lid
     # )
-    parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
-    if parking_lot:
-        logging.info("Successfully retrieved parking lot with id %i", lid)
-        return parking_lot
+    return get_lot_if_exists(lid)
 
-    logging.warning("Parking lot with id %i does not exist", lid)
-    raise HTTPException(
-        status_code=404,
-        detail={
-            "error": "Not Found",
-            "message": f"Parking lot with ID {lid} does not exist",
-            "code": "PARKING_LOT_NOT_FOUND",
-        },
-    )
+
 
 
 @router.get("/parking-lots/{lid}/sessions")
@@ -161,17 +171,7 @@ async def get_all_sessions_by_lid(
     #     lid,
     # )
 
-    parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
-    if not parking_lot:
-        logging.warning("Parking lot with id %i does not exist", lid)
-        raise HTTPException(
-            status_code=404,
-            detail={
-                "error": "Parking lot not found",
-                "message": f"Parking lot with ID {lid} does not exist",
-                "code": "PARKING_LOT_NOT_FOUND",
-            },
-        )
+    _ = get_lot_if_exists(lid)
 
     logging.info("Retrieving all sessions for parking lot with id %i", lid)
     sessions = parking_lot_model.get_all_sessions_by_lid(lid)
@@ -202,17 +202,7 @@ async def get_session_by_lid_and_sid(
     #     lid,
     # )
 
-    parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
-    if not parking_lot:
-        logging.warning("Parking lot with id %i does not exist", lid)
-        raise HTTPException(
-            status_code=404,
-            detail={
-                "error": "Parking lot not found",
-                "message": f"Parking lot with ID {lid} does not exist",
-                "code": "PARKING_LOT_NOT_FOUND",
-            },
-        )
+    _ = get_lot_if_exists(lid)
 
     logging.info("Retrieving session %i for parking lot with id %i", sid, lid)
     session = parking_lot_model.get_session_by_lid_and_sid(lid, sid)
@@ -302,17 +292,7 @@ async def update_parking_lot(
     # )
 
     logging.debug("Checking if parking lot %i exists", lid)
-    parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
-    if not parking_lot:
-        logging.warning("Parking lot with id %i does not exist", lid)
-        raise HTTPException(
-            status_code=404,
-            detail={
-                "error": "Not Found",
-                "message": f"Parking lot with ID {lid} does not exist",
-                "code": "PARKING_LOT_NOT_FOUND",
-            },
-        )
+    parking_lot = get_lot_if_exists(lid)
 
     if parking_lot.capacity != updated_lot.capacity:
         logging.info(
@@ -374,17 +354,7 @@ async def update_parking_lot_status(
     #     status,
     # )
 
-    parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
-    if not parking_lot:
-        logging.warning("Parking lot with id %i does not exist", lid)
-        raise HTTPException(
-            status_code=404,
-            detail={
-                "error": "Not Found",
-                "message": f"Parking lot with ID {lid} does not exist",
-                "code": "PARKING_LOT_NOT_FOUND",
-            },
-        )
+    parking_lot = get_lot_if_exists(lid)
 
     valid_statuses = ["open", "closed", "deleted", "maintenance", "full"]
     if lot_status not in valid_statuses:
@@ -449,7 +419,7 @@ def update_parking_lot_reserved_count(lid: int, action: str) -> bool:
     @param: action
     """
     try:
-        parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
+        parking_lot = get_lot_if_exists(lid)
         parking_lot = Parking_lot_create(**parking_lot.model_dump())
         if not parking_lot:
             return False
@@ -490,17 +460,7 @@ async def delete_parking_lot(
 
     # Check if parking lot exists
     logging.debug("Checking if parking lot %i exists", lid)
-    parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
-    if not parking_lot:
-        logging.warning("Parking lot with id %i does not exist", lid)
-        raise HTTPException(
-            status_code=404,
-            detail={
-                "error": "Not Found",
-                "message": f"Parking lot with ID {lid} does not exist",
-                "code": "PARKING_LOT_NOT_FOUND",
-            },
-        )
+    _ = get_lot_if_exists(lid)
 
     # Check if parking lot has active sessions
     logging.debug("Checking for active sessions in parking lot %i", lid)
