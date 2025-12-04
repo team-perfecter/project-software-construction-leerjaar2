@@ -254,8 +254,8 @@ async def get_parking_lots_by_location(
 @router.put("/parking-lots/{lid}")
 async def update_parking_lot(
     lid: int,
-    updated_lot: Parking_lot,
-    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPERADMIN)),
+    updated_lot: Parking_lot_create,
+    current_user: User = Depends(require_role(UserRole.SUPERADMIN)),
 ):  
     # logging.info(
     #     "User with id %i attempting to update parking lot with id %i",
@@ -283,8 +283,6 @@ async def update_parking_lot(
             parking_lot.capacity,
             updated_lot.capacity,
         )
-
-    updated_lot.id = lid
     logging.debug("Attempting database update for parking lot %i", lid)
 
     try:

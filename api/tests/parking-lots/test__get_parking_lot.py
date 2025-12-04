@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 from api.main import app
+from api.tests.conftest import get_last_pid
 
 client = TestClient(app)
 
@@ -42,10 +43,7 @@ def test_get_all_parking_lots_empty(client_with_token):
 def test_get_parking_lot_by_lid_success(client_with_token):
     """Test: GET /parking-lots/{id} - Succesvol ophalen parking lot"""
 
-    # first, get the id of a parking lot so we know the id exists
-    response = client.get("/parking-lots/")
-    data = response.json()
-    parking_lot_id = data[0]["id"]
+    parking_lot_id = get_last_pid(client)
 
     # TEst if we can get a specific parking lot
     response = client.get(f"/parking-lots/{parking_lot_id}")
@@ -63,10 +61,7 @@ def test_get_parking_lot_by_lid_not_found():
 
 def test_get_parking_lot_by_lid_unauthorized():
     """Test: GET /parking-lots/{id} - Zonder authenticatie"""
-    # first, get the id of a parking lot so we know the id exists
-    response = client.get("/parking-lots/")
-    data = response.json()
-    parking_lot_id = data[0]["id"]
+    parking_lot_id = get_last_pid(client)
     response = client.get(f"/parking-lots/{parking_lot_id}")
     assert response.status_code == 200
 

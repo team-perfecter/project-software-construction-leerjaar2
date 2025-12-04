@@ -1,5 +1,5 @@
 import psycopg2
-from api.datatypes.parking_lot import Parking_lot
+from api.datatypes.parking_lot import Parking_lot, Parking_lot_create
 from api.datatypes.session import Session
 from typing import List, Optional
 
@@ -141,13 +141,13 @@ class ParkingLotModel:
 
     # region update
 
-    def update_parking_lot(self, lot_id: int, lot: Parking_lot) -> bool:
+    def update_parking_lot(self, lot_id: int, lot: Parking_lot_create) -> bool:
         cursor = self.connection.cursor()
         cursor.execute(
             """
             UPDATE parking_lots 
             SET name = %s, location = %s, address = %s, capacity = %s, 
-                reserved = %s, tariff = %s, daytariff = %s, lat = %s, lng = %s,
+                tariff = %s, daytariff = %s, lat = %s, lng = %s,
                 status = %s, closed_reason = %s, closed_date = %s
             WHERE id = %s;
         """,
@@ -156,7 +156,6 @@ class ParkingLotModel:
                 lot.location,
                 lot.address,
                 lot.capacity,
-                lot.reserved,
                 lot.tariff,
                 lot.daytariff,
                 lot.lat,

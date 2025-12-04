@@ -63,3 +63,8 @@ def setup_parking_lots(request, client_with_token):
 
         client.post("/parking-lots", json=lot, headers=headers)
         client.post("/parking-lots", json=lot2, headers=headers)
+
+def get_last_pid(client):
+    response = client.get("/parking-lots/")
+    data = response.json()
+    return data[1]["id"]
