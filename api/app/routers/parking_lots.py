@@ -1,8 +1,10 @@
-import os
+"""
+This file contains all endpoints related to parking lots.
+"""
+
 import logging
-from datetime import date, datetime
+from datetime import date
 from api.models.parking_lot_model import ParkingLotModel
-from api.storage_utils import *
 from api.datatypes.parking_lot import Parking_lot, Parking_lot_create
 from api.datatypes.user import User, UserRole
 from api.auth_utils import get_current_user, require_lot_access, require_role
@@ -23,8 +25,15 @@ parking_lot_model: ParkingLotModel = ParkingLotModel()
 @router.post("/parking-lots", status_code=status.HTTP_201_CREATED)
 async def create_parking_lot(
     parking_lot_data: Parking_lot_create,
-    current_user: User = Depends(require_role(UserRole.SUPERADMIN)),
+    _: User = Depends(require_role(UserRole.SUPERADMIN)),
 ):
+    """
+    Creates a parking lot based on the provided data.
+    In order to successfully create a parking lot, the user must be a superadmin.
+    @param: parking_lot_data
+    @param: current_user
+    @return: parking_lot
+    """
     # logging.info(
     #     "User with id %i attempting to create a new parking lot", current_user.id
     # )
@@ -90,6 +99,10 @@ async def create_parking_lot(
 # region GET
 @router.get("/parking-lots/")
 async def get_all_parking_lots():
+    """
+    Gets all parking lots
+    @return: all parking lots
+    """
     logging.info("Retrieving all parking lots")
     parking_lots = parking_lot_model.get_all_parking_lots()
     if len(parking_lots) == 0:
@@ -98,7 +111,7 @@ async def get_all_parking_lots():
             status_code=204,
             detail={
                 "error": "No Content",
-                "message": f"There are no parking lots",
+                "message": "There are no parking lots",
                 "code": "PARKING_LOT_NOT_FOUND",
             },
         )
@@ -107,9 +120,12 @@ async def get_all_parking_lots():
 
 
 @router.get("/parking-lots/{lid}")
-async def get_parking_lot_by_lid(
-    lid: int
-):
+async def get_parking_lot_by_lid(lid: int):
+    """
+    Gets a single parking lot by id
+    @param: lid
+    @return: a single parking lot
+    """
     # logging.info(
     #     "User with id %i retrieving parking lot with id %i", current_user.id, lid
     # )
@@ -132,8 +148,13 @@ async def get_parking_lot_by_lid(
 @router.get("/parking-lots/{lid}/sessions")
 async def get_all_sessions_by_lid(
     lid: int,
-    current_user: User = Depends(require_lot_access()),
+    _: User = Depends(require_lot_access()),
 ):
+    """
+    Gets all sessions for a parking lot by id
+    @param: lid
+    @return: all sessions of a speccific parking lot
+    """
     # logging.info(
     #     "User with id %i retrieving all sessions from parking lot with id %i",
     #     current_user.id,
@@ -166,8 +187,14 @@ async def get_all_sessions_by_lid(
 async def get_session_by_lid_and_sid(
     lid: int,
     sid: int,
-    current_user: User = Depends(require_lot_access()),
+    _: User = Depends(require_lot_access()),
 ):
+    """
+    Gets a single session for a parking lot by id
+    @param: lid
+    @param: sid
+    @return: a single session of a specfic parking lot
+    """
     # logging.info(
     #     "User with id %i retrieving session %i from parking lot %i",
     #     current_user.id,
@@ -218,6 +245,11 @@ async def get_session_by_lid_and_sid(
 async def get_parking_lots_by_location(
     location: str
 ):
+    """
+    Gets all parking lot based on a location
+    @param: location
+    @return: all parking lot based of a location
+    """
     # logging.info(
     #     "User with id %i retrieving parking lots in location: %s",
     #     current_user.id,
@@ -255,8 +287,14 @@ async def get_parking_lots_by_location(
 async def update_parking_lot(
     lid: int,
     updated_lot: Parking_lot_create,
-    current_user: User = Depends(require_role(UserRole.SUPERADMIN)),
-):  
+    _: User = Depends(require_role(UserRole.SUPERADMIN)),
+):
+    """
+    Updeates a parking lot based on values provided by a superadmin.
+    to use this endpoint, it must be called by an admin.
+    @param: lid
+    @param: updated_lot
+    """
     # logging.info(
     #     "User with id %i attempting to update parking lot with id %i",
     #     current_user.id,
@@ -315,12 +353,20 @@ async def update_parking_lot(
 @router.put("/parking-lots/{lid}/status")
 async def update_parking_lot_status(
     lid: int,
-    status: str,
+    lot_status: str,
     closed_reason: str = None,
     closed_date: date = None,
-    current_user: User = Depends(get_current_user),
-    _: None = Depends(require_lot_access),  # Access check only
+    _: User = Depends(get_current_user),
+    __: None = Depends(require_lot_access),  # Access check only
 ):
+    """
+    Updates the status of a parking lot.
+    Must be called by a super admin.
+    @param: lid
+    @param: lot_status
+    @param: closed_reason
+    @param: closed_date
+    """
     # logging.info(
     #     "User with id %i attempting to update status of parking lot %i to '%s'",
     #     current_user.id,
@@ -341,8 +387,8 @@ async def update_parking_lot_status(
         )
 
     valid_statuses = ["open", "closed", "deleted", "maintenance", "full"]
-    if status not in valid_statuses:
-        logging.warning("Invalid status '%s' provided for parking lot %i", status, lid)
+    if lot_status not in valid_statuses:
+        logging.warning("Invalid status '%s' provided for parking lot %i", lot_status, lid)
         raise HTTPException(
             status_code=400,
             detail={
@@ -352,7 +398,7 @@ async def update_parking_lot_status(
             },
         )
 
-    if status == "closed":
+    if lot_status == "closed":
         if not closed_reason:
             logging.warning(
                 "Closed reason required when setting status to closed for parking lot %i",
@@ -369,10 +415,10 @@ async def update_parking_lot_status(
         if not closed_date:
             closed_date = date.today()
 
-    updated_lot = parking_lot
-    updated_lot.status = status
-    updated_lot.closed_reason = closed_reason if status == "closed" else None
-    updated_lot.closed_date = closed_date if status == "closed" else None
+    updated_lot = Parking_lot_create(**parking_lot.model_dump())
+    updated_lot.status = lot_status
+    updated_lot.closed_reason = closed_reason if lot_status == "closed" else None
+    updated_lot.closed_date = closed_date if lot_status == "closed" else None
 
     success = parking_lot_model.update_parking_lot(lid, updated_lot)
     if not success:
@@ -386,19 +432,25 @@ async def update_parking_lot_status(
             },
         )
 
-    logging.info("Successfully updated parking lot %i status to '%s'", lid, status)
+    logging.info("Successfully updated parking lot %i status to '%s'", lid, lot_status)
     return {
         "message": "Parking lot status updated successfully",
         "parking_lot_id": lid,
-        "new_status": status,
+        "new_status": lot_status,
         "closed_reason": closed_reason,
         "closed_date": closed_date,
     }
 
 
 def update_parking_lot_reserved_count(lid: int, action: str) -> bool:
+    """
+    Updates the amount of people that currently have a reservation in a specific parking lot.
+    @param: lid
+    @param: action
+    """
     try:
         parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
+        parking_lot = Parking_lot_create(**parking_lot.model_dump())
         if not parking_lot:
             return False
 
@@ -406,9 +458,8 @@ def update_parking_lot_reserved_count(lid: int, action: str) -> bool:
             if parking_lot.reserved >= parking_lot.capacity:
                 return False  # Parking lot is vol
             parking_lot.reserved += 1
-        elif action == "decrease":
-            if parking_lot.reserved > 0:
-                parking_lot.reserved -= 1
+        elif action == "decrease" and  parking_lot.reserved > 0:
+            parking_lot.reserved -= 1
 
         return parking_lot_model.update_parking_lot(lid, parking_lot)
     except Exception as e:
@@ -425,8 +476,12 @@ def update_parking_lot_reserved_count(lid: int, action: str) -> bool:
 @router.delete("/parking-lots/{lid}")
 async def delete_parking_lot(
     lid: int,
-    current_user: User = Depends(require_role(UserRole.SUPERADMIN)),
+    _: User = Depends(require_role(UserRole.SUPERADMIN)),
 ):
+    """
+    Deletes a parking lot based on id. must be logged in as superadmin.
+    @param: lid
+    """
     # logging.info(
     #     "User with id %i attempting to delete parking lot with id %i",
     #     current_user.id,
@@ -494,13 +549,13 @@ async def delete_parking_lot(
 
 
 # TODO: delete session by session lid (admin only)  /parking-lots/{lid}/sessions/{sid}
-@router.delete("/parking-lots/{lid}/sessions/{sid}")
-async def delete_parking_session(
-    lid: int,
-    sid: int,
-    current_user: User = Depends(require_lot_access),
-):  # dit is van session zelf
-    pass
+#@router.delete("/parking-lots/{lid}/sessions/{sid}")
+#async def delete_parking_session(
+#    lid: int,
+#    sid: int,
+#    current_user: User = Depends(require_lot_access),
+#):  # dit is van session zelf
+#    pass
 
 
 # endregion

@@ -1,7 +1,4 @@
 import pytest
-from fastapi.testclient import TestClient
-
-from api.main import app
 from api.tests.conftest import get_last_pid
 
 
@@ -18,10 +15,11 @@ update_parking_lot returns status code 200 (updated) or 404 (not found) or 403 (
 Only admin users can update parking lots.
 '''
 
-client = TestClient(app)
-
 @pytest.fixture
 def valid_parking_lot_data():
+    """
+    Returns a valid parking lot.
+    """
     return {
         "name": "Bedrijventerrein Almere Parkeergarage",
         "location": "Industrial Zone",
@@ -36,20 +34,20 @@ def valid_parking_lot_data():
 # Tests voor PUT /parking-lots/{id}
 def test_update_parking_lot_success(client_with_token, valid_parking_lot_data):
     """Test: PUT /parking-lots/{id} - Succesvol updaten parking lot"""
-    client, headers = client_with_token("superadmin")
-    parking_lot_id = get_last_pid(client)
-    response = client.put(f"/parking-lots/{parking_lot_id}", headers=headers, json=valid_parking_lot_data)
+    superadmin_client, headers = client_with_token("superadmin")
+    parking_lot_id = get_last_pid(superadmin_client)
+    response = superadmin_client.put(f"/parking-lots/{parking_lot_id}", headers=headers, json=valid_parking_lot_data)
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, dict)
 
 def test_update_parking_lot_not_found(client_with_token, valid_parking_lot_data):
     """Test: PUT /parking-lots/{id} - Niet bestaande parking lot"""
-    client, headers = client_with_token("superadmin")
-    response = client.put(f"/parking-lots/999999", headers=headers, json=valid_parking_lot_data)
+    superadmin_client, headers = client_with_token("superadmin")
+    response = superadmin_client.put(f"/parking-lots/999999", headers=headers, json=valid_parking_lot_data)
     assert response.status_code == 404
 
-def test_update_parking_lot_unauthorized(client_with_token, valid_parking_lot_data):
+def test_update_parking_lot_unauthorized(client, valid_parking_lot_data):
     """Test: PUT /parking-lots/{id} - Zonder authenticatie"""
     parking_lot_id = get_last_pid(client)
     response = client.put(f"/parking-lots/{parking_lot_id}", json=valid_parking_lot_data)
@@ -57,19 +55,19 @@ def test_update_parking_lot_unauthorized(client_with_token, valid_parking_lot_da
 
 def test_update_parking_lot_forbidden(client_with_token, valid_parking_lot_data):
     """Test: PUT /parking-lots/{id} - Normale user toegang geweigerd"""
-    client, headers = client_with_token("admin")
-    parking_lot_id = get_last_pid(client)
-    response = client.put(f"/parking-lots/{parking_lot_id}", headers=headers, json=valid_parking_lot_data)
+    admin_client, headers = client_with_token("admin")
+    parking_lot_id = get_last_pid(admin_client)
+    response = admin_client.put(f"/parking-lots/{parking_lot_id}", headers=headers, json=valid_parking_lot_data)
     assert response.status_code == 403
 
 def test_update_parking_lot_invalid_data(client_with_token):
     """Test: PUT /parking-lots/{id} - Ongeldige data"""
-    client, headers = client_with_token("superadmin")
-    parking_lot_id = get_last_pid(client)
+    superadmin_client, headers = client_with_token("superadmin")
+    parking_lot_id = get_last_pid(superadmin_client)
     invalid_data = {
         "capacity": "invalid_number",  # Should be integer
         "tariff": -5.0,  # Negative tariff
         "name": ""  # Empty name
     }
-    response = client.put(f"/parking-lots/{parking_lot_id}", headers=headers, json=invalid_data)
+    response = superadmin_client.put(f"/parking-lots/{parking_lot_id}", headers=headers, json=invalid_data)
     assert response.status_code in [400, 422]

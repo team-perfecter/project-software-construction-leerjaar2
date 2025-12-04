@@ -1,22 +1,17 @@
-from fastapi.testclient import TestClient
-from api.main import app
 from api.tests.conftest import get_last_pid
-
-client = TestClient(app)
-
 
 # Tests voor GET /parking-lots
 def test_get_all_parking_lots_success(client_with_token):
     """Test: GET /parking-lots - Succesvol ophalen alle parking lots"""
-    client, headers = client_with_token("user")
-    response = client.get("/parking-lots/", headers=headers)
+    user_client, headers = client_with_token("user")
+    response = user_client.get("/parking-lots/", headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert data[0]["name"] == "Bedrijventerrein Almere Parkeergarage"
     assert data[1]["name"] == "Vlaardingen Evenementenhal Parkeerterrein"
     assert len(data) == 2
 
-def test_get_all_parking_lots_unauthorized():
+def test_get_all_parking_lots_unauthorized(client):
     """Test: GET /parking-lots - Zonder authenticatie"""
     response = client.get("/parking-lots/")
     assert response.status_code == 200
@@ -28,19 +23,19 @@ def test_get_all_parking_lots_unauthorized():
 def test_get_all_parking_lots_empty(client_with_token):
     """Test: GET /parking-lots - Lege parking lots lijst"""
     # Superadmin gets all the parking lots, and deletes tem all.
-    client, headers = client_with_token("superadmin")
-    response = client.get("/parking-lots/", headers=headers)
+    superadmin_client, headers = client_with_token("superadmin")
+    response = superadmin_client.get("/parking-lots/", headers=headers)
     data = response.json()
     assert len(data) == 2
     for parking_lot in data:
-        client.delete(f"/parking-lots/{parking_lot['id']}", headers=headers)
+        superadmin_client.delete(f"/parking-lots/{parking_lot['id']}", headers=headers)
 
-    response = client.get("/parking-lots/", headers=headers)
+    response = superadmin_client.get("/parking-lots/", headers=headers)
     assert response.status_code == 204
 
 # Tests voor GET /parking-lots/{id}
 
-def test_get_parking_lot_by_lid_success(client_with_token):
+def test_get_parking_lot_by_lid_success(client):
     """Test: GET /parking-lots/{id} - Succesvol ophalen parking lot"""
 
     parking_lot_id = get_last_pid(client)
@@ -54,12 +49,12 @@ def test_get_parking_lot_by_lid_success(client_with_token):
     assert data["location"] == "Event Center"
     assert data["capacity"] == 50
 
-def test_get_parking_lot_by_lid_not_found():
+def test_get_parking_lot_by_lid_not_found(client):
     """Test: GET /parking-lots/{id} - Niet bestaande parking lot"""
     response = client.get(f"/parking-lots/9999")
     assert response.status_code == 404
 
-def test_get_parking_lot_by_lid_unauthorized():
+def test_get_parking_lot_by_lid_unauthorized(client):
     """Test: GET /parking-lots/{id} - Zonder authenticatie"""
     parking_lot_id = get_last_pid(client)
     response = client.get(f"/parking-lots/{parking_lot_id}")
@@ -142,7 +137,7 @@ def test_get_parking_lot_by_lid_unauthorized():
 #    assert response.status_code == 401
 
 # Tests voor GET /parking-lots/location/{location}
-def test_get_parking_lots_by_location_success():
+def test_get_parking_lots_by_location_success(client):
     """Test: GET /parking-lots/location/{location} - Parking lots op specifieke locatie"""
     location = "Industrial Zone"
     response = client.get(f"/parking-lots/location/{location}")
@@ -150,7 +145,7 @@ def test_get_parking_lots_by_location_success():
     data = response.json()
     assert data[0]["location"] == "Industrial Zone"
 
-def test_get_parking_lots_by_location_not_found():
+def test_get_parking_lots_by_location_not_found(client):
     """Test: GET /parking-lots/location/{location} - Geen parking lots op locatie"""
     location = "NonExistentLocation"
     response = client.get(f"/parking-lots/location/{location}")
@@ -160,7 +155,7 @@ def test_get_parking_lots_by_location_not_found():
     assert len(data) == 1
     assert "detail" in data
 
-def test_get_parking_lots_by_location_unauthorized():
+def test_get_parking_lots_by_location_unauthorized(client):
     """Test: GET /parking-lots/location/{location} - Zonder authenticatie"""
     location = "Industrial Zone"
     response = client.get(f"/parking-lots/location/{location}")

@@ -29,6 +29,10 @@ def client_with_token(client):
 
 @pytest.fixture(autouse=True)
 def setup_parking_lots(request, client_with_token):
+    """
+    Clears the database of parking lots.
+    If the create endpoints are not being tested, this also adds 2 parking lots to the database
+    """
 
     # Clears all parking lots
     client, headers = client_with_token("superadmin")
@@ -65,6 +69,12 @@ def setup_parking_lots(request, client_with_token):
         client.post("/parking-lots", json=lot2, headers=headers)
 
 def get_last_pid(client):
+    """
+    There are a max of 2 parking lots in the database when running a new test.
+    The id of these parking lots might be different for each test.
+    this function gets the 2 parking lots, and returns the id of the last one.
+    this is to make sure the id of a parking lot that is being tested actually exists.
+    """
     response = client.get("/parking-lots/")
     data = response.json()
     return data[1]["id"]
