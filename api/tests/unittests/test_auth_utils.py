@@ -1,5 +1,3 @@
-# api/tests/unit/test_auth_utils.py
-
 import pytest
 from datetime import timedelta, datetime
 from api.auth_utils import (
