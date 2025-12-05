@@ -88,7 +88,7 @@ def test_update_payment_no_authorization(client_with_token):
         "refund_requested": False
     }
     response = client.put("/payments/1", json=fake_payment, headers=headers)
-    assert response.status_code == 401
+    assert response.status_code == 403
 
 
 def test_update_payment_no_header(client):
