@@ -16,12 +16,12 @@ services:
     command: ["python", "migrate.py"]
     restart: "no"
 
-  #db_migration_test:
-  #  build:
-  #    context: ./database
-  #  depends_on:
-  #    - test_db
-  #  command: [ "python", "migrate.py", "test_database" ]
+  db_migration_test:
+   build:
+     context: ./database
+   depends_on:
+     - test_db
+   command: [ "python", "migrate.py", "test_database" ]
  
   db:
     image: postgres:16
@@ -36,16 +36,16 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
-  #test_db:
-  #  image: postgres:16
-  #  container_name: postgres_test
-  #  restart: always
-  #  environment:
-  #    POSTGRES_USER: user
-  #    POSTGRES_PASSWORD: password
-  #    POSTGRES_DB: test_database
-  #  ports:
-  #    - "5433:5432"
+  test_db:
+   image: postgres:16
+   container_name: postgres_test
+   restart: always
+   environment:
+     POSTGRES_USER: user
+     POSTGRES_PASSWORD: password
+     POSTGRES_DB: test_database
+   ports:
+     - "5433:5432"
 
 volumes:
   postgres-data:

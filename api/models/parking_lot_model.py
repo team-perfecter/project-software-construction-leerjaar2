@@ -1,10 +1,17 @@
+"""
+this file contains all queries related to parking lots.
+"""
+
 import psycopg2
-from api.datatypes.parking_lot import Parking_lot
+from api.datatypes.parking_lot import Parking_lot, Parking_lot_create
 from api.datatypes.session import Session
 from typing import List, Optional
 
 
 class ParkingLotModel:
+    """
+    This class contains all queries related to parking lots.
+    """
     def __init__(self):
         self.connection = psycopg2.connect(
             host="db",
@@ -16,17 +23,31 @@ class ParkingLotModel:
 
     # region get
     def get_all_parking_lots(self) -> List[Parking_lot]:
+        """
+        Returns a list of all parking lots
+        @return: list of Parking_lot objects
+        """
         cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM parking_lots;")
         return self.map_to_parking_lot(cursor)
 
     def get_parking_lot_by_lid(self, lot_id: int) -> Optional[Parking_lot]:
+        """
+        return a specific parking lot based on the given id
+        @param: lot_id
+        @returns: Parking_lot object based on id
+        """
         cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM parking_lots WHERE id = %s;", (lot_id,))
         lots = self.map_to_parking_lot(cursor)
         return lots[0] if lots else None
 
     def get_all_sessions_by_lid(self, lot_id: int) -> List[Session]:
+        """
+        Returns all sessions based on a parking lot id
+        @param: lot_id
+        @return: list of Session objects
+        """
         cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM sessions WHERE parking_lot_id = %s;", (lot_id,))
         return self.map_to_session(cursor)
@@ -34,6 +55,12 @@ class ParkingLotModel:
     def get_session_by_lid_and_sid(
         self, lot_id: int, session_id: int
     ) -> Optional[Session]:
+        """
+        Gets a specific session inside a specific parking lot based on session id and parking lot id
+        @param: lot_id
+        @param: session_id
+        @return: Session object
+        """
         cursor = self.connection.cursor()
         cursor.execute(
             "SELECT * FROM sessions WHERE parking_lot_id = %s AND id = %s;",
@@ -42,7 +69,13 @@ class ParkingLotModel:
         sessions = self.map_to_session(cursor)
         return sessions[0] if sessions else None
 
-    def map_to_session(self, cursor) -> List[Session]:
+    @staticmethod
+    def map_to_session(cursor) -> List[Session]:
+        """
+        Maps the cursor to a session object
+        @param: cursor
+        @return: session object
+        """
         columns = [desc[0] for desc in cursor.description]
         sessions = []
         for row in cursor.fetchall():
@@ -66,6 +99,19 @@ class ParkingLotModel:
         max_tariff: float = None,
         has_availability: bool = None,
     ) -> List[Parking_lot]:
+        """
+        Finds parking lots based on data provided with this method.
+        @param: lot_id
+        @param: name
+        @param: location
+        @param: city
+        @param: min_capacity
+        @param: max_capacity
+        @param: min_tariff
+        @param: max_tariff
+        @param: has_availability
+        @return: list of Parking_lot objects
+        """
         cursor = self.connection.cursor()
 
         query = "SELECT * FROM parking_lots WHERE 1=1"
@@ -114,6 +160,10 @@ class ParkingLotModel:
     # region post
 
     def create_parking_lot(self, lot: Parking_lot) -> None:
+        """
+        Creates a parking lot based on the data provided.
+        @param: lot
+        """
         cursor = self.connection.cursor()
         cursor.execute(
             """
@@ -141,13 +191,19 @@ class ParkingLotModel:
 
     # region update
 
-    def update_parking_lot(self, lot_id: int, lot: Parking_lot) -> bool:
+    def update_parking_lot(self, lot_id: int, lot: Parking_lot_create) -> bool:
+        """
+        Updates a parking lot based on the data provided.
+        @param: lot_id
+        @param: lot
+        @return: True if update was successful
+        """
         cursor = self.connection.cursor()
         cursor.execute(
             """
             UPDATE parking_lots 
             SET name = %s, location = %s, address = %s, capacity = %s, 
-                reserved = %s, tariff = %s, daytariff = %s, lat = %s, lng = %s,
+                tariff = %s, daytariff = %s, lat = %s, lng = %s,
                 status = %s, closed_reason = %s, closed_date = %s
             WHERE id = %s;
         """,
@@ -156,7 +212,6 @@ class ParkingLotModel:
                 lot.location,
                 lot.address,
                 lot.capacity,
-                lot.reserved,
                 lot.tariff,
                 lot.daytariff,
                 lot.lat,
@@ -172,12 +227,23 @@ class ParkingLotModel:
 
     # region delete
     def delete_parking_lot(self, lot_id: int) -> bool:
+        """
+        Deletes a parking lot based on id
+        @param: lot_id
+        @return: True if deletion was successful
+        """
         cursor = self.connection.cursor()
         cursor.execute("DELETE FROM parking_lots WHERE id = %s;", (lot_id,))
         self.connection.commit()
         return cursor.rowcount > 0
 
-    def map_to_parking_lot(self, cursor) -> List[Parking_lot]:
+    @staticmethod
+    def map_to_parking_lot(cursor) -> List[Parking_lot]:
+        """
+        Maps the cursor to a list of parking lot objects
+        @param: cursor
+        @return: list of Parking_lot objects
+        """
         columns = [desc[0] for desc in cursor.description]
         parking_lots = []
         for row in cursor.fetchall():

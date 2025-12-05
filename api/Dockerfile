@@ -10,4 +10,6 @@ COPY . ./api
 
 RUN pip install -r requirements.txt
 
+RUN pip install pytest-cov
+
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
