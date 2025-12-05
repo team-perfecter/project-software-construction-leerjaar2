@@ -1,3 +1,4 @@
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 from api.main import app
 
@@ -24,6 +25,18 @@ def test_create_payment_with_paymentadmin(client_with_token):
     }
     response = client.post("/payments", json=fake_payment, headers=headers)
     assert response.status_code == 201
+
+
+@patch("api.models.payment_model.PaymentModel.create_payment", return_value=False)
+def test_create_payment_server_error(mock_create, client_with_token):
+    client, headers = client_with_token("superadmin")
+    fake_payment = {
+        "user_id": 1,
+        "amount": 200,
+        "method": "method1"
+    }
+    response = client.post("/payments", json=fake_payment, headers=headers)
+    assert response.status_code == 500
 
 
 def test_create_payment_without_authorization(client_with_token):
