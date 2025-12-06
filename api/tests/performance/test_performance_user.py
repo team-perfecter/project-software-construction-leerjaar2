@@ -4,6 +4,7 @@ from api.main import app
 from unittest.mock import patch
 from api.datatypes.user import User, UserRole
 from datetime import datetime
+from api.utilities.Hasher import hash_string
 
 client = TestClient(app)
 
@@ -15,7 +16,7 @@ def mock_user_lookup():
             return User(
                 id=1,
                 username="testuser",
-                password="5f4dcc3b5aa765d61d8327deb882cf99",  # MD5 hash of "password"
+                password=hash_string("password"),
                 email="test@example.com",
                 name="Test User",
                 role=UserRole.USER,
