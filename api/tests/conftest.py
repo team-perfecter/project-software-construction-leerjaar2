@@ -4,6 +4,12 @@ from api.main import app
 from api.auth_utils import create_access_token
 
 
+pytest_plugins = "pytest_benchmark"
+
+def pytest_configure(config):
+    config.option.benchmark_min_rounds = 20
+
+
 @pytest.fixture
 def client():
     """Provides a FastAPI TestClient instance."""

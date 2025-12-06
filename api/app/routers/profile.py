@@ -56,7 +56,7 @@ async def login(data: UserLogin):
     if user is None:
         logging.info("Login failed — username not found: %s", data.username)
         raise HTTPException(status_code=404, detail="Username not found")
-    if not verify_password(data.password, user.password, user.is_new_password):
+    if not verify_password(data.password, user.password):
         logging.info("Login failed — incorrect password for user: %s", data.username)
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
