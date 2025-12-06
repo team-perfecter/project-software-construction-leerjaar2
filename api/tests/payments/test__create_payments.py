@@ -27,7 +27,8 @@ def test_create_payment_with_paymentadmin(client_with_token):
     assert response.status_code == 201
 
 
-@patch("api.models.payment_model.PaymentModel.create_payment", return_value=False)
+@patch("api.models.payment_model.PaymentModel.create_payment",
+       return_value=False)
 def test_create_payment_server_error(mock_create, client_with_token):
     client, headers = client_with_token("superadmin")
     fake_payment = {
