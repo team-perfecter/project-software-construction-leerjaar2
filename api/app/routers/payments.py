@@ -148,7 +148,7 @@ async def update_payment(payment_id: int,
     if not user:
         logging.info("Admin ID %i tried changing Payment ID %i to User ID %i, "
                      "but user does not exist.",
-                     current_user.id, payment_id, p["user_id"])
+                     current_user.id, payment_id, p.user_id)
         raise HTTPException(status_code=404,
                             detail="User not found")
     update = PaymentModel.update_payment(payment_id, p)
