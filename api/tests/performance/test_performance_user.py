@@ -8,6 +8,7 @@ from api.utilities.Hasher import hash_string
 
 client = TestClient(app)
 
+
 @pytest.fixture
 def mock_user_lookup():
     """Mock database lookup to isolate auth performance"""
@@ -26,20 +27,22 @@ def mock_user_lookup():
                 birth_year=None
             )
         return None
-    
-    with patch("api.app.routers.profile.user_model.get_user_by_username", side_effect=fake_get_user):
+
+    with patch("api.app.routers.profile.user_model.get_user_by_username",
+               side_effect=fake_get_user):
         yield
+
 
 @pytest.mark.benchmark(group="auth")
 def test_login_success_performance(benchmark, mock_user_lookup):
     """Benchmark: Successful login with valid credentials"""
     payload = {"username": "testuser", "password": "password"}
-    
+
     result = benchmark(
         client.post,
         "/login",
         json=payload
     )
-    
+
     assert result.status_code == 200
     assert "access_token" in result.json()
