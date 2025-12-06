@@ -3,6 +3,7 @@ from api.main import app
 
 client = TestClient(app)
 
+
 # /sessions/active
 def test_get_active_sessions_success(client_with_token):
     client_instance, headers = client_with_token("admin")
@@ -51,6 +52,7 @@ def test_get_active_sessions_response_structure(client_with_token):
         expected_fields = ["id", "parking_lot_id", "user_id", "vehicle_id", "started"]
         for field in expected_fields:
             assert field in session
+
 
 # /parking-lots/{lid}/sessions
 def test_get_sessions_for_parking_lot_authorized(client_with_token):
