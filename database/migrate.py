@@ -2,6 +2,7 @@ import time
 import psycopg2
 import sys
 import hashlib
+
 # A function that hashes a string.
 # use this instead of hashing inside a function somewhere else,
 # so the hashing method can be changed when needed.
@@ -27,7 +28,7 @@ for i in range(10):
             port=5432,
             database=db_name,
             user="user",
-            password="password"
+            password="password",
         )
         print(f"Connected to database '{db_name}' on host '{host_name}'")
         break
@@ -37,7 +38,8 @@ for i in range(10):
 
 cur = conn.cursor()
 
-cur.execute("""
+cur.execute(
+    """
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR,
@@ -51,9 +53,11 @@ CREATE TABLE IF NOT EXISTS users (
     active BOOLEAN DEFAULT TRUE,
     is_new_password BOOLEAN DEFAULT FALSE
 );
-""")
+"""
+)
 
-cur.execute("""
+cur.execute(
+    """
 CREATE TABLE IF NOT EXISTS vehicles (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id),
@@ -64,9 +68,11 @@ CREATE TABLE IF NOT EXISTS vehicles (
     year INTEGER,
     created_at TIMESTAMP DEFAULT NOW()
 );
-""")
+"""
+)
 
-cur.execute("""
+cur.execute(
+    """
 CREATE TABLE IF NOT EXISTS parking_lots (
     id SERIAL PRIMARY KEY,
     name VARCHAR,
@@ -83,9 +89,11 @@ CREATE TABLE IF NOT EXISTS parking_lots (
     closed_reason VARCHAR,
     closed_date DATE
 );
-""")
+"""
+)
 
-cur.execute("""
+cur.execute(
+    """
 CREATE TABLE IF NOT EXISTS payments (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id),
@@ -99,9 +107,11 @@ CREATE TABLE IF NOT EXISTS payments (
     date TIMESTAMP DEFAULT NOW(),
     refund_requested BOOLEAN DEFAULT FALSE
 );
-""")
+"""
+)
 
-cur.execute("""
+cur.execute(
+    """
 CREATE TABLE IF NOT EXISTS reservations (
     id SERIAL PRIMARY KEY,
     vehicle_id INTEGER REFERENCES vehicles(id),
@@ -113,9 +123,11 @@ CREATE TABLE IF NOT EXISTS reservations (
     created_at TIMESTAMP DEFAULT NOW(),
     cost INTEGER
 );
-""")
+"""
+)
 
-cur.execute("""
+cur.execute(
+    """
 CREATE TABLE IF NOT EXISTS sessions (
     id SERIAL PRIMARY KEY,
     parking_lot_id INTEGER REFERENCES parking_lots(id),
@@ -127,15 +139,18 @@ CREATE TABLE IF NOT EXISTS sessions (
     duration_minutes INTEGER,
     cost FLOAT
 );
-""")
+"""
+)
 
-cur.execute("""
+cur.execute(
+    """
 CREATE TABLE IF NOT EXISTS parking_lot_admins (
     admin_user_id INTEGER REFERENCES users(id),
     parking_lot_id INTEGER REFERENCES parking_lots(id),
     PRIMARY KEY (admin_user_id, parking_lot_id)
 );
-""")
+"""
+)
 
 
 conn.commit()
@@ -148,32 +163,44 @@ if not exists:
     try:
         hashed_pw = hash_string("admin123")
 
-        cur.execute("""
+        cur.execute(
+            """
             INSERT INTO users (username, password, name, email, role)
             VALUES ('superadmin', %s, 'Super Admin',
                     'super@admin.com', 'superadmin');
-        """, (hashed_pw,))
+        """,
+            (hashed_pw,),
+        )
 
         print("Default superadmin created.")
         conn.commit()
 
-        cur.execute("""
+        cur.execute(
+            """
             INSERT INTO users (username, password, name, email, role)
             VALUES ('admin', %s, 'Admin', 'admin@admin.com', 'admin');
-        """, (hashed_pw,))
+        """,
+            (hashed_pw,),
+        )
 
         conn.commit()
-        cur.execute("""
+        cur.execute(
+            """
             INSERT INTO users (username, password, name, email, role)
             VALUES ('paymentadmin', %s, 'testuser',
                     'payment@admin.com', 'paymentadmin');
-        """, (hashed_pw,))
+        """,
+            (hashed_pw,),
+        )
 
         conn.commit()
-        cur.execute("""
+        cur.execute(
+            """
             INSERT INTO users (username, password, name, email, role)
             VALUES ('user', %s, 'testuser', 'test@user.com', 'user');
-        """, (hashed_pw,))
+        """,
+            (hashed_pw,),
+        )
 
         conn.commit()
     except Exception as e:
