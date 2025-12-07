@@ -367,12 +367,12 @@ class DataConverter:
         self.insert_parking_lots(parking_lot_data)
         logging.info("Parking lots successfully inserted")
 
-        #payment_data = self.read_data('payments')
-        #if not payment_data:
-        #    logging.info("No payments data found, aborting conversion")
-        #    return
-        #self.insert_payment(payment_data)
-        #logging.info("Payments successfully inserted")
+        payment_data = self.read_data('payments')
+        if not payment_data:
+            logging.info("No payments data found, aborting conversion")
+            return
+        self.insert_payment(payment_data)
+        logging.info("Payments successfully inserted")
 
         reservation_data = self.read_data('reservations')
         if not reservation_data:
