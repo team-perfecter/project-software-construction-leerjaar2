@@ -90,10 +90,9 @@ class SessionModel:
     def get_vehicle_sessions(self, vehicle_id: int):
         cursor = self.connection.cursor()
         cursor.execute("""
-            SELECT * FROM sessions WHERE vehicle_id = %s AND stopped IS NULL;
+            SELECT id FROM sessions WHERE vehicle_id = %s AND stopped IS NULL;
         """, (vehicle_id,))
-        sessions = self.map_to_session(cursor)
-        return sessions[0] if sessions else None
+        return cursor.fetchall()
 
     # Helperfunctie om DB-rijen om te zetten naar Session objecten
     def map_to_session(self, cursor) -> list[Session]:

@@ -9,6 +9,7 @@ from api.models.parking_lot_model import ParkingLotModel
 from api.models.payment_model import PaymentModel
 from api.models.session_model import SessionModel
 from fastapi import APIRouter, Depends, HTTPException, status
+from starlette.responses import JSONResponse
 
 from api.models.vehicle_model import Vehicle_model
 
@@ -20,7 +21,7 @@ logging.basicConfig(
 
 router = APIRouter(tags=["sessions"])
 
-session_storage: SessionModel = SessionModel()
+session_model: SessionModel = SessionModel()
 parking_lot_model: ParkingLotModel = ParkingLotModel()
 vehicle_model: Vehicle_model = Vehicle_model()
 payment_model: PaymentModel = PaymentModel()
@@ -96,7 +97,7 @@ async def start_parking_session(
     # create new session
 
     # Save session
-    session = session_storage.create_session(lid, current_user.id, vehicle_id)
+    session = session_model.create_session(lid, current_user.id, vehicle_id)
     if session is None:
         return "This vehicle already has a session"
 
@@ -116,10 +117,10 @@ async def start_parking_session(
 
 @router.post("/parking-lots/{lid}/sessions/stop")
 async def stop_parking_session(vehicle_id: int, current_user: User = Depends(get_current_user)):
-    active_sessions = session_storage.get_vehicle_sessions(vehicle_id)
+    active_sessions = session_model.get_vehicle_sessions(vehicle_id)
     if not active_sessions:
         return "This vehicle has no active sessions"
-    session = session_storage.stop_session(active_sessions)
+    session = session_model.stop_session(active_sessions)
     print("current stopped session ")
     print(session)
     payment: PaymentCreate = PaymentCreate(
@@ -134,5 +135,14 @@ async def get_active_sessions():
     """
     Geeft een lijst van alle actieve sessies.
     """
-    sessions = session_storage.get_active_sessions()
+    sessions = session_model.get_active_sessions()
     return {"active_sessions": sessions}
+
+@router.get("/sessions/vehicle/{vehicle_id}")
+async def get_sessions_vehicle(vehicle_id: int, user: User = Depends(get_current_user)):
+    vehicle = vehicle_model.get_one_vehicle(vehicle_id)
+    if not vehicle or vehicle["user_id"] != user.id:
+        raise HTTPException(status_code=404, detail={"error": "Vehicle not found", "message": f"Vehicle with ID {vehicle_id} does not exist"})
+    sessions = session_model.get_vehicle_sessions(vehicle_id)
+    print(sessions)
+    return JSONResponse(content={"message": sessions}, status_code=201)
