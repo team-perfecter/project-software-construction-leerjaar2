@@ -1,15 +1,32 @@
-from datetime import datetime, date
+from datetime import date
 from pydantic import BaseModel
+from typing import Optional
 
-class Payment(BaseModel):
-  id: int
-  user_id: int
-  transaction: str
-  amount: float
-  created_at: datetime
-  completed_at: datetime
-  hash: str
-  method: str
-  issue: str
-  bank: str
-  date: date
+
+class PaymentCreate(BaseModel):
+    user_id: int
+    transaction: Optional[str] = None
+    amount: float
+    hash: Optional[str] = None
+    method: Optional[str] = None
+    issuer: Optional[str] = None
+    bank: Optional[str] = None
+
+
+class Payment(PaymentCreate):
+    id: int
+    date: date
+    completed: bool
+    refund_requested: bool
+
+
+class PaymentUpdate(BaseModel):
+    user_id: int
+    transaction: Optional[str] = None
+    amount: float
+    hash: Optional[str] = None
+    method: Optional[str] = None
+    issuer: Optional[str] = None
+    bank: Optional[str] = None
+    completed: bool
+    refund_requested: bool

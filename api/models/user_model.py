@@ -2,8 +2,7 @@ from datetime import datetime
 
 import psycopg2
 
-from api.datatypes.user import UserCreate, User, UserLogin
-
+from api.datatypes.user import UserCreate, User, UserLogin, UserUpdate, AdminCreate
 
 
 class UserModel:
@@ -22,6 +21,14 @@ class UserModel:
             INSERT INTO users (username, password, name, email, phone, birth_year)
             VALUES (%s, %s, %s, %s, %s, %s);
         """, (user.username, user.password, user.name, user.email, user.phone, user.birth_year))
+        self.connection.commit()
+
+    def create_admin(self, user: AdminCreate) -> None:
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            INSERT INTO users (username, password, name, email, phone, birth_year, role)
+            VALUES (%s, %s, %s, %s, %s, %s, %s);
+        """, (user.username, user.password, user.name, user.email, user.phone, user.birth_year, "admin"))
         self.connection.commit()
 
     def get_user_by_id(self, user_id) -> User | None:
@@ -44,7 +51,6 @@ class UserModel:
         cursor.execute("""
             SELECT * FROM users WHERE username = %s;
             """, (username,))
-
         user_list = self.map_to_user(cursor)
         if len(user_list) > 0:
             return user_list[0]
@@ -63,6 +69,58 @@ class UserModel:
         else:
             return None
 
+    def update_user(self, user_id: int, update_data: dict) -> None:
+        if user_id is None or update_data is None:
+            return
+
+        cursor = self.connection.cursor()
+
+        set_clauses = ", ".join(f"{key} = %s" for key in update_data.keys())
+        values = list(update_data.values()) + [user_id]
+
+        cursor.execute(f"""
+            UPDATE users
+            SET {set_clauses}
+            WHERE id = %s;
+        """, values)
+        self.connection.commit()
+
     def map_to_user(self, cursor):
         columns = [desc[0] for desc in cursor.description]
-        return [User(**dict(zip(columns, row))) for row in cursor.fetchall()]
+        users = []
+        for row in cursor.fetchall():
+            row_dict = dict(zip(columns, row))
+            try:
+                user = User.parse_obj(row_dict)
+                users.append(user)
+            except Exception as e:
+                print("Failed to map row to User:", row_dict, e)
+        return users
+    
+    def get_parking_lots_for_admin(self, user_id: int) -> list[int]:
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            SELECT parking_lot_id 
+            FROM parking_lot_admins 
+            WHERE admin_user_id = %s;
+        """, (user_id,))
+        rows = cursor.fetchall()
+        return [r[0] for r in rows]
+    
+    def add_parking_lot_access(self, admin_id: int, lot_id: int):
+        cursor = self.connection.cursor()
+
+        cursor.execute("""
+            INSERT INTO admin_parking_lots (admin_id, lot_id)
+            VALUES (%s, %s)
+            ON CONFLICT DO NOTHING;
+        """, (admin_id, lot_id))
+        self.connection.commit()
+
+
+    def delete_user(self, user_id: int) -> bool:
+        cursor = self.connection.cursor()
+        cursor.execute("DELETE FROM users WHERE id = %s RETURNING id;", (user_id,))
+        deleted = cursor.fetchone()
+        self.connection.commit()
+        return deleted is not None
