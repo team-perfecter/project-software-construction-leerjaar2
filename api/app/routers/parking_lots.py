@@ -465,7 +465,7 @@ async def delete_parking_lot(
     # Check if parking lot has active sessions
     logging.debug("Checking for active sessions in parking lot %i", lid)
     sessions = parking_lot_model.get_all_sessions_by_lid(lid)
-    active_sessions = [s for s in sessions if s.end_time is None]
+    active_sessions = [s for s in sessions if s.stopped is None]
 
     if active_sessions:
         logging.warning(
