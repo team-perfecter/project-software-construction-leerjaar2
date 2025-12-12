@@ -20,21 +20,6 @@ logging.basicConfig(
 
 @router.post("/register")
 async def register(user: UserCreate):
-
-    missing_fields: list[str] = []
-    if not user.name:
-        missing_fields.append("name")
-    if not user.password:
-        missing_fields.append("password")
-    if not user.email:
-        missing_fields.append("email")
-
-    if len(missing_fields) > 0:
-        logging.info(
-            "A user tried to create a profile, but did not fill in the following fields: %s", missing_fields)
-        raise HTTPException(status_code=400, detail={
-                            "missing_fields": missing_fields})
-
     username_check = user_model.get_user_by_username(user.username)
     if username_check is not None:
         logging.info(
@@ -56,7 +41,7 @@ async def login(data: UserLogin):
     if user is None:
         logging.info("Login failed — username not found: %s", data.username)
         raise HTTPException(status_code=404, detail="Username not found")
-    if not verify_password(data.password, user.password, user.is_new_password):
+    if not verify_password(data.password, user.password):
         logging.info("Login failed — incorrect password for user: %s", data.username)
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
@@ -81,8 +66,6 @@ async def get_user(user_id: int):
 
 @router.get("/profile", response_model=User)
 async def get_me(user: User = Depends(get_current_user)):
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
     return user
 
 
@@ -91,7 +74,6 @@ async def logout(token: str = Depends(oauth2_scheme), user: User = Depends(get_c
     if user:
         revoke_token(token)
         return "logged out successfully"
-    return "user not logged in"
 
 
 @router.put("/update_profile")
@@ -104,20 +86,6 @@ async def update_me(update_data: UserUpdate, current_user: User = Depends(get_cu
 
 @router.post("/create_admin")
 async def create_admin(user: AdminCreate, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
-    missing_fields: list[str] = []
-    if not user.name:
-        missing_fields.append("name")
-    if not user.password:
-        missing_fields.append("password")
-    if not user.email:
-        missing_fields.append("email")
-
-    if len(missing_fields) > 0:
-        logging.info(
-            "A user tried to create a profile, but did not fill in the following fields: %s", missing_fields)
-        raise HTTPException(status_code=400, detail={
-                            "missing_fields": missing_fields})
-
     username_check = user_model.get_user_by_username(user.username)
     if username_check is not None:
         logging.info(

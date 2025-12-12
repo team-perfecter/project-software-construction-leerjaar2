@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import psycopg2
+from psycopg2.extras import RealDictCursor
 
 from api.datatypes.user import UserCreate, User, UserLogin, UserUpdate, AdminCreate
 
@@ -124,3 +125,8 @@ class UserModel:
         deleted = cursor.fetchone()
         self.connection.commit()
         return deleted is not None
+    
+    def get_all_users(self):
+        cursor = self.connection.cursor(cursor_factory=RealDictCursor)
+        cursor.execute("SELECT * FROM users")
+        return cursor.fetchall()
