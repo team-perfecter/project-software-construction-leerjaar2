@@ -116,7 +116,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "user_id": 2,
+  "id": 21,
   "license_plate": "ABC123",
   "make": "Toyota",
   "model": "Corolla",

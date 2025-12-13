@@ -1,48 +1,33 @@
 import pytest
 from fastapi.testclient import TestClient
 from api.main import app
-from unittest.mock import patch
-from api.datatypes.user import User, UserRole
-from datetime import datetime
-from api.utilities.Hasher import hash_string
+
 
 client = TestClient(app)
 
 
-@pytest.fixture
-def mock_user_lookup():
-    """Mock database lookup to isolate auth performance"""
-    def fake_get_user(username: str) -> User | None:
-        if username == "testuser":
-            return User(
-                id=1,
-                username="testuser",
-                password=hash_string("password"),
-                email="test@example.com",
-                name="Test User",
-                role=UserRole.USER,
-                created_at=datetime.now(),
-                is_new_password=False,
-                phone=None,
-                birth_year=None
-            )
-        return None
+@pytest.mark.benchmark(group="user")
+def test_login_success_performance(benchmark):
+    payload = {
+        "username": "superadmin",
+        "password": "admin123"
+    }
 
-    with patch("api.app.routers.profile.user_model.get_user_by_username",
-               side_effect=fake_get_user):
-        yield
+    def do_login():
+        return client.post("/login", json=payload)
 
-
-@pytest.mark.benchmark(group="auth")
-def test_login_success_performance(benchmark, mock_user_lookup):
-    """Benchmark: Successful login with valid credentials"""
-    payload = {"username": "testuser", "password": "password"}
-
-    result = benchmark(
-        client.post,
-        "/login",
-        json=payload
-    )
+    result = benchmark(do_login)
 
     assert result.status_code == 200
-    assert "access_token" in result.json()
+
+
+@pytest.mark.benchmark(group="user")
+def test_profile_performance(benchmark, client_with_token):
+    client, headers = client_with_token("superadmin")
+
+    def get_profile():
+        return client.get("/profile", headers=headers)
+
+    result = benchmark(get_profile)
+
+    assert result.status_code == 200
