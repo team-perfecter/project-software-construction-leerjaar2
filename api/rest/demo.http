@@ -110,6 +110,13 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 
+###Get all users
+GET http://localhost:8000/users
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+
 ### Create a vehicle
 POST http://127.0.0.1:8000/vehicles/create
 Content-Type: application/json

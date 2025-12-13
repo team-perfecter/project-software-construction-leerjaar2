@@ -2,13 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from api.auth_utils import get_current_user, require_role
 from api.models.user_model import UserModel
 from api.datatypes.user import User
+from api.datatypes.user import UserRole
 
 router = APIRouter(tags=["admin-users"])
 user_model = UserModel()
 
 
 @router.get("/admin/users/{user_id}")
-async def admin_get_user(user_id: int, current_user = require_role("admin")):
+async def admin_get_user(user_id: int, user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPERADMIN))):
     user = user_model.get_user_by_id(user_id)
     if not user:
         raise HTTPException(404, "User not found")
@@ -17,10 +18,15 @@ async def admin_get_user(user_id: int, current_user = require_role("admin")):
 
 
 @router.delete("/admin/users/{user_id}")
-async def admin_delete_user(user_id: int, current_user: User = Depends(get_current_user)):
+async def admin_delete_user(user_id: int, user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPERADMIN))):
 
     deleted = user_model.delete_user(user_id)
     if not deleted:
         raise HTTPException(404, "User not found or not deleted")
 
     return {"message": "User deleted successfully"}
+
+@router.get("/users")
+async def get_all_users():
+    users = user_model.get_all_users()
+    return HTTPException(status_code=201, detail={"message": users,})
