@@ -1,9 +1,6 @@
 import psycopg2
+from api.datatypes.reservation import Reservation, ReservationCreate
 
-from api.datatypes.reservation import ReservationCreate, Reservation
-
-
-#eventually the database queries / JSON write/read will be here.
 
 class Reservation_model:
     def __init__(self):
@@ -23,8 +20,12 @@ class Reservation_model:
     def get_reservation_by_id(self, reservation_id) -> Reservation | None:
         cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM reservations WHERE id = %s", (reservation_id,))
-        return cursor.fetchone()
-    
+        row = cursor.fetchone()
+        if row:
+            columns = [desc[0] for desc in cursor.description]
+            return dict(zip(columns, row))
+        return None
+
     def create_reservation(self, reservation: ReservationCreate) -> None:
         cursor = self.connection.cursor()
         cursor.execute("""
@@ -34,10 +35,22 @@ class Reservation_model:
         self.connection.commit()
         return cursor.fetchone()[0]
 
-#     def get_reservation_by_vehicle(self, vehicle_id: int) -> list[Reservation]:
-#         cursor = self.connection.cursor()
-#         cursor.execute("SELECT * FROM reservations WHERE vehicle_id = %s", (vehicle_id,))
-#         return cursor.fetchall()
+    def get_reservation_by_vehicle(self, vehicle_id: int) -> list[dict]:
+        """Get all reservations for a specific vehicle"""
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            SELECT * FROM reservations 
+            WHERE vehicle_id = %s
+            ORDER BY start_time DESC
+        """, (vehicle_id,))
+        
+        columns = [desc[0] for desc in cursor.description]
+        reservations = []
+        for row in cursor.fetchall():
+            row_dict = dict(zip(columns, row))
+            reservations.append(row_dict)
+        
+        return reservations
 
     def delete_reservation(self, reservation_id: int) -> bool:
         cursor = self.connection.cursor()
