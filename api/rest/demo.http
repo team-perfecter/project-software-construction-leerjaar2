@@ -135,6 +135,9 @@ Authorization: Bearer {{token}}
 ### Get current sessions
 GET http://localhost:8000/sessions/active
 Authorization: Bearer {{token}}
+### Get current sessions of a vehicle
+GET http://localhost:8000/sessions/vehicle/1
+Authorization: Bearer {{token}}
 ### Stop a session
 POST http://localhost:8000/parking-lots/1/sessions/stop?vehicle_id=1
 Authorization: Bearer {{token}}
