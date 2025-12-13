@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 from api.tests.conftest import get_last_pid
 
@@ -71,3 +73,100 @@ def test_update_parking_lot_invalid_data(client_with_token):
     }
     response = superadmin_client.put(f"/parking-lots/{parking_lot_id}", headers=headers, json=invalid_data)
     assert response.status_code in [400, 422]
+
+
+def test_update_parking_lot_status_success(client_with_token):
+    superadmin_client, headers = client_with_token("superadmin")
+    pid = get_last_pid(superadmin_client)
+    data = {
+        "lid": pid,
+        "lot_status": "closed",
+        "closed_reason": "for testing",
+        "closed_date": datetime.now().strftime("%Y-%m-%d")
+    }
+    response = superadmin_client.put(f"/parking-lots/{pid}/status", headers=headers, params=data)
+    assert response.status_code == 200
+    assert response.json()["new_status"] == "closed"
+
+def test_update_parking_lot_status_forbidden(client_with_token):
+    user_client, headers = client_with_token("user")
+    pid = get_last_pid(user_client)
+    data = {
+        "lid": pid,
+        "lot_status": "closed",
+        "closed_reason": "for testing",
+        "closed_date": datetime.now().strftime("%Y-%m-%d")
+    }
+    response = user_client.put(f"/parking-lots/{pid}/status", headers=headers, params=data)
+    assert response.status_code == 403
+
+def test_update_parking_lot_status_unaothorized(client):
+    pid = get_last_pid(client)
+    data = {
+        "lid": pid,
+        "lot_status": "closed",
+        "closed_reason": "for testing",
+        "closed_date": datetime.now().strftime("%Y-%m-%d")
+    }
+    response = client.put(f"/parking-lots/{pid}/status", params=data)
+    assert response.status_code == 401
+
+def test_update_parking_lot_status_invalid_status(client_with_token):
+    superadmin_client, headers = client_with_token("superadmin")
+    pid = get_last_pid(superadmin_client)
+    data = {
+        "lid": pid,
+        "lot_status": "invalid",
+        "closed_reason": "for testing",
+        "closed_date": datetime.now().strftime("%Y-%m-%d")
+    }
+    response = superadmin_client.put(f"/parking-lots/{pid}/status", headers=headers, params=data)
+    assert response.status_code == 400
+
+def test_update_parking_lot_status_no_closed_reason(client_with_token):
+    superadmin_client, headers = client_with_token("superadmin")
+    pid = get_last_pid(superadmin_client)
+    data = {
+        "lid": pid,
+        "lot_status": "closed",
+        "closed_date": datetime.now().strftime("%Y-%m-%d")
+    }
+    response = superadmin_client.put(f"/parking-lots/{pid}/status", headers=headers, params=data)
+    assert response.status_code == 400
+
+def test_update_parking_lot_status_no_closed_date(client_with_token):
+    superadmin_client, headers = client_with_token("superadmin")
+    pid = get_last_pid(superadmin_client)
+    data = {
+        "lid": pid,
+        "lot_status": "closed",
+        "closed_reason": "for testing",
+    }
+    response = superadmin_client.put(f"/parking-lots/{pid}/status", headers=headers, params=data)
+    assert response.status_code == 200
+    assert response.json()["new_status"] == "closed"
+
+def test_update_parking_lot_increase_reserved_count_success(client_with_token):
+    superadmin_client, headers = client_with_token("superadmin")
+    lid = get_last_pid(superadmin_client)
+    response = superadmin_client.get(f"/parking-lots/{lid}")
+    current_reserved = response.json()["reserved"]
+
+    data = {
+        "lid": lid,
+        "action": "increase"
+    }
+    _ = superadmin_client.put(f"/parking-lots/{lid}/reserved", headers=headers, params=data)
+    assert response.status_code == 200
+    response = superadmin_client.get(f"/parking-lots/{lid}")
+    assert response.json()["reserved"] == current_reserved + 1
+
+    data = {
+        "lid": lid,
+        "action": "decrease"
+    }
+    _ = superadmin_client.put(f"/parking-lots/{lid}/reserved", headers=headers, params=data)
+    assert response.status_code == 200
+    response = superadmin_client.get(f"/parking-lots/{lid}")
+    assert response.json()["reserved"] == current_reserved
+

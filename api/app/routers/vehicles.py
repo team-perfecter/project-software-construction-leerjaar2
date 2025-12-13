@@ -19,11 +19,6 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-
-
-
-
-
 #Get:
 
 #Get all vehicles from logged in user or get all vehicles if loggedin is ADMIN. (User and Admin)
@@ -56,19 +51,11 @@ async def vehicles_user(user_id: int, user: User = Depends(require_role(UserRole
 @router.post("/vehicles/create")
 async def vehicle_create(vehicle: VehicleCreate, user: User = Depends(get_current_user)):
     #Create vehicle.
-    print(vehicle)
     vehicle.user_id = user.id
-    print(vehicle)
     created = vehicle_model.create_vehicle(vehicle)
     if not created:
         raise HTTPException(status_code=500, detail="Failed to create vehicle")
     return JSONResponse(content={"message": "Vehicle successfully created."}, status_code=201)
-
-#Users must see the history of the vehicles reservations. (User)
-#@router.get("/vehicles/history-reservations")
-#async def vehicles_user():
-#    vehicles_user = vehicle_model.get_all_Reservations_history_vehicles(get_current_user().id)
-#    return "Your vehicle reservations are not found." if vehicles_user == [] else vehicles_user
 
 #Put:
 

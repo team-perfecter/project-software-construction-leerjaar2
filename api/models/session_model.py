@@ -90,8 +90,18 @@ class SessionModel:
         cursor.execute("""
             SELECT * FROM sessions WHERE vehicle_id = %s AND stopped IS NULL;
         """, (vehicle_id,))
-        sessions = self.map_to_session(cursor)
-        return sessions[0] if sessions else None
+        rows = cursor.fetchall()
+        columns = [d[0] for d in cursor.description]
+
+        result = [
+            {
+                col: (val.isoformat() if isinstance(val, datetime) else val)
+                for col, val in zip(columns, row)
+            }
+            for row in rows
+        ]
+
+        return result
 
     # Helperfunctie om DB-rijen om te zetten naar Session objecten
     def map_to_session(self, cursor) -> list[Session]:
