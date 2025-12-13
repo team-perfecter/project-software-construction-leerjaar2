@@ -25,13 +25,11 @@ class SessionModel:
             print("Vehicle already has an active session.")
             return None
 
-        started = datetime.now()
-
         cursor.execute("""
-            INSERT INTO sessions (parking_lot_id, user_id, vehicle_id, started)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO sessions (parking_lot_id, user_id, vehicle_id)
+            VALUES (%s, %s, %s)
             RETURNING *;
-        """, (parking_lot_id, user_id, vehicle_id, started))
+        """, (parking_lot_id, user_id, vehicle_id))
 
         self.connection.commit()
         return self.map_to_session(cursor)[0]

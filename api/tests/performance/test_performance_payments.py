@@ -7,16 +7,12 @@ from api.datatypes.payment import PaymentCreate
 
 
 client = TestClient(app)
+user_model = UserModel()
+payment_model = PaymentModel()
+
 
 @pytest.fixture
 def seeded_payments():
-    """
-    Ensure the benchmark user has some payments in the DB.
-    Returns the user ID and list of created payments.
-    """
-    user_model = UserModel()
-    payment_model = PaymentModel()
-
     user = user_model.get_user_by_username("superadmin")
     if not user:
         raise Exception("Superadmin must exist in the DB for benchmarks")
