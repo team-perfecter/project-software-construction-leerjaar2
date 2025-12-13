@@ -11,25 +11,8 @@ user_model = UserModel()
 payment_model = PaymentModel()
 
 
-@pytest.fixture
-def seeded_payments():
-    user = user_model.get_user_by_username("superadmin")
-    if not user:
-        raise Exception("Superadmin must exist in the DB for benchmarks")
-    
-    #zorgt dat er 5 payments zijn minimaal
-    existing = payment_model.get_payments_by_user(user.id)
-    if len(existing) < 5:
-        for i in range(5 - len(existing)):
-            p = PaymentCreate(
-                user_id=user.id,
-                amount=100 + i,
-            )
-    payment_model.create_payment(p)
-
-
 @pytest.mark.benchmark(group="payments")
-def test_get_my_payments_performance(benchmark, client_with_token, seeded_payments):
+def test_get_my_payments_performance(benchmark, client_with_token):
     client, headers = client_with_token("superadmin")
 
     def get_my_payments():
@@ -40,7 +23,7 @@ def test_get_my_payments_performance(benchmark, client_with_token, seeded_paymen
     assert result.status_code == 200
 
 @pytest.mark.benchmark(group="payments")
-def test_get_my_open_payments_performance(benchmark, client_with_token, seeded_payments):
+def test_get_my_open_payments_performance(benchmark, client_with_token):
     client, headers = client_with_token("superadmin")
 
     def get_my_open_payments():
