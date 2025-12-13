@@ -69,6 +69,14 @@ class UserModel:
         else:
             return None
 
+    def get_all_users(self) -> list[User]:
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            SELECT * FROM users;
+            """)
+        user_list = self.map_to_user(cursor)
+        return user_list
+
     def update_user(self, user_id: int, update_data: dict) -> None:
         if user_id is None or update_data is None:
             return

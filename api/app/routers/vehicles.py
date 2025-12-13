@@ -12,7 +12,7 @@ router = APIRouter(tags=["vehicles"])
 #Models:
 vehicle_model: Vehicle_model = Vehicle_model()
 
-
+#Logging configuration
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -51,7 +51,16 @@ async def vehicles_user(user_id: int, user: User = Depends(require_role(UserRole
 @router.post("/vehicles/create")
 async def vehicle_create(vehicle: VehicleCreate, user: User = Depends(get_current_user)):
     #Create vehicle.
-    vehicle.user_id = user.id
+    print(vehicle)
+    vehicle = VehicleCreate(
+        user_id=user.id,
+        license_plate=vehicle.license_plate,
+        make=vehicle.make,
+        model=vehicle.model,
+        color=vehicle.color,
+        year=vehicle.year,
+    )
+    print(vehicle)
     created = vehicle_model.create_vehicle(vehicle)
     if not created:
         raise HTTPException(status_code=500, detail="Failed to create vehicle")
@@ -92,4 +101,3 @@ async def vehicle_delete(vehicle_id: int, user: User = Depends(get_current_user)
     vehicle_model.delete_vehicle(vehicle_id)
     logging.info("A user with the ID of %i succesfully deleted a vehicle with the ID of %i.", user.id, vehicle_id)
     return JSONResponse(content={"message": "Vehicle succesfully deleted"}, status_code=201)
-
