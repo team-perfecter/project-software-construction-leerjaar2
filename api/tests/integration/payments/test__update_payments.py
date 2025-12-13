@@ -19,7 +19,8 @@ def test_update_payment(client_with_token):
         "completed": False,
         "refund_requested": False
     }
-    response = client.put(f"/payments/{payment_id}", json=fake_payment, headers=headers)
+    response = client.put(f"/payments/{payment_id}", json=fake_payment,
+                          headers=headers)
     assert response.status_code == 200
 
     client, headers = client_with_token("superadmin")
@@ -41,7 +42,8 @@ def test_update_payment_server_error(mock_create, client_with_token):
         "completed": False,
         "refund_requested": False
     }
-    response = client.put(f"/payments/{payment_id}", json=fake_payment, headers=headers)
+    response = client.put(f"/payments/{payment_id}", json=fake_payment,
+                          headers=headers)
     assert response.status_code == 500
 
 
@@ -249,7 +251,10 @@ def test_request_refund_no_header(client):
 def test_get_refunds(client_with_token):
     client, headers = client_with_token("superadmin")
     payment_id = get_last_payment_id(client_with_token)
-    client.post(f"/payments/{payment_id}/pay", json={}, headers=headers)
+    client.post(f"/payments/{payment_id}/pay", json={},
+                headers=headers)
+    client.post(f"payments/{payment_id}/request_refund",
+                json={}, headers=headers)
     response = client.get("/payments/refunds", headers=headers)
     print(response.text)
     assert response.status_code == 200
@@ -260,6 +265,8 @@ def test_get_refunds_with_user(client_with_token):
     client, headers = client_with_token("superadmin")
     payment_id = get_last_payment_id(client_with_token)
     client.post(f"/payments/{payment_id}/pay", json={}, headers=headers)
+    client.post(f"payments/{payment_id}/request_refund",
+                json={}, headers=headers)
     response = client.get("/payments/refunds?user_id=1", headers=headers)
     assert response.status_code == 200
 
