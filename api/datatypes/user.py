@@ -18,6 +18,12 @@ class UserCreate(BaseModel):
     phone: Optional[str] = None
     birth_year: Optional[int] = None
 
+class User(UserCreate):
+    id: int
+    created_at: datetime
+    role: UserRole
+    is_new_password: bool
+
 class AdminCreate(BaseModel):
     username: str
     password: str
@@ -26,12 +32,6 @@ class AdminCreate(BaseModel):
     phone: Optional[str] = None
     birth_year: Optional[int] = None
     role: UserRole
-
-class User(UserCreate):
-    id: int
-    created_at: datetime
-    role: UserRole
-    is_new_password: bool
 
 class UserLogin(BaseModel):
     username: str

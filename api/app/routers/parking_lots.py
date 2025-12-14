@@ -4,6 +4,8 @@ This file contains all endpoints related to parking lots.
 
 import logging
 from datetime import date
+from typing import Optional
+
 from api.models.parking_lot_model import ParkingLotModel
 from api.datatypes.parking_lot import Parking_lot, Parking_lot_create
 from api.datatypes.user import User, UserRole
@@ -158,7 +160,7 @@ async def get_parking_lot_by_lid(lid: int):
 @router.get("/parking-lots/{lid}/sessions")
 async def get_all_sessions_by_lid(
     lid: int,
-    _: User = Depends(require_lot_access()),
+    _: User = Depends(require_role(UserRole.SUPERADMIN)),
 ):
     """
     Gets all sessions for a parking lot by id
@@ -187,7 +189,7 @@ async def get_all_sessions_by_lid(
 async def get_session_by_lid_and_sid(
     lid: int,
     sid: int,
-    _: User = Depends(require_lot_access()),
+    _: User = Depends(require_role(UserRole.SUPERADMIN)),
 ):
     """
     Gets a single session for a parking lot by id
@@ -337,7 +339,7 @@ async def update_parking_lot_status(
     closed_reason: str = None,
     closed_date: date = None,
     _: User = Depends(get_current_user),
-    __: None = Depends(require_lot_access),  # Access check only
+    __: None = Depends(require_role(UserRole.SUPERADMIN)),  # Access check only
 ):
     """
     Updates the status of a parking lot.
@@ -411,7 +413,7 @@ async def update_parking_lot_status(
         "closed_date": closed_date,
     }
 
-
+@router.put("/parking-lots/{lid}/reserved")
 def update_parking_lot_reserved_count(lid: int, action: str) -> bool:
     """
     Updates the amount of people that currently have a reservation in a specific parking lot.
@@ -420,7 +422,7 @@ def update_parking_lot_reserved_count(lid: int, action: str) -> bool:
     """
     try:
         parking_lot = get_lot_if_exists(lid)
-        parking_lot = Parking_lot_create(**parking_lot.model_dump())
+        parking_lot = Parking_lot(**parking_lot.model_dump())
         if not parking_lot:
             return False
 
@@ -431,7 +433,7 @@ def update_parking_lot_reserved_count(lid: int, action: str) -> bool:
         elif action == "decrease" and  parking_lot.reserved > 0:
             parking_lot.reserved -= 1
 
-        return parking_lot_model.update_parking_lot(lid, parking_lot)
+        return parking_lot_model.update_parking_lot_reserved(lid, parking_lot.reserved)
     except Exception as e:
         logging.error(
             "Failed to update reserved count for parking lot %i: %s", lid, str(e)

@@ -18,4 +18,4 @@ class SessionCreate(BaseModel):
     parking_lot_id: int
     user_id: int
     vehicle_id: int
-    start_time: datetime = datetime.now()
+

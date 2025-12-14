@@ -8,6 +8,7 @@ from api.models.parking_lot_model import ParkingLotModel
 from api.models.payment_model import PaymentModel
 from api.models.session_model import SessionModel
 from fastapi import APIRouter, Depends, HTTPException, status
+from starlette.responses import JSONResponse
 
 from api.models.vehicle_model import Vehicle_model
 
@@ -19,7 +20,7 @@ logging.basicConfig(
 
 router = APIRouter(tags=["sessions"])
 
-session_storage: SessionModel = SessionModel()
+session_model: SessionModel = SessionModel()
 parking_lot_model: ParkingLotModel = ParkingLotModel()
 vehicle_model: Vehicle_model = Vehicle_model()
 payment_model: PaymentModel = PaymentModel()
@@ -77,7 +78,7 @@ async def start_parking_session(
 
     # active session check voor vehicle
     try:
-        existing_sessions = session_storage.get_all_sessions_by_id(lid, vehicle_id)
+        existing_sessions = session_model.get_all_sessions_by_id(lid, vehicle_id)
     except Exception as e:
         logging.error("Database error checking existing sessions: %s", e)
         raise HTTPException(
@@ -104,7 +105,7 @@ async def start_parking_session(
 
     # create new session
     try:
-        session = session_storage.create_session(lid, current_user.id, vehicle_id)
+        session = session_model.create_session(lid, current_user.id, vehicle_id)
         if session is None:
             raise HTTPException(
                 status_code=409,
@@ -150,7 +151,7 @@ async def stop_parking_session(
     )
 
     try:
-        active_sessions = session_storage.get_vehicle_sessions(vehicle_id)
+        active_sessions = session_model.get_vehicle_sessions(vehicle_id)
     except Exception as e:
         logging.error("Database error retrieving vehicle sessions: %s", e)
         raise HTTPException(
@@ -172,7 +173,7 @@ async def stop_parking_session(
         )
 
     try:
-        session = session_storage.stop_session(active_sessions)
+        session = session_model.stop_session(active_sessions)
         logging.debug("Stopped session: %s", session)
     except Exception as e:
         logging.error("Failed to stop session: %s", e)
@@ -220,7 +221,7 @@ async def get_active_sessions(current_user: User = Depends(get_current_user)):
     logging.info("User %i requesting active sessions", current_user.id)
 
     try:
-        sessions = session_storage.get_active_sessions()
+        sessions = session_model.get_active_sessions()
     except Exception as e:
         logging.error("Failed to retrieve active sessions: %s", e)
         raise HTTPException(
@@ -232,6 +233,22 @@ async def get_active_sessions(current_user: User = Depends(get_current_user)):
         )
 
     return {"active_sessions": sessions, "count": len(sessions) if sessions else 0}
+
+
+@router.get("/sessions/vehicle/{vehicle_id}")
+async def get_sessions_vehicle(vehicle_id: int, user: User = Depends(get_current_user)):
+    vehicle = vehicle_model.get_one_vehicle(vehicle_id)
+    if not vehicle or vehicle["user_id"] != user.id:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "Vehicle not found",
+                "message": f"Vehicle with ID {vehicle_id} does not exist",
+            },
+        )
+    sessions = session_model.get_vehicle_sessions(vehicle_id)
+    print(sessions)
+    return JSONResponse(content={"message": sessions}, status_code=201)
 
 
 # @router.get("/sessions/{session_id}")
@@ -246,7 +263,7 @@ async def get_active_sessions(current_user: User = Depends(get_current_user)):
 #     )
 
 #     try:
-#         session = session_storage.get_session_by_id(session_id)
+#         session = session_model.get_session_by_id(session_id)
 #     except Exception as e:
 #         logging.error("Failed to retrieve session %i: %s", session_id, e)
 #         raise HTTPException(
@@ -284,7 +301,7 @@ async def get_active_sessions(current_user: User = Depends(get_current_user)):
 #     )
 
 #     try:
-#         session = session_storage.get_session_by_id(session_id)
+#         session = session_model.get_session_by_id(session_id)
 #     except Exception as e:
 #         logging.error("Failed to retrieve session %i for update: %s", session_id, e)
 #         raise HTTPException(
@@ -306,7 +323,7 @@ async def get_active_sessions(current_user: User = Depends(get_current_user)):
 #         )
 
 #     try:
-#         updated_session = session_storage.update_session_end_time(session_id, end_time)
+#         updated_session = session_model.update_session_end_time(session_id, end_time)
 #         logging.info("Session %i updated successfully", session_id)
 #     except Exception as e:
 #         logging.error("Failed to update session %i: %s", session_id, e)
@@ -331,7 +348,7 @@ async def get_active_sessions(current_user: User = Depends(get_current_user)):
 #     logging.info("User %i attempting to delete session %i", current_user.id, session_id)
 
 #     try:
-#         session = session_storage.get_session_by_id(session_id)
+#         session = session_model.get_session_by_id(session_id)
 #     except Exception as e:
 #         logging.error("Failed to retrieve session %i for deletion: %s", session_id, e)
 #         raise HTTPException(
@@ -353,7 +370,7 @@ async def get_active_sessions(current_user: User = Depends(get_current_user)):
 #         )
 
 #     try:
-#         session_storage.delete_session(session_id)
+#         session_model.delete_session(session_id)
 #         logging.info("Session %i deleted successfully", session_id)
 #     except Exception as e:
 #         logging.error("Failed to delete session %i: %s", session_id, e)

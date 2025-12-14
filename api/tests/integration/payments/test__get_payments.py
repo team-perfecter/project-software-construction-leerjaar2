@@ -1,13 +1,15 @@
 from fastapi.testclient import TestClient
 from api.main import app
+from api.tests.conftest import get_last_payment_id
 
 client = TestClient(app)
 
 
 # /payments/{payment_id}
 def test_get_payment_by_id(client_with_token):
+    payment_id = get_last_payment_id(client_with_token)
     client, headers = client_with_token("superadmin")
-    response = client.get("/payments/1", headers=headers)
+    response = client.get(f"/payments/{payment_id}", headers=headers)
     assert response.status_code == 200
 
 
