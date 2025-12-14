@@ -18,7 +18,7 @@ def test_get_all_vehicles(client_with_token):
 @pytest.mark.asyncio
 def test_get_one_vehicle(client_with_token):
     client, headers = client_with_token("superadmin")
-    vehicle_id = get_last_vid(client, headers)
+    vehicle_id = get_last_vid(client_with_token)
 
     response = client.get(f"/vehicles/{vehicle_id}", headers=headers)
     assert response.status_code == 200
@@ -30,7 +30,7 @@ def test_get_one_vehicle(client_with_token):
 @pytest.mark.asyncio
 def test_get_vehicles_of_user(client_with_token):
     client, headers = client_with_token("superadmin")
-    vehicle_id = get_last_vid(client, headers)
+    vehicle_id = get_last_vid(client_with_token)
 
     # Ophalen van vehicles van die user
     response = client.get("/vehicles/user/1", headers=headers)
@@ -72,7 +72,7 @@ def test_get_all_vehicles_no_vehicles(client_with_token):
 # Test dat een ingelogde admin één specifieke vehicle kan ophalen
 def test_get_one_vehicle_logged_in(client_with_token):
     client, headers = client_with_token("superadmin")
-    vehicle_id = get_last_vid(client, headers)
+    vehicle_id = get_last_vid(client_with_token)
 
     response = client.get(f"/vehicles/{vehicle_id}", headers=headers)
     assert response.status_code == 200

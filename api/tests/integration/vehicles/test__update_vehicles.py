@@ -6,7 +6,7 @@ from api.tests.conftest import get_last_vid
 @pytest.mark.asyncio
 def test_update_vehicle_success(client_with_token):
     client, headers = client_with_token("superadmin")
-    vehicle_id = get_last_vid(client, headers)
+    vehicle_id = get_last_vid(client_with_token)
     updated_vehicle = {
         "license_plate": "UPDATED123",
         "make": "Tesla",

@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     payment_id INTEGER REFERENCES payments(id),
     user_id INTEGER REFERENCES users(id),
     vehicle_id INTEGER REFERENCES vehicles(id),
-    started TIMESTAMP,
+    started TIMESTAMP DEFAULT NOW(),
     stopped TIMESTAMP,
     duration_minutes INTEGER,
     cost FLOAT

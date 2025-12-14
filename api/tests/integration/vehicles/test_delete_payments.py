@@ -7,7 +7,7 @@ from api.tests.conftest import get_last_vid
 def test_delete_vehicle_success(client_with_token):
     client, headers = client_with_token("superadmin")
 
-    vehicle_id = get_last_vid(client, headers)
+    vehicle_id = get_last_vid(client_with_token)
 
     response = client.delete(
         f"/vehicles/delete/{vehicle_id}",
@@ -42,7 +42,7 @@ def test_delete_vehicle_unauthorized(client):
 # Test dat een ingelogde gebruiker zijn vehicle kan verwijderen
 def test_delete_vehicle_success(client_with_token):
     client, headers = client_with_token("superadmin")
-    vehicle_id = get_last_vid(client, headers)
+    vehicle_id = get_last_vid(client_with_token)
 
     response = client.delete(f"/vehicles/delete/{vehicle_id}", headers=headers)
     assert response.status_code == 200
