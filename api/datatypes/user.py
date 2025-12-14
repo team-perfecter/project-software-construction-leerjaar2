@@ -10,7 +10,7 @@ class UserRole(str, Enum):
     PAYMENTADMIN = "paymentadmin"
     SUPERADMIN = "superadmin"
 
-class UserCreate(BaseModel):
+class Register(BaseModel):
     username: str
     password: str
     email: str
@@ -18,22 +18,13 @@ class UserCreate(BaseModel):
     phone: Optional[str] = None
     birth_year: Optional[int] = None
 
-class UserCreateWithRole(BaseModel):
-    username: str
-    password: str
-    email: str
-    name: str
-    phone: Optional[str] = None
-    birth_year: Optional[int] = None
-    role: UserRole
-
-class User(UserCreate):
+class User(Register):
     id: int
     created_at: datetime
     role: UserRole
     is_new_password: bool
 
-class AdminCreate(BaseModel):
+class UserCreate(BaseModel):
     username: str
     password: str
     email: str

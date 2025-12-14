@@ -42,33 +42,33 @@ def test_register_same_name(client):
     assert response.status_code == 409
 
 
-def test_create_admin(client_with_token):
+def test_create_user(client_with_token):
     client, headers = client_with_token("superadmin")
     fake_user = {
-        "username": "Waddap_admin",
-        "password": "Waddap_admin",
-        "name": "admin",
-        "email": "adminnetje@gmail.com",
+        "username": "Waddap_user",
+        "password": "Waddap_user",
+        "name": "user",
+        "email": "user@gmail.com",
         "phone": "1234567890",
         "birth_year": "2003",
-        "role": "admin"
+        "role": "user"
     }
-    response = client.post("/create_admin", json=fake_user, headers=headers)
+    response = client.post("/create_user", json=fake_user, headers=headers)
     assert response.status_code == 201
 
 
 def test_create_admin_already_exists(client_with_token):
     client, headers = client_with_token("superadmin")
     fake_user = {
-        "username": "Waddap_admin",
-        "password": "Waddap_admin",
-        "name": "admin",
-        "email": "adminnetje@gmail.com",
+        "username": "Waddap_user",
+        "password": "Waddap_user",
+        "name": "user",
+        "email": "user@gmail.com",
         "phone": "1234567890",
         "birth_year": "2003",
-        "role": "admin"
+        "role": "user"
     }
-    response = client.post("/create_admin", json=fake_user, headers=headers)
+    response = client.post("/create_user", json=fake_user, headers=headers)
     assert response.status_code == 409
 
 
@@ -88,7 +88,6 @@ def test_login_wrong_password(client):
     }
     response = client.post("/login", json=fake_user)
     assert response.status_code == 401
-
 
 
 def test_login_not_existing_username(client):

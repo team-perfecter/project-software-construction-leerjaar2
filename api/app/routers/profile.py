@@ -1,5 +1,5 @@
 from starlette.responses import JSONResponse
-from api.datatypes.user import User, UserCreate, UserLogin, UserUpdate, UserRole, AdminCreate, UserCreateWithRole
+from api.datatypes.user import User, UserCreate, UserLogin, UserUpdate, UserRole, Register
 from api.models.user_model import UserModel
 from api.utilities.Hasher import hash_string
 import logging
@@ -19,7 +19,7 @@ logging.basicConfig(
 
 
 @router.post("/register")
-async def register(user: UserCreate):
+async def register(user: Register):
     username_check = user_model.get_user_by_username(user.username)
     if username_check is not None:
         logging.info(
@@ -106,7 +106,7 @@ async def delete_user(user_id: int, current_user = require_role(UserRole.SUPERAD
 
 
 @router.post("/create_user")
-async def create_user_with_role(user: AdminCreate, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
+async def create_user(user: UserCreate, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
     username_check = user_model.get_user_by_username(user.username)
     if username_check is not None:
         logging.info(
@@ -120,21 +120,6 @@ async def create_user_with_role(user: AdminCreate, current_user: User = Depends(
 
     return JSONResponse(content={"message": "User created successfully"}, status_code=201)
 
-
-@router.post("/create_admin")
-async def create_admin(user: UserCreateWithRole, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
-    username_check = user_model.get_user_by_username(user.username)
-    if username_check is not None:
-        logging.info(
-            "A user tried to create a profile, but the name was already created: %s", user.name)
-        raise HTTPException(status_code=409, detail="Name already taken")
-    hashed_password = hash_string(user.password)
-    user.password = hashed_password
-    user_model.create_admin(user)
-    logging.info(
-        "A user has created a new profile with the name: %s", user.name)
-
-    return JSONResponse(content={"message": "User created successfully"}, status_code=201)
 
 @router.post("/admin/{admin_id}/parking-lots/{lot_id}/assign")
 async def assign_lot_to_admin(admin_id: int, lot_id: int, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):

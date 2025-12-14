@@ -3,8 +3,7 @@ from fastapi.testclient import TestClient
 from api.main import app
 from api.auth_utils import create_access_token
 from api.models.user_model import UserModel
-from api.models.payment_model import PaymentModel
-from api.datatypes.payment import PaymentCreate
+
 
 
 pytest_plugins = "pytest_benchmark"
