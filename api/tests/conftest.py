@@ -92,7 +92,7 @@ def setup_users(request, client_with_token):
 
     if "create" not in request.node.fspath.basename:
         for user in response.json():
-            if user['id'] != 1:
+            if user['id'] > 4:
                 client.delete(f"/users/{user['id']}", headers=headers)
 
         user2 = {
