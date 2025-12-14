@@ -72,7 +72,7 @@ async def login(data: UserLogin):
 
 
 @router.get("/get_user/{user_id}")
-async def get_user(user_id: int):
+async def get_user(user_id: int, user_auth: User = Depends(get_current_user)):
     user: User = user_model.get_user_by_id(user_id)
     if user is None:
         return JSONResponse(status_code=404, content={"message": "User not found"})

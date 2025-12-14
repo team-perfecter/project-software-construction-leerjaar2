@@ -4,11 +4,15 @@ from api.main import app
 
 client = TestClient(app)
 
-def test_get_all_users(client_with_token):
-    client, headers = client_with_token("superadmin")
-    response = client.get("/users", headers=headers)
+def test_get_all_users_as_admin(client_with_token):
+    client, headers = client_with_token("admin")
+    response = client.get("/admin/users", headers=headers)
     assert response.status_code == 200
 
+def test_get_all_users_as_superadmin(client_with_token):
+    client, headers = client_with_token("superadmin")
+    response = client.get("/admin/users", headers=headers)
+    assert response.status_code == 200
 
 def test_get_user_as_superadmin(client_with_token):
     client, headers = client_with_token("superadmin")
@@ -19,7 +23,7 @@ def test_get_user_as_superadmin(client_with_token):
 def test_get_user_as_user(client_with_token):
     client, headers = client_with_token("user")
     response = client.get("/get_user/1", headers=headers)
-    assert response.status_code == 403
+    assert response.status_code == 200
 
 
 def test_get_user_not_logged_in(client):

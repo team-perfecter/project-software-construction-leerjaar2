@@ -131,4 +131,4 @@ class UserModel:
         cursor.execute("DELETE FROM users WHERE id = %s RETURNING id;", (user_id,))
         deleted = cursor.fetchone()
         self.connection.commit()
-        return deleted is not None
+        return deleted
