@@ -20,21 +20,6 @@ logging.basicConfig(
 
 @router.post("/register")
 async def register(user: UserCreate):
-
-    missing_fields: list[str] = []
-    if not user.name:
-        missing_fields.append("name")
-    if not user.password:
-        missing_fields.append("password")
-    if not user.email:
-        missing_fields.append("email")
-
-    if len(missing_fields) > 0:
-        logging.info(
-            "A user tried to create a profile, but did not fill in the following fields: %s", missing_fields)
-        raise HTTPException(status_code=400, detail={
-                            "missing_fields": missing_fields})
-
     username_check = user_model.get_user_by_username(user.username)
     if username_check is not None:
         logging.info(
@@ -72,7 +57,7 @@ async def login(data: UserLogin):
 
 
 @router.get("/get_user/{user_id}")
-async def get_user(user_id: int):
+async def get_user(user_id: int, user_auth: User = Depends(get_current_user)):
     user: User = user_model.get_user_by_id(user_id)
     if user is None:
         return JSONResponse(status_code=404, content={"message": "User not found"})
@@ -104,20 +89,6 @@ async def update_me(update_data: UserUpdate, current_user: User = Depends(get_cu
 
 @router.post("/create_admin")
 async def create_admin(user: AdminCreate, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
-    missing_fields: list[str] = []
-    if not user.name:
-        missing_fields.append("name")
-    if not user.password:
-        missing_fields.append("password")
-    if not user.email:
-        missing_fields.append("email")
-
-    if len(missing_fields) > 0:
-        logging.info(
-            "A user tried to create a profile, but did not fill in the following fields: %s", missing_fields)
-        raise HTTPException(status_code=400, detail={
-                            "missing_fields": missing_fields})
-
     username_check = user_model.get_user_by_username(user.username)
     if username_check is not None:
         logging.info(
