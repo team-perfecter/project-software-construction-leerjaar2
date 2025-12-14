@@ -26,12 +26,20 @@ class Reservation_model:
             return dict(zip(columns, row))
         return None
 
-    def create_reservation(self, reservation: ReservationCreate) -> None:
+    def create_reservation(self, reservation_data: dict) -> int:
         cursor = self.connection.cursor()
         cursor.execute("""
             INSERT INTO reservations (vehicle_id, user_id, parking_lot_id, start_time, end_time, status, cost)
             VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id;
-        """, (reservation.vehicle_id, reservation.user_id, reservation.parking_lot_id, reservation.start_time, reservation.end_time, reservation.status, reservation.cost))
+        """, (
+            reservation_data["vehicle_id"],
+            reservation_data["user_id"],
+            reservation_data["parking_lot_id"],
+            reservation_data["start_time"],
+            reservation_data["end_time"],
+            reservation_data["status"],
+            reservation_data.get("cost", 0)
+        ))
         self.connection.commit()
         return cursor.fetchone()[0]
 
