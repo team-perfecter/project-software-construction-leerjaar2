@@ -10,6 +10,7 @@ client = TestClient(app)
 
 # region HELPER FUNCTIONS
 
+
 def create_vehicle_for_user(client, headers, license_plate="TEST-001"):
     """Helper function to create a test vehicle and return its ID"""
     vehicle_data = {
@@ -18,12 +19,14 @@ def create_vehicle_for_user(client, headers, license_plate="TEST-001"):
         "make": "Toyota",
         "model": "Corolla",
         "color": "Blue",
-        "year": 2024
+        "year": 2024,
     }
     response = client.post("/vehicles/create", json=vehicle_data, headers=headers)
 
     if response.status_code != 201:
-        pytest.fail(f"Failed to create vehicle: {response.status_code} - {response.json()}")
+        pytest.fail(
+            f"Failed to create vehicle: {response.status_code} - {response.json()}"
+        )
 
     vehicles_response = client.get("/vehicles", headers=headers)
     if vehicles_response.status_code == 200:
@@ -34,35 +37,43 @@ def create_vehicle_for_user(client, headers, license_plate="TEST-001"):
                 return last_vehicle[0]
             elif isinstance(last_vehicle, dict):
                 return last_vehicle["id"]
-    
+
     pytest.fail(f"Could not extract vehicle ID. Response: {vehicles_response.json()}")
 
 
-def create_test_reservation(client, headers, vehicle_id, parking_lot_id, days_ahead=1, duration=1):
+def create_test_reservation(
+    client, headers, vehicle_id, parking_lot_id, days_ahead=1, duration=1
+):
     """Helper to create a reservation and return its ID"""
     reservation_data = {
         "vehicle_id": vehicle_id,
         "parking_lot_id": parking_lot_id,
         "start_time": (datetime.now() + timedelta(days=days_ahead)).isoformat(),
-        "end_time": (datetime.now() + timedelta(days=days_ahead + duration)).isoformat(),
+        "end_time": (
+            datetime.now() + timedelta(days=days_ahead + duration)
+        ).isoformat(),
     }
-    
-    response = client.post("/reservations/create", json=reservation_data, headers=headers)
-    
+
+    response = client.post(
+        "/reservations/create", json=reservation_data, headers=headers
+    )
+
     if response.status_code == 201:
         try:
             message = response.json()["detail"]["message"]
             import re
-            match = re.search(r'\d+', message)
+
+            match = re.search(r"\d+", message)
             if match:
                 return int(match.group())
         except Exception as e:
             print(f"Could not extract reservation ID: {e}")
-    
+
     return None
 
 
 # GET /reservations/vehicle/{vehicle_id} TESTS
+
 
 def test_get_reservations_by_vehicle_success(client_with_token):
     """
@@ -71,7 +82,7 @@ def test_get_reservations_by_vehicle_success(client_with_token):
     """
     client, headers = client_with_token("user")
     vehicle_id = create_vehicle_for_user(client, headers, "GET-SUCCESS-01")
-    
+
     response = client.get(f"/reservations/vehicle/{vehicle_id}", headers=headers)
     assert response.status_code == 200
     data = response.json()
@@ -105,9 +116,11 @@ def test_get_reservations_by_vehicle_wrong_owner(client_with_token):
     """
     user_client, user_headers = client_with_token("user")
     vehicle_id = create_vehicle_for_user(user_client, user_headers, "GET-WRONG-01")
-    
+
     admin_client, admin_headers = client_with_token("admin")
-    response = admin_client.get(f"/reservations/vehicle/{vehicle_id}", headers=admin_headers)
+    response = admin_client.get(
+        f"/reservations/vehicle/{vehicle_id}", headers=admin_headers
+    )
     assert response.status_code == 403
     assert "does not belong" in response.json()["detail"].lower()
 
@@ -150,9 +163,9 @@ def test_get_reservations_by_vehicle_with_existing_reservations(client_with_toke
     client, headers = client_with_token("user")
     vehicle_id = create_vehicle_for_user(client, headers, "GET-EXIST-01")
     parking_lot_id = get_last_pid(client)
-    
+
     res_id = create_test_reservation(client, headers, vehicle_id, parking_lot_id)
-    
+
     response = client.get(f"/reservations/vehicle/{vehicle_id}", headers=headers)
     assert response.status_code == 200
     data = response.json()
@@ -168,7 +181,7 @@ def test_get_reservations_by_vehicle_empty_list(client_with_token):
     """
     client, headers = client_with_token("user")
     vehicle_id = create_vehicle_for_user(client, headers, "GET-EMPTY-01")
-    
+
     response = client.get(f"/reservations/vehicle/{vehicle_id}", headers=headers)
     assert response.status_code == 200
     data = response.json()
@@ -184,16 +197,22 @@ def test_get_reservations_by_vehicle_multiple_reservations(client_with_token):
     client, headers = client_with_token("user")
     vehicle_id = create_vehicle_for_user(client, headers, "GET-MULTI-01")
     parking_lot_id = get_last_pid(client)
-    
-    res1_id = create_test_reservation(client, headers, vehicle_id, parking_lot_id, days_ahead=1, duration=1)
-    res2_id = create_test_reservation(client, headers, vehicle_id, parking_lot_id, days_ahead=3, duration=1)
-    res3_id = create_test_reservation(client, headers, vehicle_id, parking_lot_id, days_ahead=5, duration=1)
-    
+
+    res1_id = create_test_reservation(
+        client, headers, vehicle_id, parking_lot_id, days_ahead=1, duration=1
+    )
+    res2_id = create_test_reservation(
+        client, headers, vehicle_id, parking_lot_id, days_ahead=3, duration=1
+    )
+    res3_id = create_test_reservation(
+        client, headers, vehicle_id, parking_lot_id, days_ahead=5, duration=1
+    )
+
     response = client.get(f"/reservations/vehicle/{vehicle_id}", headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
-    
+
     if res1_id and res2_id and res3_id:
         assert len(data) >= 3
 
@@ -240,6 +259,7 @@ def test_get_reservations_by_vehicle_sql_injection_attempt(client_with_token):
 
 # region MOCK TESTS FOR ERROR HANDLING
 
+
 @patch("api.models.vehicle_model.Vehicle_model.get_one_vehicle", return_value=None)
 def test_get_reservations_vehicle_not_found_mock(mock_get_vehicle, client_with_token):
     """
@@ -247,7 +267,7 @@ def test_get_reservations_vehicle_not_found_mock(mock_get_vehicle, client_with_t
     Covers: Line 27-28 via mock
     """
     client, headers = client_with_token("user")
-    
+
     response = client.get("/reservations/vehicle/1", headers=headers)
     assert response.status_code == 404
     mock_get_vehicle.assert_called_once_with(1)
@@ -260,14 +280,10 @@ def test_get_reservations_wrong_owner_mock(mock_get_vehicle, client_with_token):
     Covers: Line 30-31 via mock
     """
     client, headers = client_with_token("user")
-    
+
     # Mock vehicle belonging to different user (admin has id=2)
-    mock_get_vehicle.return_value = {
-        "id": 1,
-        "user_id": 2,
-        "license_plate": "TEST-123"
-    }
-    
+    mock_get_vehicle.return_value = {"id": 1, "user_id": 2, "license_plate": "TEST-123"}
+
     response = client.get("/reservations/vehicle/1", headers=headers)
     assert response.status_code == 403
     assert "does not belong" in response.json()["detail"].lower()
@@ -275,42 +291,45 @@ def test_get_reservations_wrong_owner_mock(mock_get_vehicle, client_with_token):
 
 @patch("api.models.reservation_model.Reservation_model.get_reservation_by_vehicle")
 @patch("api.models.vehicle_model.Vehicle_model.get_one_vehicle")
-def test_get_reservations_database_error_mock(mock_get_vehicle, mock_get_reservations, client_with_token):
+def test_get_reservations_database_error_mock(
+    mock_get_vehicle, mock_get_reservations, client_with_token
+):
     """
     Test: Mock database error scenario
     Covers: Exception handling in Line 33
     """
     client, headers = client_with_token("user")
-    
+
     # Mock vehicle exists
-    mock_get_vehicle.return_value = {
-        "id": 1,
-        "user_id": 1,
-        "license_plate": "TEST-123"
-    }
-    
+    mock_get_vehicle.return_value = {"id": 1, "user_id": 1, "license_plate": "TEST-123"}
+
     # Mock database error
     mock_get_reservations.side_effect = Exception("Database connection error")
-    
+
     response = client.get("/reservations/vehicle/1", headers=headers)
     # Should return 500 if error handling is implemented
     assert response.status_code in [500, 403, 200]
 
 
-@patch("api.models.reservation_model.Reservation_model.get_reservation_by_vehicle", return_value=[])
+@patch(
+    "api.models.reservation_model.Reservation_model.get_reservation_by_vehicle",
+    return_value=[],
+)
 @patch("api.models.vehicle_model.Vehicle_model.get_one_vehicle")
-def test_get_reservations_empty_list_mock(mock_get_vehicle, mock_get_reservations, client_with_token):
+def test_get_reservations_empty_list_mock(
+    mock_get_vehicle, mock_get_reservations, client_with_token
+):
     client, headers = client_with_token("user")
-    
+
     user_response = client.get("/profile", headers=headers)
     user_id = user_response.json()["id"]
-    
+
     mock_get_vehicle.return_value = {
         "id": 1,
         "user_id": user_id,
-        "license_plate": "TEST-123"
+        "license_plate": "TEST-123",
     }
-    
+
     response = client.get("/reservations/vehicle/1", headers=headers)
     assert response.status_code == 200
     data = response.json()
@@ -321,35 +340,37 @@ def test_get_reservations_empty_list_mock(mock_get_vehicle, mock_get_reservation
 
 @patch("api.models.reservation_model.Reservation_model.get_reservation_by_vehicle")
 @patch("api.models.vehicle_model.Vehicle_model.get_one_vehicle")
-def test_get_reservations_with_data_mock(mock_get_vehicle, mock_get_reservations, client_with_token):
+def test_get_reservations_with_data_mock(
+    mock_get_vehicle, mock_get_reservations, client_with_token
+):
     client, headers = client_with_token("user")
-    
+
     user_response = client.get("/profile", headers=headers)
     user_id = user_response.json()["id"]
-    
+
     mock_get_vehicle.return_value = {
         "id": 1,
         "user_id": user_id,
-        "license_plate": "TEST-123"
+        "license_plate": "TEST-123",
     }
-    
+
     mock_get_reservations.return_value = [
         {
             "id": 1,
             "vehicle_id": 1,
             "parking_lot_id": 1,
             "start_time": datetime.now() + timedelta(days=1),
-            "end_time": datetime.now() + timedelta(days=2)
+            "end_time": datetime.now() + timedelta(days=2),
         },
         {
             "id": 2,
             "vehicle_id": 1,
             "parking_lot_id": 1,
             "start_time": datetime.now() + timedelta(days=3),
-            "end_time": datetime.now() + timedelta(days=4)
-        }
+            "end_time": datetime.now() + timedelta(days=4),
+        },
     ]
-    
+
     response = client.get("/reservations/vehicle/1", headers=headers)
     assert response.status_code == 200
     data = response.json()
@@ -358,7 +379,7 @@ def test_get_reservations_with_data_mock(mock_get_vehicle, mock_get_reservations
     mock_get_reservations.assert_called_once_with(1)
 
 
-#region INTEGRATION TESTS
+# region INTEGRATION TESTS
 
 
 def test_get_reservations_cross_user_isolation(client_with_token):
@@ -368,13 +389,17 @@ def test_get_reservations_cross_user_isolation(client_with_token):
     """
     # User 1 creates vehicle and reservation
     user1_client, user1_headers = client_with_token("user")
-    vehicle1_id = create_vehicle_for_user(user1_client, user1_headers, "ISOLATION-USER1")
+    vehicle1_id = create_vehicle_for_user(
+        user1_client, user1_headers, "ISOLATION-USER1"
+    )
     parking_lot_id = get_last_pid(user1_client)
     create_test_reservation(user1_client, user1_headers, vehicle1_id, parking_lot_id)
-    
+
     # User 2 (admin) tries to access user 1's vehicle
     user2_client, user2_headers = client_with_token("admin")
-    response = user2_client.get(f"/reservations/vehicle/{vehicle1_id}", headers=user2_headers)
+    response = user2_client.get(
+        f"/reservations/vehicle/{vehicle1_id}", headers=user2_headers
+    )
     assert response.status_code == 403
 
 
@@ -386,20 +411,22 @@ def test_get_reservations_data_structure(client_with_token):
     client, headers = client_with_token("user")
     vehicle_id = create_vehicle_for_user(client, headers, "STRUCTURE-01")
     parking_lot_id = get_last_pid(client)
-    
+
     create_test_reservation(client, headers, vehicle_id, parking_lot_id)
-    
+
     response = client.get(f"/reservations/vehicle/{vehicle_id}", headers=headers)
     assert response.status_code == 200
     data = response.json()
-    
+
     assert isinstance(data, list)
     if len(data) > 0:
         reservation = data[0]
         # Check that reservation has expected fields
         assert "id" in reservation or isinstance(reservation, (list, tuple))
 
-#region EDGE CASES
+
+# region EDGE CASES
+
 
 def test_get_reservations_with_expired_reservations(client_with_token):
     """
@@ -408,7 +435,7 @@ def test_get_reservations_with_expired_reservations(client_with_token):
     """
     client, headers = client_with_token("user")
     vehicle_id = create_vehicle_for_user(client, headers, "EXPIRED-01")
-    
+
     # Get reservations (may include expired ones depending on implementation)
     response = client.get(f"/reservations/vehicle/{vehicle_id}", headers=headers)
     assert response.status_code == 200
@@ -423,13 +450,13 @@ def test_get_reservations_concurrent_requests(client_with_token):
     """
     client, headers = client_with_token("user")
     vehicle_id = create_vehicle_for_user(client, headers, "CONCURRENT-01")
-    
+
     # Make multiple requests
     responses = []
     for _ in range(3):
         response = client.get(f"/reservations/vehicle/{vehicle_id}", headers=headers)
         responses.append(response)
-    
+
     # All should succeed
     for response in responses:
         assert response.status_code == 200

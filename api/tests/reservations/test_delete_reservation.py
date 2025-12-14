@@ -8,7 +8,7 @@ from api.tests.conftest import get_last_pid
 client = TestClient(app)
 
 
-#region HELPER FUNCTIONS
+# region HELPER FUNCTIONS
 
 
 def create_vehicle_for_user(client, headers, license_plate="TEST-001"):
@@ -73,6 +73,7 @@ def create_test_reservation(
 
 
 # DELETE /reservations/delete/{reservation_id} TESTS
+
 
 def test_delete_reservation_success(client_with_token):
     """
@@ -253,7 +254,8 @@ def test_delete_reservation_special_characters(client_with_token):
     assert response.status_code in [404, 422]
 
 
-#region MOCK TESTS FOR ERROR HANDLING
+# region MOCK TESTS FOR ERROR HANDLING
+
 
 @patch(
     "api.models.reservation_model.Reservation_model.get_reservation_by_id",
@@ -359,7 +361,7 @@ def test_delete_reservation_success_mock(
     mock_delete.assert_called_once_with(1)
 
 
-#region INTEGRATION TESTS
+# region INTEGRATION TESTS
 
 
 def test_delete_reservation_user_isolation(client_with_token):
@@ -448,7 +450,7 @@ def test_delete_reservation_verify_not_in_list(client_with_token):
         assert reservation_id not in reservation_ids
 
 
-#region EDGE CASES
+# region EDGE CASES
 
 
 def test_delete_reservation_concurrent_delete_attempts(client_with_token):
