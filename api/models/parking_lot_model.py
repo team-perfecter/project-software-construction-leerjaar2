@@ -225,6 +225,28 @@ class ParkingLotModel:
         self.connection.commit()
         return cursor.rowcount > 0
 
+    def update_parking_lot_reserved(self, lot_id: int, amount: int) -> bool:
+        """
+        Updates a parking lot based on the data provided.
+        @param: lot_id
+        @param: lot
+        @return: True if update was successful
+        """
+        cursor = self.connection.cursor()
+        cursor.execute(
+            """
+            UPDATE parking_lots 
+            SET reserved = %s
+            WHERE id = %s;
+        """,
+            (
+                amount,
+                lot_id,
+            ),
+        )
+        self.connection.commit()
+        return cursor.rowcount > 0
+
     # region delete
     def delete_parking_lot(self, lot_id: int) -> bool:
         """
@@ -249,8 +271,8 @@ class ParkingLotModel:
         for row in cursor.fetchall():
             row_dict = dict(zip(columns, row))
             try:
-                user = Parking_lot.model_validate(row_dict)
-                parking_lots.append(user)
+                parking_lot = Parking_lot.model_validate(row_dict)
+                parking_lots.append(parking_lot)
             except Exception as e:
-                print("Failed to map row to User:", row_dict, e)
+                print("Failed to map row to parking_lot:", row_dict, e)
         return parking_lots

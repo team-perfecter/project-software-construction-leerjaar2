@@ -37,7 +37,6 @@ class Vehicle_model:
             SELECT * FROM vehicles WHERE id = %s;
                        """, (id,))
         row = cursor.fetchone()
-        print(row)
         if row:
             columns = [desc[0] for desc in cursor.description]
             return dict(zip(columns, row))

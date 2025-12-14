@@ -63,6 +63,56 @@ def test_get_parking_lot_by_lid_unauthorized(client):
     data = response.json()
     assert data["id"] == parking_lot_id
 
+# Tests voor GET /parking-lots/location/{location}
+def test_get_parking_lots_by_location_success(client):
+    """Test: GET /parking-lots/location/{location} - Parking lots op specifieke locatie"""
+    location = "Industrial Zone"
+    response = client.get(f"/parking-lots/location/{location}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data[0]["location"] == "Industrial Zone"
+
+def test_get_parking_lots_by_location_not_found(client):
+    """Test: GET /parking-lots/location/{location} - Geen parking lots op locatie"""
+    location = "NonExistentLocation"
+    response = client.get(f"/parking-lots/location/{location}")
+    assert response.status_code == 404
+    data = response.json()
+    assert isinstance(data, dict)
+    assert len(data) == 1
+    assert "detail" in data
+
+def test_get_parking_lots_by_location_unauthorized(client):
+    """Test: GET /parking-lots/location/{location} - Zonder authenticatie"""
+    location = "Industrial Zone"
+    response = client.get(f"/parking-lots/location/{location}")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["location"] == "Industrial Zone"
+
+def test_get_parking_lots_sessions(client_with_token):
+    """Test: GET /parking-lots/{id}/sessions - Alle sessies van een parking lot"""
+    superadmin_client, headers = client_with_token("superadmin")
+    parking_lot_id = get_last_pid(superadmin_client)
+    response = superadmin_client.get(f"/parking-lots/{parking_lot_id}/sessions", headers=headers, params={"lid": parking_lot_id})
+    assert response.status_code == 200
+
+    data = response.json()
+    assert len(data) == 0
+
+def test_get_parking_lots_sessions_by_id_no_session(client_with_token):
+    """Test: GET /parking-lots/{id}/sessions - Alle sessies van een parking lot"""
+    superadmin_client, headers = client_with_token("superadmin")
+    parking_lot_id = get_last_pid(superadmin_client)
+    response = superadmin_client.get(f"/parking-lots/{parking_lot_id}/sessions/99999", headers=headers, params={"lid": parking_lot_id, "sid": 999999})
+    assert response.status_code == 404
+
+    data = response.json()
+    assert data["detail"]["error"] == "Session not found"
+
+
 # Tests voor GET /parking-lots/availability
 #def test_get_parking_lots_availability_success():
 #    """Test: GET /parking-lots/availability - Beschikbaarheid alle lots"""
@@ -135,35 +185,6 @@ def test_get_parking_lot_by_lid_unauthorized(client):
 #    city = "Almere"
 #    response = client.get(f"/parking-lots/city/{city}")
 #    assert response.status_code == 401
-
-# Tests voor GET /parking-lots/location/{location}
-def test_get_parking_lots_by_location_success(client):
-    """Test: GET /parking-lots/location/{location} - Parking lots op specifieke locatie"""
-    location = "Industrial Zone"
-    response = client.get(f"/parking-lots/location/{location}")
-    assert response.status_code == 200
-    data = response.json()
-    assert data[0]["location"] == "Industrial Zone"
-
-def test_get_parking_lots_by_location_not_found(client):
-    """Test: GET /parking-lots/location/{location} - Geen parking lots op locatie"""
-    location = "NonExistentLocation"
-    response = client.get(f"/parking-lots/location/{location}")
-    assert response.status_code == 404
-    data = response.json()
-    assert isinstance(data, dict)
-    assert len(data) == 1
-    assert "detail" in data
-
-def test_get_parking_lots_by_location_unauthorized(client):
-    """Test: GET /parking-lots/location/{location} - Zonder authenticatie"""
-    location = "Industrial Zone"
-    response = client.get(f"/parking-lots/location/{location}")
-    assert response.status_code == 200
-
-    data = response.json()
-    assert len(data) == 1
-    assert data[0]["location"] == "Industrial Zone"
 
 # Tests voor GET /parking-lots/{id}/reservations
 #def test_get_parking_lot_reservations_success(client_with_token):
