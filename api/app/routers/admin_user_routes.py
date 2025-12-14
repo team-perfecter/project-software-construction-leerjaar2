@@ -15,6 +15,11 @@ async def admin_get_user(user_id: int, current_user = require_role("admin")):
 
     return user
 
+@router.get("/admin/users/")
+async def admin_get_all_users(current_user = require_role("admin")):
+    users = user_model.get_all_users()
+    return users
+
 
 @router.delete("/admin/users/{user_id}")
 async def admin_delete_user(user_id: int, current_user: User = Depends(get_current_user)):
