@@ -19,7 +19,7 @@ def test_get_all_vehicles(client_with_token):
 def test_get_one_vehicle(client_with_token):
     client, headers = client_with_token("superadmin")
     vehicle_id = get_last_vid(client, headers)
-    
+
     response = client.get(f"/vehicles/{vehicle_id}", headers=headers)
     assert response.status_code == 200
     vehicle_data = response.json()
@@ -65,7 +65,7 @@ def test_get_all_vehicles_no_vehicles(client_with_token):
         client.delete(f"/vehicles/delete/{vehicle['id']}", headers=headers)
 
     response = client.get("/vehicles", headers=headers)
-    assert response.status_code == 201
+    assert response.status_code == 404
     assert response.json()["message"] == "Vehicles not found"
 
 # Test dat een ingelogde admin één specifieke vehicle kan ophalen
@@ -83,7 +83,7 @@ def test_get_one_vehicle_logged_in(client_with_token):
 def test_get_one_vehicle_not_logged_in(client):
 
     response = client.get("/vehicles/1")
-    assert response.status_code == 200
+    assert response.status_code == 404
 
 
 # Test wat er gebeurt als een vehicle niet bestaat

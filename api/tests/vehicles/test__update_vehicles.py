@@ -20,8 +20,8 @@ def test_update_vehicle_success(client_with_token):
         json=updated_vehicle,
         headers=headers,
     )
-    
-    assert response.status_code == 201
+
+    assert response.status_code == 200
     assert response.json()["message"] == "Vehicle succesfully updated"
 
 # Test update van een niet-bestaand vehicle
@@ -63,21 +63,6 @@ def test_update_vehicle_unauthorized(client):
 
     assert response.status_code == 401
 
-# Test dat een ingelogde gebruiker zijn vehicle kan updaten
-def test_update_vehicle_success(client_with_token):
-    client, headers = client_with_token("superadmin")
-    vehicle_id = get_last_vid(client, headers)
-
-    update_data = {
-        "license_plate": "UPD123",
-        "make": "Honda",
-        "model": "Civic",
-        "color": "Black",
-        "year": 2021,
-    }
-
-    response = client.put(f"/vehicles/update/{vehicle_id}", json=update_data, headers=headers)
-    assert response.status_code == 201
 
 # Test wat er gebeurt als de gebruiker niet is ingelogd
 def test_update_vehicle_not_logged_in(client):
@@ -98,19 +83,4 @@ def test_update_vehicle_not_found(client_with_token):
     }
 
     response = client.put("/vehicles/update/999999", json=update_data, headers=headers)
-    assert response.status_code == 404
-
-# Test wat er gebeurt als een gebruiker een voertuig probeert te updaten die niet van hem is
-def test_update_vehicle_unauthorized(client_with_token):
-    client, headers = client_with_token("user")
-
-    update_data = {
-        "license_plate": "NOPE123",
-        "make": "BMW",
-        "model": "X5",
-        "color": "White",
-        "year": 2022,
-    }
-
-    response = client.put("/vehicles/update/1", json=update_data, headers=headers)
     assert response.status_code == 404

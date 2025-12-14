@@ -14,7 +14,7 @@ def test_delete_vehicle_success(client_with_token):
         headers=headers,
     )
 
-    assert response.status_code == 201
+    assert response.status_code == 200
     assert response.json()["message"] == "Vehicle succesfully deleted"
 
 # Test verwijderen van een niet-bestaand vehicle
@@ -42,7 +42,7 @@ def test_delete_vehicle_success(client_with_token):
     vehicle_id = get_last_vid(client, headers)
 
     response = client.delete(f"/vehicles/delete/{vehicle_id}", headers=headers)
-    assert response.status_code == 201
+    assert response.status_code == 200
 
 # Test wat er gebeurt als de gebruiker niet is ingelogd
 def test_delete_vehicle_not_logged_in(client):
