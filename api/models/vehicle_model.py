@@ -1,6 +1,5 @@
 
 from api.datatypes.vehicle import Vehicle, VehicleCreate
-from psycopg2.extras import RealDictCursor
 import psycopg2
 
 class Vehicle_model:
@@ -15,19 +14,19 @@ class Vehicle_model:
 
     #Return all vehicles
     def get_all_vehicles_of_user(self, user_id: int):
-        cursor = self.connection.cursor(cursor_factory=RealDictCursor)
+        cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM vehicles WHERE user_id = %s", (user_id,))
         return cursor.fetchall()
     
     #return all vehicles of user.
     def get_all_user_vehicles(self, user_id):
-        cursor = self.connection.cursor(cursor_factory=RealDictCursor)
+        cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM vehicles WHERE user_id = %s", (user_id,))
         return cursor.fetchall()
     
     # #Return a vehicle.
     def get_one_vehicle(self, id):
-        cursor = self.connection.cursor(cursor_factory=RealDictCursor)
+        cursor = self.connection.cursor()
         cursor.execute("SELECT id, license_plate FROM vehicles")
         print("ALL VEHICLES (inside reservation):", cursor.fetchall(), flush=True)
         print("vehicle_id type:", type(id), "value:", id, flush=True)
@@ -37,6 +36,7 @@ class Vehicle_model:
             SELECT * FROM vehicles WHERE id = %s;
                        """, (id,))
         row = cursor.fetchone()
+        print(row)
         if row:
             columns = [desc[0] for desc in cursor.description]
             return dict(zip(columns, row))

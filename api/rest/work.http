@@ -83,11 +83,6 @@ GET http://127.0.0.1:8000/reservations/vehicle/1
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
-### Get vehicles of an user. (only for Admin)
-GET http://127.0.0.1:8000/vehicles/user/1
-Content-Type: application/json
-Authorization: Bearer {{token}}
-
 ### Delete a reservation
 DELETE http://127.0.0.1:8000/reservations/delete/1
 Content-Type: application/json

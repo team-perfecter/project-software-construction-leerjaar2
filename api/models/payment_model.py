@@ -1,4 +1,7 @@
+from datetime import date
+
 import psycopg2
+
 from api.datatypes.payment import PaymentCreate, PaymentUpdate
 
 
@@ -16,13 +19,10 @@ class PaymentModel:
         cursor = cls.connection.cursor()
         try:
             cursor.execute("""
-                INSERT INTO payments
-                (user_id, transaction, amount, hash, method, issuer, bank)
+                INSERT INTO payments (user_id, transaction, amount, hash, method, issuer, bank)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
                 RETURNING id;
-            """,
-                           (p.user_id, p.transaction, p.amount,
-                            p.hash, p.method, p.issuer, p.bank))
+            """, (p.user_id, p.transaction, p.amount, p.hash, p.method, p.issuer, p.bank))
             created = cursor.fetchone()
             cls.connection.commit()
             print("Created:", created)
@@ -54,7 +54,7 @@ class PaymentModel:
         columns = [desc[0] for desc in cursor.description]
         result = [dict(zip(columns, row)) for row in rows]
         return result
-
+    
     @classmethod
     def get_open_payments_by_user(cls, user_id):
         cursor = cls.connection.cursor()
@@ -65,24 +65,23 @@ class PaymentModel:
         columns = [desc[0] for desc in cursor.description]
         result = [dict(zip(columns, row)) for row in rows]
         return result
-
+    
     @classmethod
     def update_payment(cls, id, p: PaymentUpdate):
         cursor = cls.connection.cursor()
         cursor.execute("""
-            UPDATE payments
-            SET user_id = %s, transaction = %s, amount = %s,
-                hash = %s, method = %s, issuer = %s, bank = %s, completed = %s,
-                date = NOW(), refund_requested = %s
+            UPDATE payments 
+            SET user_id = %s, transaction = %s, amount = %s, 
+                hash = %s, method = %s, issuer = %s, bank = %s, completed = %s, date = NOW(), refund_requested = %s
             WHERE id = %s
             RETURNING id;
-        """, (p.user_id, p.transaction, p.amount,
-              p.hash, p.method,
+        """, (p.user_id, p.transaction, p.amount, 
+            p.hash, p.method, 
               p.issuer, p.bank, p.completed, p.refund_requested, id,))
         updated = cursor.fetchone()
         cls.connection.commit()
         return updated is not None
-
+    
     @classmethod
     def mark_payment_completed(cls, id):
         cursor = cls.connection.cursor()
@@ -95,7 +94,7 @@ class PaymentModel:
         updated = cursor.fetchone()
         cls.connection.commit()
         return updated is not None
-
+    
     @classmethod
     def mark_refund_request(cls, id):
         cursor = cls.connection.cursor()
@@ -133,8 +132,12 @@ class PaymentModel:
     @classmethod
     def delete_payment(cls, id):
         cursor = cls.connection.cursor()
-        cursor.execute("DELETE FROM payments WHERE id = %s RETURNING id;",
-                       (id,))
+        cursor.execute("DELETE FROM payments WHERE id = %s RETURNING id;", (id,))
         deleted = cursor.fetchone()
         cls.connection.commit()
         return deleted is not None
+
+        
+            
+
+

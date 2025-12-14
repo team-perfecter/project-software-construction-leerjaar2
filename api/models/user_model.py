@@ -28,7 +28,7 @@ class UserModel:
         cursor.execute("""
             INSERT INTO users (username, password, name, email, phone, birth_year, role)
             VALUES (%s, %s, %s, %s, %s, %s, %s);
-        """, (user.username, user.password, user.name, user.email, user.phone, user.birth_year, "admin"))
+        """, (user.username, user.password, user.name, user.email, user.phone, user.birth_year, user.role))
         self.connection.commit()
 
     def get_user_by_id(self, user_id) -> User | None:
@@ -69,14 +69,6 @@ class UserModel:
         else:
             return None
 
-    def get_all_users(self) -> list[User]:
-        cursor = self.connection.cursor()
-        cursor.execute("""
-            SELECT * FROM users;
-            """)
-        user_list = self.map_to_user(cursor)
-        return user_list
-
     def update_user(self, user_id: int, update_data: dict) -> None:
         if user_id is None or update_data is None:
             return
@@ -92,6 +84,18 @@ class UserModel:
             WHERE id = %s;
         """, values)
         self.connection.commit()
+
+    def update_password(self, user_id: int, updated_password: str) -> bool:
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            UPDATE users
+            SET password = %s
+            WHERE id = %s;
+        """, (updated_password, user_id))
+        self.connection.commit()
+        return True
+
+
 
     def map_to_user(self, cursor):
         columns = [desc[0] for desc in cursor.description]
@@ -119,16 +123,8 @@ class UserModel:
         cursor = self.connection.cursor()
 
         cursor.execute("""
-            INSERT INTO admin_parking_lots (admin_id, lot_id)
+            INSERT INTO parking_lot_admins (admin_user_id, parking_lot_id)
             VALUES (%s, %s)
             ON CONFLICT DO NOTHING;
         """, (admin_id, lot_id))
         self.connection.commit()
-
-
-    def delete_user(self, user_id: int) -> bool:
-        cursor = self.connection.cursor()
-        cursor.execute("DELETE FROM users WHERE id = %s RETURNING id;", (user_id,))
-        deleted = cursor.fetchone()
-        self.connection.commit()
-        return deleted is not None
