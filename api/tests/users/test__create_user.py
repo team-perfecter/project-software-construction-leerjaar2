@@ -30,7 +30,6 @@ def test_register(client):
 
 
 def test_register_not_existing_password(client):
-    
     fake_user = {
         "username": "Waddap_User",
         "password": "woow",

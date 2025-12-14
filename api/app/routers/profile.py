@@ -57,7 +57,7 @@ async def login(data: UserLogin):
 
 
 @router.get("/get_user/{user_id}")
-async def get_user(user_id: int):
+async def get_user(user_id: int, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
     user: User = user_model.get_user_by_id(user_id)
     if user is None:
         return JSONResponse(status_code=404, content={"message": "User not found"})
@@ -69,11 +69,18 @@ async def get_me(user: User = Depends(get_current_user)):
     return user
 
 
+@router.get("/users")
+async def get_all_users(current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
+    users = user_model.get_all_users()
+    return HTTPException(status_code=201, detail={"message": users,})
+
+
 @router.post("/logout")
 async def logout(token: str = Depends(oauth2_scheme), user: User = Depends(get_current_user)):
     if user:
         revoke_token(token)
         return "logged out successfully"
+
 
 @router.put("/update_profile")
 async def update_me(update_data: UserUpdate, current_user: User = Depends(get_current_user)):
@@ -82,6 +89,19 @@ async def update_me(update_data: UserUpdate, current_user: User = Depends(get_cu
     update_fields = update_data.dict(exclude_unset=True)
     user_model.update_user(current_user.id, update_fields)
     return {"message": "Profile updated"}
+
+
+@router.delete("/users/{user_id}")
+async def delete_user(user_id: int, user: User = Depends(require_role(UserRole.SUPERADMIN))):
+    user = user_model.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404,
+                                detail="User not found")
+    deleted = user_model.delete_user(user_id)
+    if not deleted:
+        raise HTTPException(500, "Deletioon was unsuccessful")
+    return {"message": "User deleted successfully"}
+
 
 @router.post("/create_admin")
 async def create_admin(user: AdminCreate, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
@@ -95,8 +115,8 @@ async def create_admin(user: AdminCreate, current_user: User = Depends(require_r
     user_model.create_admin(user)
     logging.info(
         "A user has created a new profile with the name: %s", user.name)
-
     return JSONResponse(content={"message": "User created successfully"}, status_code=201)
+
 
 @router.post("/admin/{admin_id}/parking-lots/{lot_id}/assign")
 async def assign_lot_to_admin(admin_id: int, lot_id: int, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
