@@ -9,6 +9,7 @@ from starlette.responses import JSONResponse
 
 router = APIRouter(tags=["vehicles"])
 
+
 #Models:
 vehicle_model: Vehicle_model = Vehicle_model()
 

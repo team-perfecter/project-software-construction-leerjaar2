@@ -68,6 +68,7 @@ def test_get_all_vehicles_no_vehicles(client_with_token):
     assert response.status_code == 404
     assert response.json()["message"] == "Vehicles not found"
 
+
 # Test dat een ingelogde admin één specifieke vehicle kan ophalen
 def test_get_one_vehicle_logged_in(client_with_token):
     client, headers = client_with_token("superadmin")

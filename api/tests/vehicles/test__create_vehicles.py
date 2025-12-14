@@ -45,7 +45,7 @@ def test_create_vehicle_no_user(client) -> None:
         "color": "Green",
         "year": 2021,
     }
-    
+
     response = client.post("/vehicles/create", json=vehicle)
     assert response.status_code == 401  # Unauthorized
 

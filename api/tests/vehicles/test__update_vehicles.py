@@ -70,6 +70,7 @@ def test_update_vehicle_not_logged_in(client):
     response = client.put("/vehicles/update/1", json={})
     assert response.status_code == 401
 
+
 # Test wat er gebeurt als het voertuig niet bestaat
 def test_update_vehicle_not_found(client_with_token):
     client, headers = client_with_token("superadmin")
