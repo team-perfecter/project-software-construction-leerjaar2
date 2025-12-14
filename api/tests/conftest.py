@@ -88,24 +88,49 @@ def setup_users(request, client_with_token):
 
     client, headers = client_with_token("superadmin")
     response = client.get("/users/", headers=headers)
-    if response.status_code == 200:
-        for user in response.json():
-            client.delete(f"/users/{user['id']}", headers=headers)
+    
 
-        user1 = {
-            "username": "user",
-            "password": "password",
-            "role": "user"
-        }
+    if "create" not in request.node.fspath.basename:
+        for user in response.json():
+            if user['id'] != 1:
+                client.delete(f"/users/{user['id']}", headers=headers)
 
         user2 = {
+            "username": "admin",
+            "password": "admin123",
+            "email": "bla@bla.com",
+            "name": "admin",
+            "role": "admin"
+        }    
+    
+        user3 = {
             "username": "paymentadmin",
-            "password": "password",
+            "password": "admin123",
+            "email": "bla@bla.com",
+            "name": "paymentadmin",
             "role": "paymentadmin"
         }
 
-        client.post("/users", json=user1, headers=headers)
-        client.post("/users", json=user2, headers=headers)
+        user4 = {
+            "username": "user",
+            "password": "admin123",
+            "email": "bla@bla.com",
+            "name": "user",
+            "role": "user"
+        }
+
+        user5 = {
+            "username": "extrauser",
+            "password": "admin123",
+            "email": "bla@bla.com",
+            "name": "extrauser",
+            "role": "user"
+        }
+
+        client.post("/create_user", json=user2, headers=headers)
+        client.post("/create_user", json=user3, headers=headers)
+        client.post("/create_user", json=user4, headers=headers)
+        client.post("/create_user", json=user5, headers=headers)
 
 @pytest.fixture(autouse=True)
 def setup_parking_lots(request, client_with_token):
@@ -203,11 +228,12 @@ def get_last_payment_id(client_with_token):
     return data[-1]["id"]
 
 
-def get_last_uid(client):
+def get_last_uid(client_with_token):
     """
     Returns the id of the last user.
     """
-    response = client.get("/admin/users/")
+    client, headers = client_with_token("superadmin")
+    response = client.get("/users/", headers=headers)
     data = response.json()
     return data[-1]["id"]
 

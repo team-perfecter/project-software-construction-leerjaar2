@@ -18,6 +18,15 @@ class UserCreate(BaseModel):
     phone: Optional[str] = None
     birth_year: Optional[int] = None
 
+class UserCreateWithRole(BaseModel):
+    username: str
+    password: str
+    email: str
+    name: str
+    phone: Optional[str] = None
+    birth_year: Optional[int] = None
+    role: UserRole
+
 class User(UserCreate):
     id: int
     created_at: datetime

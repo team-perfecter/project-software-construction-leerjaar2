@@ -29,19 +29,9 @@ def test_register(client):
     assert response.status_code == 201
 
 
-def test_register_not_existing_password(client):
-    fake_user = {
-        "username": "Waddap_User",
-        "password": "woow",
-    }
-    response = client.post("/login", json=fake_user)
-    assert response.status_code == 401
-
-
-
 def test_register_same_name(client):
     fake_user = {
-        "username": "Waddap_User",
+        "username": "superadmin",
         "password": "Waddap",
         "name": "waddap",
         "email": "waddap@gmail.com",
@@ -84,17 +74,27 @@ def test_create_admin_already_exists(client_with_token):
 
 def test_login(client): 
     fake_user = {
-        "username": "Waddap_User",
-        "password": "Waddap",
+        "username": "superadmin",
+        "password": "admin123",
     }
     response = client.post("/login", json=fake_user)
     assert response.status_code == 200
 
 
+def test_login_wrong_password(client):
+    fake_user = {
+        "username": "superadmin",
+        "password": "wrong",
+    }
+    response = client.post("/login", json=fake_user)
+    assert response.status_code == 401
+
+
+
 def test_login_not_existing_username(client):
     fake_user = {
-        "username": "user_waddap",
-        "password": "Waddap",
+        "username": "wrong",
+        "password": "wrong",
     }
     response = client.post("/login", json=fake_user)
     assert response.status_code == 404
