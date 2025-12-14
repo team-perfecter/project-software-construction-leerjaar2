@@ -16,7 +16,7 @@ def test_get_all_users_as_superadmin(client_with_token):
 
 def test_get_user_as_superadmin(client_with_token):
     client, headers = client_with_token("superadmin")
-    response = client.get("/get_user/1", headers=headers)
+    response = client.get("/admin/users/1", headers=headers)
     assert response.status_code == 200
 
 
