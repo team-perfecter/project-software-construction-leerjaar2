@@ -2,6 +2,7 @@ from api.auth_utils import get_current_user, require_role
 from api.datatypes.user import User
 from fastapi import FastAPI, HTTPException, Body, Depends, APIRouter
 from api.models.vehicle_model import Vehicle_model
+from api.models.user_model import UserModel
 from api.datatypes.vehicle import Vehicle, VehicleCreate
 from api.datatypes.user import UserRole
 import logging
@@ -12,6 +13,7 @@ router = APIRouter(tags=["vehicles"])
 
 #Models:
 vehicle_model: Vehicle_model = Vehicle_model()
+user_model: UserModel = UserModel()
 
 #Logging configuration
 logging.basicConfig(
@@ -48,13 +50,26 @@ async def vehicles(
     return vehicle
 
 
-#Get vehicles of an user. (Admin)
+# Get vehicles of an user. (Admin)
 @router.get("/vehicles/user/{user_id}")
-async def vehicles_user(user_id: int, user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPERADMIN))):
-    #Get user vehicles.
-
+async def vehicles_user(
+    user_id: int,
+    user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPERADMIN)),
+):
+    
+    # Check if user exists
+    existing_user = user_model.get_user_by_id(user_id)
+    if not existing_user:
+        raise HTTPException(status_code=404, detail="user not found")
+    
+    # Get user vehicles
     vehicles_user = vehicle_model.get_all_user_vehicles(user_id)
-    return JSONResponse(content={"message": "Vehicles not found"}, status_code=201) if vehicles_user == [] else vehicles_user
+
+    # Return 404 if no vehicles are found
+    if not vehicles_user:
+        raise HTTPException(status_code=404, detail="vehicles not found")
+
+    return vehicles_user
 
 #Post:
 

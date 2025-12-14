@@ -109,8 +109,7 @@ def test_get_vehicles_of_non_existing_user(client_with_token):
     client, headers = client_with_token("superadmin")
 
     response = client.get("/vehicles/user/999999", headers=headers)
-    assert response.status_code == 201
-    assert response.json()["message"] == "Vehicles not found"
+    assert response.status_code == 404
 
 
 # Test wat er gebeurt als een normale gebruiker deze endpoint aanroept
