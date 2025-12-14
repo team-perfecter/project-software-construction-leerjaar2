@@ -25,7 +25,6 @@ def create_vehicle_for_user(client, headers, license_plate="TEST-001"):
     if response.status_code != 201:
         pytest.fail(f"Failed to create vehicle: {response.status_code} - {response.json()}")
 
-    # Get all vehicles - response is a list of tuples: [(id, user_id, plate, ...), ...]
     vehicles_response = client.get("/vehicles", headers=headers)
     if vehicles_response.status_code == 200:
         vehicles = vehicles_response.json()
