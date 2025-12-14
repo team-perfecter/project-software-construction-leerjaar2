@@ -44,6 +44,10 @@ def test_profile_when_loggedin(client_with_token):
     response = client.get("/profile", headers=headers)
     assert response.status_code == 200
 
+def test_profile_when_not_loggedin(client):
+    response = client.get("/profile")
+    assert response.status_code == 401
+
 def test_get_user(client):
     response = client.get("/get_user/1")
     assert response.status_code == 200

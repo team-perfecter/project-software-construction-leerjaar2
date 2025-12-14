@@ -75,7 +75,6 @@ async def logout(token: str = Depends(oauth2_scheme), user: User = Depends(get_c
         revoke_token(token)
         return "logged out successfully"
 
-
 @router.put("/update_profile")
 async def update_me(update_data: UserUpdate, current_user: User = Depends(get_current_user)):
     if not update_data:

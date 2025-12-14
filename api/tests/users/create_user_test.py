@@ -56,7 +56,7 @@ def test_create_admin(client_with_token):
     response = client.post("/create_admin", json=fake_user, headers=headers)
     assert response.status_code == 201
 
-def test_create_admin_again(client_with_token):
+def test_create_admin_already_exists(client_with_token):
     client, headers = client_with_token("superadmin")
     fake_user = {
         "username": "Waddap_admin",
