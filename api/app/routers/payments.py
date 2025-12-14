@@ -19,7 +19,7 @@ logging.basicConfig(
 )
 
 
-@router.post("/payments")
+@router.post("/payments", status_code=201)
 async def create_payment(p: PaymentCreate,
                          current_user: User = Depends(require_role(
                           UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
