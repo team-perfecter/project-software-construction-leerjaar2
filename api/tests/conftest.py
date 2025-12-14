@@ -69,7 +69,7 @@ def setup_vehicles(request, client_with_token):
     # Voeg een standaard voertuig toe als de test geen create test is
     if "create" not in request.node.fspath.basename:
         vehicle = {
-            "user_id": get_last_uid(client),
+            "user_id": 1,
             "license_plate": "ABC123",
             "make": "Toyota",
             "model": "Corolla",
@@ -209,14 +209,14 @@ def get_last_uid(client):
     """
     response = client.get("/admin/users/")
     data = response.json()
-    return data[1]["id"]
+    return data[-1]["id"]
 
-def get_last_vid(client, headers):
+def get_last_vid(client_with_token):
     """
     Returns the ID of the last vehicle in the database.
     Creates a vehicle if none exists.
     """
+    client, headers = client_with_token("superadmin")
     response = client.get("/vehicles", headers=headers)
     data = response.json()
-
-    return data[0]["id"]
+    return data[-1]["id"]
