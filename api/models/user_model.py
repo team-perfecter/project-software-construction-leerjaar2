@@ -23,6 +23,14 @@ class UserModel:
         """, (user.username, user.password, user.name, user.email, user.phone, user.birth_year))
         self.connection.commit()
 
+    def create_user_with_role(self, user: UserCreate) -> None:
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            INSERT INTO users (username, password, name, email, phone, birth_year, role)
+            VALUES (%s, %s, %s, %s, %s, %s, %s);
+        """, (user.username, user.password, user.name, user.email, user.phone, user.birth_year, user.role))
+        self.connection.commit()
+
     def create_admin(self, user: AdminCreate) -> None:
         cursor = self.connection.cursor()
         cursor.execute("""

@@ -1,5 +1,5 @@
 from starlette.responses import JSONResponse
-from api.datatypes.user import User, UserCreate, UserLogin, UserUpdate, UserRole, AdminCreate
+from api.datatypes.user import User, UserCreate, UserLogin, UserUpdate, UserRole, AdminCreate, UserCreateWithRole
 from api.models.user_model import UserModel
 from api.utilities.Hasher import hash_string
 import logging
@@ -57,11 +57,17 @@ async def login(data: UserLogin):
 
 
 @router.get("/get_user/{user_id}")
-async def get_user(user_id: int, user_auth: User = Depends(get_current_user)):
+async def get_user(user_id: int, current_user: User = Depends(require_role(UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.PAYMENTADMIN))):
     user: User = user_model.get_user_by_id(user_id)
     if user is None:
         return JSONResponse(status_code=404, content={"message": "User not found"})
     return {"username: " + user.username, "password: " + user.password}
+
+
+@router.get("/users")
+async def admin_get_all_users(current_user: User = Depends(require_role(UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.PAYMENTADMIN))):
+    users = user_model.get_all_users()
+    return users
 
 
 @router.get("/profile", response_model=User)
@@ -87,8 +93,36 @@ async def update_me(update_data: UserUpdate, current_user: User = Depends(get_cu
     user_model.update_user(current_user.id, update_fields)
     return {"message": "Profile updated"}
 
+
+@router.delete("/users/{user_id}")
+async def delete_user(user_id: int, current_user = require_role(UserRole.SUPERADMIN)):
+    user = user_model.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    deleted = user_model.delete_user(user_id)
+    if not deleted:
+        raise HTTPException(500, "Deletion was unsuccesful")
+    return {"message": "User deleted successfully"}
+
+
+@router.post("/create_user")
+async def create_user_with_role(user: AdminCreate, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
+    username_check = user_model.get_user_by_username(user.username)
+    if username_check is not None:
+        logging.info(
+            "A user tried to create a profile, but the name was already created: %s", user.name)
+        raise HTTPException(status_code=409, detail="Name already taken")
+    hashed_password = hash_string(user.password)
+    user.password = hashed_password
+    user_model.create_user_with_role(user)
+    logging.info(
+        "A user has created a new profile with the name: %s", user.name)
+
+    return JSONResponse(content={"message": "User created successfully"}, status_code=201)
+
+
 @router.post("/create_admin")
-async def create_admin(user: AdminCreate, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
+async def create_admin(user: UserCreateWithRole, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
     username_check = user_model.get_user_by_username(user.username)
     if username_check is not None:
         logging.info(
