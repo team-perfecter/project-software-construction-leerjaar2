@@ -14,23 +14,19 @@ class PaymentModel:
     @classmethod
     def create_payment(cls, p: PaymentCreate):
         cursor = cls.connection.cursor()
-        try:
-            cursor.execute("""
-                INSERT INTO payments
-                (user_id, transaction, amount, hash, method, issuer, bank)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                RETURNING id;
-            """,
-                           (p.user_id, p.transaction, p.amount,
-                            p.hash, p.method, p.issuer, p.bank))
-            created = cursor.fetchone()
-            cls.connection.commit()
-            print("Created:", created)
-            return created is not None
-        except Exception as e:
-            print("DB Error:", e)
-            cls.connection.rollback()
-            return False
+        cursor.execute("""
+            INSERT INTO payments
+            (user_id, transaction, amount, hash, method, issuer, bank)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            RETURNING id;
+        """,
+                        (p.user_id, p.transaction, p.amount,
+                        p.hash, p.method, p.issuer, p.bank))
+        created = cursor.fetchone()
+        cls.connection.commit()
+        print("Created:", created)
+        return created is not None
+
 
     @classmethod
     def get_payment_by_payment_id(cls, id):

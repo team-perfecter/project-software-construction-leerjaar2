@@ -50,11 +50,9 @@ def is_token_revoked(token: str) -> bool:
 
 
 def get_current_user(token: str = Depends(oauth2_scheme)):
-    """Controleer of token geldig en niet ingetrokken is."""
     if is_token_revoked(token):
         raise HTTPException(
             status_code=401, detail="Token has been revoked (user logged out)")
-
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
