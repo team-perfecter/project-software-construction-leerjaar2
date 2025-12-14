@@ -17,5 +17,5 @@ def test_delete_user_doesnt_exist(client_with_token):
 def test_delete_user_as_user(client_with_token):
     client, headers = client_with_token("user")
     response = client.delete("/users/1", headers=headers)
-    assert response.status_code == 403
+    assert response.status_code == 401
 

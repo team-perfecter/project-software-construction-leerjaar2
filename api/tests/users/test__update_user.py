@@ -15,6 +15,8 @@ def test_update_profile(client_with_token):
 
 def test_update_profile_without_user_changes(client_with_token):
     client, headers = client_with_token("user")
-    fake_user = False
-    response = client.put("/update_profile", headers=headers, json=fake_user)
+    fake_user = {
+        "username": "waddapjess",
+    }
+    response = client.put("/update_profile", json=fake_user, headers=headers)
     assert response.status_code == 400

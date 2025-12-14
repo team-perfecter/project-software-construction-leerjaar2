@@ -78,3 +78,14 @@ def get_last_pid(client):
     response = client.get("/parking-lots/")
     data = response.json()
     return data[1]["id"]
+
+def get_last_uid(client):
+    """
+    There are a max of 2 parking lots in the database when running a new test.
+    The id of these parking lots might be different for each test.
+    this function gets the 2 parking lots, and returns the id of the last one.
+    this is to make sure the id of a parking lot that is being tested actually exists.
+    """
+    response = client.get("/users/")
+    data = response.json()
+    return data[1]["id"]
