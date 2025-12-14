@@ -28,8 +28,14 @@ class ParkingLotModel:
         @return: list of Parking_lot objects
         """
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM parking_lots;")
-        return self.map_to_parking_lot(cursor)
+        try:
+            cursor.execute("SELECT * FROM parking_lots;")
+            return self.map_to_parking_lot(cursor)
+        except psycopg2.errors.InFailedSqlTransaction:
+            self.connection.rollback()
+            cursor = self.connection.cursor()
+            cursor.execute("SELECT * FROM parking_lots;")
+            return self.map_to_parking_lot(cursor)
 
     def get_parking_lot_by_lid(self, lot_id: int) -> Optional[Parking_lot]:
         """

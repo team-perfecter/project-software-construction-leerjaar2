@@ -6,10 +6,10 @@ class Reservation(BaseModel):
   created_at: datetime
 
 class ReservationCreate(BaseModel):
-    user_id: int
     vehicle_id: int
     parking_lot_id: int
-    status: str
     start_time: datetime
-    end_time: datetime | None
-    cost: int
+    end_time: datetime
+    user_id: int | None = None       # ✅ Maak optioneel
+    status: str = "pending"          # ✅ Default value
+    cost: int = 0                    # ✅ Default value
