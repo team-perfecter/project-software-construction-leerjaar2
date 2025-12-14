@@ -4,71 +4,114 @@ from api.main import app
 from api.auth_utils import create_access_token
 
 
-@pytest.fixture
-def client():
-    """Provides a FastAPI TestClient instance."""
+@pytest.fixture(scope="session")
+def base_client():
+    """Provides a FastAPI TestClient instance (session-scoped for reuse)."""
     return TestClient(app)
 
 
 @pytest.fixture
-def client_with_token(client):
+def client(base_client):
+    """Provides access to the session-scoped client."""
+    return base_client
+
+
+@pytest.fixture
+def client_with_token(base_client):
     """
     Returns a TestClient and headers with JWT token for a given role.
-
-    Usage:
-        client, headers = client_with_token("superadmin")
-        client, headers = client_with_token("paymentadmin")
+    Uses session-scoped client for better performance.
     """
 
     def _client_with_role(username: str):
         token = create_access_token({"sub": username})
         headers = {"Authorization": f"Bearer {token}"}
-        return client, headers
+        return base_client, headers
 
     return _client_with_role
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="function")
 def setup_parking_lots(request, client_with_token):
     """
-    Clears the database of parking lots.
-    If the create endpoints are not being tested, this also adds 2 parking lots to the database
+    Fixture to ensure parking lots exist before tests and clean up after.
+    Optimized for speed.
     """
-    # Get superadmin client
     client, headers = client_with_token("superadmin")
 
-    # ✅ FIRST: Delete all reservations to avoid foreign key constraint violations
-    try:
-        # Get all users to delete their reservations
-        users_response = client.get("/admin/users", headers=headers)
-        if users_response.status_code == 200:
-            users = users_response.json()
-            for user in users:
-                # Delete reservations for each user
-                reservations_response = client.get(
-                    f"/reservations/user/{user['id']}", headers=headers
-                )
-                if reservations_response.status_code == 200:
-                    reservations = reservations_response.json()
-                    for reservation in reservations:
-                        client.delete(
-                            f"/reservations/delete/{reservation['id']}", headers=headers
-                        )
-    except Exception as e:
-        print(f"Warning: Could not delete reservations: {e}")
-
-    # ✅ SECOND: Delete all parking lots
-    response = client.get("/parking-lots/", headers=headers)
-    if response.status_code == 200:
-        for lot in response.json():
-            try:
-                client.delete(f"/parking-lots/{lot['id']}", headers=headers)
-            except Exception as e:
-                print(f"Warning: Could not delete parking lot {lot['id']}: {e}")
+    # Skip cleanup for read-only tests (GET endpoints)
+    is_readonly_test = any(keyword in request.node.name.lower() for keyword in ["get", "read", "list"])
+    
+    if not is_readonly_test:
+        # Only cleanup if test modifies data
+        _cleanup_all(client, headers)
 
     # Create default parking lots if not testing create endpoints
     if "create" not in request.node.fspath.basename:
-        lot = {
+        _ensure_parking_lots_exist(client, headers)
+
+
+def _cleanup_all(client, headers):
+    """Fast cleanup using batch operations where possible."""
+    try:
+        # Get all parking lots once
+        lots_response = client.get("/parking-lots/", headers=headers)
+        if lots_response.status_code != 200:
+            return
+        
+        lots = lots_response.json()
+        
+        # Delete sessions for all parking lots
+        for lot in lots:
+            lot_id = lot['id']
+            try:
+                # Get sessions
+                sessions_response = client.get(f"/parking-lots/{lot_id}/sessions", headers=headers)
+                if sessions_response.status_code == 200:
+                    sessions = sessions_response.json()
+                    # Delete sessions without individual error handling
+                    for session in sessions:
+                        client.delete(
+                            f"/parking-lots/{lot_id}/sessions/{session['id']}", 
+                            headers=headers
+                        )
+            except:
+                pass  # Silently continue
+        
+        # Delete all reservations in one go
+        try:
+            reservations_response = client.get("/reservations/all", headers=headers)
+            if reservations_response.status_code == 200:
+                for reservation in reservations_response.json():
+                    client.delete(
+                        f"/reservations/delete/{reservation['id']}", 
+                        headers=headers
+                    )
+        except:
+            pass
+        
+        # Delete parking lots
+        for lot in lots:
+            try:
+                client.delete(f"/parking-lots/{lot['id']}", headers=headers)
+            except:
+                pass
+    except:
+        pass  # Fail silently
+
+
+def _ensure_parking_lots_exist(client, headers):
+    """Only create parking lots if they don't exist."""
+    try:
+        response = client.get("/parking-lots/", headers=headers)
+        if response.status_code == 200 and len(response.json()) >= 2:
+            return  # Parking lots already exist
+    except:
+        pass
+    
+    # Create parking lots
+    lot_data = [
+        {
             "name": "Bedrijventerrein Almere Parkeergarage",
             "location": "Industrial Zone",
             "address": "Schanssingel 337, 2421 BS Almere",
@@ -77,9 +120,8 @@ def setup_parking_lots(request, client_with_token):
             "daytariff": 0.5,
             "lat": 0,
             "lng": 0,
-        }
-
-        lot2 = {
+        },
+        {
             "name": "Vlaardingen Evenementenhal Parkeerterrein",
             "location": "Event Center",
             "address": "Westlindepark 756, 8920 AB Vlaardingen",
@@ -89,19 +131,33 @@ def setup_parking_lots(request, client_with_token):
             "lat": 0,
             "lng": 0,
         }
-
-        client.post("/parking-lots", json=lot, headers=headers)
-        client.post("/parking-lots", json=lot2, headers=headers)
+    ]
+    
+    for lot in lot_data:
+        try:
+            client.post("/parking-lots", json=lot, headers=headers)
+        except:
+            pass
 
 
 # region HELPER FUNCTIONS FOR TESTS
 
 
+# Cache voor parking lot IDs
+_parking_lot_cache = {}
+
+
 def get_last_pid(client):
     """
     Gets the ID of the last parking lot in the database.
-    Works with any number of parking lots (minimum 1).
+    Uses caching for better performance.
     """
+    cache_key = "last_pid"
+    
+    # Return cached value if available
+    if cache_key in _parking_lot_cache:
+        return _parking_lot_cache[cache_key]
+    
     response = client.get("/parking-lots/")
 
     if response.status_code != 200:
@@ -112,26 +168,17 @@ def get_last_pid(client):
     if not data or len(data) == 0:
         pytest.fail("No parking lots found in database")
 
-    # Use -1 to get last item, works with both 1 and 2+ parking lots
-    return data[-1]["id"]
+    pid = data[-1]["id"]
+    _parking_lot_cache[cache_key] = pid
+    return pid
 
 
 def create_test_vehicle(client, headers, license_plate="TEST-VEHICLE"):
     """
     Creates a test vehicle for the authenticated user.
-
-    Args:
-        client: TestClient instance
-        headers: Authorization headers with Bearer token
-        license_plate: Unique license plate (default: "TEST-VEHICLE")
-
-    Returns:
-        int: The ID of the created vehicle
-
-    Raises:
-        pytest.fail: If vehicle creation fails
+    Optimized version with reduced API calls.
     """
-    # Get authenticated user's ID
+    # Get authenticated user's ID (cache this if possible)
     profile_response = client.get("/profile", headers=headers)
     if profile_response.status_code != 200:
         pytest.fail(f"Failed to get user profile: {profile_response.status_code}")
@@ -153,14 +200,17 @@ def create_test_vehicle(client, headers, license_plate="TEST-VEHICLE"):
     )
 
     if create_response.status_code != 201:
-        error_detail = (
-            create_response.json() if create_response.text else "No error details"
-        )
-        pytest.fail(
-            f"Failed to create vehicle: {create_response.status_code} - {error_detail}"
-        )
+        pytest.fail(f"Failed to create vehicle: {create_response.status_code}")
 
-    # Get vehicle ID from GET /vehicles
+    # Try to extract ID from creation response first
+    try:
+        created_data = create_response.json()
+        if isinstance(created_data, dict) and "id" in created_data:
+            return created_data["id"]
+    except:
+        pass
+
+    # Fallback: Get vehicle ID from GET /vehicles
     vehicles_response = client.get("/vehicles", headers=headers)
 
     if vehicles_response.status_code != 200:
@@ -185,17 +235,7 @@ def create_test_vehicle(client, headers, license_plate="TEST-VEHICLE"):
 def create_test_parking_lot(client, headers, name="Test Parking Lot"):
     """
     Creates a test parking lot (requires superadmin).
-
-    Args:
-        client: TestClient instance
-        headers: Authorization headers with Bearer token (must be superadmin)
-        name: Name of the parking lot
-
-    Returns:
-        int: The ID of the created parking lot
-
-    Raises:
-        pytest.fail: If parking lot creation fails
+    Optimized version.
     """
     parking_lot_data = {
         "name": name,
@@ -213,14 +253,17 @@ def create_test_parking_lot(client, headers, name="Test Parking Lot"):
     )
 
     if create_response.status_code != 201:
-        error_detail = (
-            create_response.json() if create_response.text else "No error details"
-        )
-        pytest.fail(
-            f"Failed to create parking lot: {create_response.status_code} - {error_detail}"
-        )
+        pytest.fail(f"Failed to create parking lot: {create_response.status_code}")
 
-    # Get the last parking lot ID
+    # Try to get ID from response
+    try:
+        data = create_response.json()
+        if isinstance(data, dict) and "id" in data:
+            return data["id"]
+    except:
+        pass
+
+    # Fallback: Get the last parking lot ID
     response = client.get("/parking-lots/")
     if response.status_code == 200:
         parking_lots = response.json()
@@ -235,18 +278,7 @@ def setup_reservation_prerequisites(
 ):
     """
     Sets up both a vehicle and parking lot for reservation/session tests.
-
-    Args:
-        client_with_token: The client_with_token fixture
-        role: User role ("user", "admin", "superadmin")
-        vehicle_plate: License plate for the vehicle
-        lot_name: Name for the parking lot
-
-    Returns:
-        tuple: (client, headers, vehicle_id, parking_lot_id)
-
-    Example:
-        client, headers, vehicle_id, lot_id = setup_reservation_prerequisites(client_with_token, "user")
+    Reuses existing parking lots when possible.
     """
     # Get client with user role
     user_client, user_headers = client_with_token(role)
@@ -254,14 +286,12 @@ def setup_reservation_prerequisites(
     # Create vehicle as user
     vehicle_id = create_test_vehicle(user_client, user_headers, vehicle_plate)
 
-    # Get/create parking lot
-    # Check if parking lots exist (from setup_parking_lots fixture)
+    # Always use existing parking lot (created by fixture)
     response = user_client.get("/parking-lots/")
     if response.status_code == 200 and response.json():
-        # Use existing parking lot
         parking_lot_id = response.json()[-1]["id"]
     else:
-        # Create new parking lot (requires superadmin)
+        # Fallback: create if needed
         superadmin_client, superadmin_headers = client_with_token("superadmin")
         parking_lot_id = create_test_parking_lot(
             superadmin_client, superadmin_headers, lot_name
@@ -276,15 +306,10 @@ def setup_session_prerequisites(
     """
     Sets up vehicle and parking lot for session tests.
     Alias for setup_reservation_prerequisites for clarity in session tests.
-
-    Args:
-        client_with_token: The client_with_token fixture
-        role: User role ("user", "admin", "superadmin")
-        vehicle_plate: License plate for the vehicle
-
-    Returns:
-        tuple: (client, headers, vehicle_id, parking_lot_id)
     """
     return setup_reservation_prerequisites(
         client_with_token, role, vehicle_plate, "Session Test Lot"
     )
+
+
+# endregion
