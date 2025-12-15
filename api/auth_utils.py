@@ -88,7 +88,7 @@ def user_can_manage_lot(user: User, lid: int) -> bool:
     return False
 
 
-def require_lot_access():
+def require_lot_access():      
     def wrapper(
         lid: int,
         current_user: User = Depends(get_current_user)

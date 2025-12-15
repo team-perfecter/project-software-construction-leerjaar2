@@ -1,8 +1,5 @@
-from datetime import datetime
-
 import psycopg2
-
-from api.datatypes.user import UserCreate, User, UserLogin, UserUpdate, AdminCreate
+from api.datatypes.user import UserCreate, User, UserLogin
 
 
 class UserModel:
@@ -23,13 +20,14 @@ class UserModel:
         """, (user.username, user.password, user.name, user.email, user.phone, user.birth_year))
         self.connection.commit()
 
-    def create_admin(self, user: AdminCreate) -> None:
+    def create_user_with_role(self, user: UserCreate) -> None:
         cursor = self.connection.cursor()
         cursor.execute("""
             INSERT INTO users (username, password, name, email, phone, birth_year, role)
             VALUES (%s, %s, %s, %s, %s, %s, %s);
-        """, (user.username, user.password, user.name, user.email, user.phone, user.birth_year, "admin"))
+        """, (user.username, user.password, user.name, user.email, user.phone, user.birth_year, user.role))
         self.connection.commit()
+
 
     def get_user_by_id(self, user_id) -> User | None:
         cursor = self.connection.cursor()
@@ -68,6 +66,14 @@ class UserModel:
             return user_list[0]
         else:
             return None
+
+    def get_all_users(self) -> list[User]:
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            SELECT * FROM users;
+            """)
+        user_list = self.map_to_user(cursor)
+        return user_list
 
     def update_user(self, user_id: int, update_data: dict) -> None:
         if user_id is None or update_data is None:
@@ -123,4 +129,4 @@ class UserModel:
         cursor.execute("DELETE FROM users WHERE id = %s RETURNING id;", (user_id,))
         deleted = cursor.fetchone()
         self.connection.commit()
-        return deleted is not None
+        return deleted
