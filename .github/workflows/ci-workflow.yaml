@@ -60,11 +60,3 @@ jobs:
     - name: Stop services
       if: always()
       run: docker compose down -v
-
-  webhook:
-    runs-on: ubuntu-latest
-    needs: [test, report]
-    if: always()
-    steps:
-      - name: Placeholder
-        run: echo "Webhook job - to be implemented"
