@@ -10,50 +10,29 @@ jobs:
   unit-tests:
     runs-on: ubuntu-latest
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }}
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: user
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: database
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
+    - name: Start services with Docker Compose
+      run: docker-compose up -d db db_migration
 
-    - name: Cache pip dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-
-    - name: Install dependencies
+    - name: Wait for database
       run: |
-        python -m pip install --upgrade pip
-        pip install -r api/requirements.txt
-        pip install pytest pytest-cov
+        until docker-compose exec -T db pg_isready -U user -d database; do
+          echo "Waiting for database..."
+          sleep 2
+        done
 
     - name: Run unit tests
       run: |
-        pytest api/tests/unit/ -v --cov=api --cov-report=xml:coverage-unit.xml --cov-report=term
-      env:
-        PGHOST: localhost
-        PGPORT: 5432
+        docker-compose run --rm -v ${PWD}:/app parking-api \
+          pytest /app/api/tests/unit/ \
+          --cov=api \
+          --cov-report=xml:/app/coverage-unit.xml \
+          --cov-report=term \
+          -v
 
     - name: Upload unit test coverage
       uses: actions/upload-artifact@v4
@@ -62,53 +41,36 @@ jobs:
         name: coverage-unit
         path: coverage-unit.xml
 
+    - name: Stop services
+      if: always()
+      run: docker-compose down -v
+
   integration-tests:
     runs-on: ubuntu-latest
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }}
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: user
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: database
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
+    - name: Start services with Docker Compose
+      run: docker-compose up -d db db_migration
 
-    - name: Cache pip dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-
-    - name: Install dependencies
+    - name: Wait for database
       run: |
-        python -m pip install --upgrade pip
-        pip install -r api/requirements.txt
-        pip install pytest pytest-cov
+        until docker-compose exec -T db pg_isready -U user -d database; do
+          echo "Waiting for database..."
+          sleep 2
+        done
 
     - name: Run integration tests
       run: |
-        pytest api/tests/integration/ -v --cov=api --cov-report=xml:coverage-integration.xml --cov-report=term
-      env:
-        PGHOST: localhost
-        PGPORT: 5432
+        docker-compose run --rm -v ${PWD}:/app parking-api \
+          pytest /app/api/tests/integration/ \
+          --cov=api \
+          --cov-report=xml:/app/coverage-integration.xml \
+          --cov-report=term \
+          -v
 
     - name: Upload integration test coverage
       uses: actions/upload-artifact@v4
@@ -117,53 +79,35 @@ jobs:
         name: coverage-integration
         path: coverage-integration.xml
 
+    - name: Stop services
+      if: always()
+      run: docker-compose down -v
+
   performance-tests:
     runs-on: ubuntu-latest
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }}
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: user
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: database
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
+    - name: Start services with Docker Compose
+      run: docker-compose up -d db db_migration
 
-    - name: Cache pip dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-
-    - name: Install dependencies
+    - name: Wait for database
       run: |
-        python -m pip install --upgrade pip
-        pip install -r api/requirements.txt
-        pip install pytest pytest-benchmark
+        until docker-compose exec -T db pg_isready -U user -d database; do
+          echo "Waiting for database..."
+          sleep 2
+        done
 
     - name: Run performance tests
       run: |
-        pytest api/tests/performance/ -v --benchmark-only --benchmark-json=benchmark-results.json
-      env:
-        PGHOST: localhost
-        PGPORT: 5432
+        docker-compose run --rm -v ${PWD}:/app parking-api \
+          pytest /app/api/tests/performance/ \
+          --benchmark-only \
+          --benchmark-json=/app/benchmark-results.json \
+          -v
 
     - name: Upload benchmark results
       uses: actions/upload-artifact@v4
@@ -171,6 +115,10 @@ jobs:
       with:
         name: benchmark-results
         path: benchmark-results.json
+
+    - name: Stop services
+      if: always()
+      run: docker-compose down -v
 
   # report:
   #   runs-on: ubuntu-latest
