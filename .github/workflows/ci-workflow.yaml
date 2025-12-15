@@ -16,18 +16,18 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Start services with Docker Compose
-      run: docker-compose up -d db db_migration
+      run: docker compose up -d db db_migration
 
     - name: Wait for database
       run: |
-        until docker-compose exec -T db pg_isready -U user -d database; do
+        until docker compose exec -T db pg_isready -U user -d database; do
           echo "Waiting for database..."
           sleep 2
         done
 
     - name: Run unit tests
       run: |
-        docker-compose run --rm -v ${PWD}:/app parking-api \
+        docker compose run --rm -v ${PWD}:/app parking-api \
           pytest /app/api/tests/unit/ \
           --cov=api \
           --cov-report=xml:/app/coverage-unit.xml \
@@ -43,7 +43,7 @@ jobs:
 
     - name: Stop services
       if: always()
-      run: docker-compose down -v
+      run: docker compose down -v
 
   integration-tests:
     runs-on: ubuntu-latest
@@ -54,18 +54,18 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Start services with Docker Compose
-      run: docker-compose up -d db db_migration
+      run: docker compose up -d db db_migration
 
     - name: Wait for database
       run: |
-        until docker-compose exec -T db pg_isready -U user -d database; do
+        until docker compose exec -T db pg_isready -U user -d database; do
           echo "Waiting for database..."
           sleep 2
         done
 
     - name: Run integration tests
       run: |
-        docker-compose run --rm -v ${PWD}:/app parking-api \
+        docker compose run --rm -v ${PWD}:/app parking-api \
           pytest /app/api/tests/integration/ \
           --cov=api \
           --cov-report=xml:/app/coverage-integration.xml \
@@ -81,7 +81,7 @@ jobs:
 
     - name: Stop services
       if: always()
-      run: docker-compose down -v
+      run: docker compose down -v
 
   performance-tests:
     runs-on: ubuntu-latest
@@ -92,18 +92,18 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Start services with Docker Compose
-      run: docker-compose up -d db db_migration
+      run: docker compose up -d db db_migration
 
     - name: Wait for database
       run: |
-        until docker-compose exec -T db pg_isready -U user -d database; do
+        until docker compose exec -T db pg_isready -U user -d database; do
           echo "Waiting for database..."
           sleep 2
         done
 
     - name: Run performance tests
       run: |
-        docker-compose run --rm -v ${PWD}:/app parking-api \
+        docker compose run --rm -v ${PWD}:/app parking-api \
           pytest /app/api/tests/performance/ \
           --benchmark-only \
           --benchmark-json=/app/benchmark-results.json \
@@ -118,7 +118,7 @@ jobs:
 
     - name: Stop services
       if: always()
-      run: docker-compose down -v
+      run: docker compose down -v
 
   # report:
   #   runs-on: ubuntu-latest
