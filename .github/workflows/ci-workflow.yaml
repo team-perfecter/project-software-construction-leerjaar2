@@ -64,7 +64,7 @@ jobs:
 
     - name: Run tests with pytest
       run: |
-        pytest tests/ -v --cov=api --cov-report=xml --cov-report=term
+        pytest api/tests/ -v --cov=api --cov-report=xml --cov-report=term
       env:
         PGHOST: localhost
         PGPORT: 5432
