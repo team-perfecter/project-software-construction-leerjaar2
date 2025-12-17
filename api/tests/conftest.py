@@ -5,8 +5,8 @@ from api.auth_utils import create_access_token
 from api.models.user_model import UserModel
 
 
-
 pytest_plugins = "pytest_benchmark"
+
 
 def pytest_configure(config):
     config.option.benchmark_min_rounds = 20
@@ -17,6 +17,7 @@ def client():
     """Provides a FastAPI TestClient instance."""
     return TestClient(app)
 
+
 @pytest.fixture
 def client_with_token(client):
     """
@@ -26,12 +27,14 @@ def client_with_token(client):
         client, headers = client_with_token("superadmin")
         client, headers = client_with_token("paymentadmin")
     """
+
     def _client_with_role(username: str):
         token = create_access_token({"sub": username})
         headers = {"Authorization": f"Bearer {token}"}
         return client, headers
 
     return _client_with_role
+
 
 @pytest.fixture(autouse=True)
 def setup_vehicles(request, client_with_token):
@@ -87,11 +90,10 @@ def setup_users(request, client_with_token):
 
     client, headers = client_with_token("superadmin")
     response = client.get("/users/", headers=headers)
-    
 
     if "create" not in request.node.fspath.basename:
         for user in response.json():
-            if user['id'] > 4:
+            if user["id"] > 4:
                 client.delete(f"/users/{user['id']}", headers=headers)
 
         user2 = {
@@ -99,15 +101,15 @@ def setup_users(request, client_with_token):
             "password": "admin123",
             "email": "bla@bla.com",
             "name": "admin",
-            "role": "admin"
-        }    
-    
+            "role": "admin",
+        }
+
         user3 = {
             "username": "paymentadmin",
             "password": "admin123",
             "email": "bla@bla.com",
             "name": "paymentadmin",
-            "role": "paymentadmin"
+            "role": "paymentadmin",
         }
 
         user4 = {
@@ -115,7 +117,7 @@ def setup_users(request, client_with_token):
             "password": "admin123",
             "email": "bla@bla.com",
             "name": "user",
-            "role": "user"
+            "role": "user",
         }
 
         user5 = {
@@ -123,13 +125,14 @@ def setup_users(request, client_with_token):
             "password": "admin123",
             "email": "bla@bla.com",
             "name": "extrauser",
-            "role": "user"
+            "role": "user",
         }
 
         client.post("/create_user", json=user2, headers=headers)
         client.post("/create_user", json=user3, headers=headers)
         client.post("/create_user", json=user4, headers=headers)
         client.post("/create_user", json=user5, headers=headers)
+
 
 @pytest.fixture(autouse=True)
 def setup_parking_lots(request, client_with_token):
@@ -153,7 +156,7 @@ def setup_parking_lots(request, client_with_token):
             "tariff": 0.5,
             "daytariff": 0.5,
             "lat": 0,
-            "lng": 0
+            "lng": 0,
         }
 
         lot2 = {
@@ -164,7 +167,7 @@ def setup_parking_lots(request, client_with_token):
             "tariff": 0.5,
             "daytariff": 0.5,
             "lat": 0,
-            "lng": 0
+            "lng": 0,
         }
 
         client.post("/parking-lots", json=lot, headers=headers)
@@ -211,10 +214,10 @@ def setup_payments(request, client_with_token):
                 "hash": f"hash{i+1}",
                 "method": f"method{i+1}",
                 "issuer": f"issuer{i+1}",
-                "bank": f"bank{i+1}"
+                "bank": f"bank{i+1}",
             }
             client.post("/payments", json=payment, headers=headers)
-            
+
 
 def get_last_payment_id(client_with_token):
     """
@@ -235,6 +238,7 @@ def get_last_uid(client_with_token):
     response = client.get("/users/", headers=headers)
     data = response.json()
     return data[-1]["id"]
+
 
 def get_last_vid(client_with_token):
     """
