@@ -4,14 +4,10 @@ from hashlib import md5
 import math
 import uuid
 
-def calculate_price(parkinglot, sid, data):
+def calculate_price(parking_lot, session):
     price = 0
-    start = datetime.strptime(data["started"], "%d-%m-%Y %H:%M:%S")
-
-    if data.get("stopped"):
-        end = datetime.strptime(data["stopped"], "%d-%m-%Y %H:%M:%S")
-    else:
-        end = datetime.now()
+    start = session.started
+    end = session.stopped or datetime.now()
 
     diff = end - start
     hours = math.ceil(diff.total_seconds() / 3600)
@@ -19,20 +15,16 @@ def calculate_price(parkinglot, sid, data):
     if diff.total_seconds() < 180:
         price = 0
     elif end.date() > start.date():
-        price = float(parkinglot.get("daytariff", 999)) * (diff.days + 1)
+        price = float(parking_lot.daytariff) * (diff.days + 1)
     else:
-        price = float(parkinglot.get("tariff")) * hours
-
-        if price > float(parkinglot.get("daytariff", 999)):
-            price = float(parkinglot.get("daytariff", 999))
+        price = float(parking_lot.tariff) * hours
+        if price > float(parking_lot.daytariff):
+            price = float(parking_lot.daytariff)
 
     return (price, hours, diff.days + 1 if end.date() > start.date() else 0)
 
-
-
 def generate_payment_hash(sid, data):
     return md5(str(sid + data["licenseplate"]).encode("utf-8")).hexdigest()
-
 
 def generate_transaction_validation_hash():
     return str(uuid.uuid4())
