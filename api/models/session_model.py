@@ -35,11 +35,9 @@ class SessionModel:
         return self.map_to_session(cursor)[0]
 
     # Sessie stoppen (wanneer voertuig vertrekt)
-    def stop_session(self, session: Session):
-
+    def stop_session(self, session: Session, cost: float) -> Session:
         stopped = datetime.now()
         duration_minutes = int((stopped - session.started).total_seconds() / 60)
-        cost = round(duration_minutes * 0.05, 2) + 1
 
         cursor = self.connection.cursor()
         cursor.execute("""
@@ -53,9 +51,9 @@ class SessionModel:
 
         self.connection.commit()
 
-        row = cursor.fetchone()
-        columns = [desc[0] for desc in cursor.description]
-        return dict(zip(columns, row))
+        # Use map_to_session to return a Session object
+        session_list = self.map_to_session(cursor)
+        return session_list[0] if session_list else None
 
     # Alle sessies ophalen
     def get_all_sessions(self) -> list[Session]:
@@ -85,23 +83,13 @@ class SessionModel:
         session_list = self.map_to_session(cursor)
         return session_list[0] if len(session_list) > 0 else None
 
-    def get_vehicle_sessions(self, vehicle_id: int):
+    def get_vehicle_session(self, vehicle_id: int) -> Session | None:
         cursor = self.connection.cursor()
         cursor.execute("""
             SELECT * FROM sessions WHERE vehicle_id = %s AND stopped IS NULL;
         """, (vehicle_id,))
-        rows = cursor.fetchall()
-        columns = [d[0] for d in cursor.description]
-
-        result = [
-            {
-                col: (val.isoformat() if isinstance(val, datetime) else val)
-                for col, val in zip(columns, row)
-            }
-            for row in rows
-        ]
-
-        return result
+        session_list = self.map_to_session(cursor)
+        return session_list[0] if session_list else None
 
     # Helperfunctie om DB-rijen om te zetten naar Session objecten
     def map_to_session(self, cursor) -> list[Session]:

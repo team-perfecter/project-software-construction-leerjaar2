@@ -85,5 +85,18 @@ Authorization: Bearer {{token}}
 ### DELETE USER (1.6)
 DELETE http://127.0.0.1:8000/admin/users/2
 Authorization: Bearer {{token}}
-
+### Get current user payments
+GET http://127.0.0.1:8000/payments/me/open
+Authorization: Bearer {{token}}
 ###
+POST http://localhost:8000/parking-lots/1/sessions/start?vehicle_id=1
+Authorization: Bearer {{token}}
+### Get current sessions
+GET http://localhost:8000/sessions/active
+Authorization: Bearer {{token}}
+### Get current sessions of a vehicle
+GET http://localhost:8000/sessions/vehicle/1
+Authorization: Bearer {{token}}
+### Stop a session
+POST http://localhost:8000/parking-lots/1/sessions/stop?vehicle_id=1
+Authorization: Bearer {{token}}

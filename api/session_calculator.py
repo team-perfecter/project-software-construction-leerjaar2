@@ -1,5 +1,4 @@
 from datetime import datetime
-from storage_utils import load_payment_data
 from hashlib import md5
 import math
 import uuid
@@ -20,21 +19,19 @@ def calculate_price(parking_lot, session):
         price = float(parking_lot.tariff) * hours
         if price > float(parking_lot.daytariff):
             price = float(parking_lot.daytariff)
+    return price
 
-    return (price, hours, diff.days + 1 if end.date() > start.date() else 0)
-
-def generate_payment_hash(sid, data):
-    return md5(str(sid + data["licenseplate"]).encode("utf-8")).hexdigest()
+def generate_payment_hash(sid, licenseplate):
+    return md5(str(sid + licenseplate).encode("utf-8")).hexdigest()
 
 def generate_transaction_validation_hash():
     return str(uuid.uuid4())
 
-def check_payment_amount(hash):
-    payments = load_payment_data()
-    total = 0
+# def check_payment_amount(hash):
+#     payments = load_payment_data()
+#     total = 0
 
-    for payment in payments:
-        if payment["transaction"] == hash:
-            total += payment["amount"]
-
-    return total
+#     for payment in payments:
+#         if payment["transaction"] == hash:
+#             total += payment["amount"]
+#     return total
