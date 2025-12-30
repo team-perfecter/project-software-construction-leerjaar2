@@ -3,6 +3,7 @@ from hashlib import md5
 import math
 import uuid
 
+
 def calculate_price(parking_lot, session):
     price = 0
     start = session.started
@@ -21,11 +22,14 @@ def calculate_price(parking_lot, session):
             price = float(parking_lot.daytariff)
     return price
 
+
 def generate_payment_hash(sid, licenseplate):
     return md5(str(sid + licenseplate).encode("utf-8")).hexdigest()
 
+
 def generate_transaction_validation_hash():
     return str(uuid.uuid4())
+
 
 # def check_payment_amount(hash):
 #     payments = load_payment_data()
