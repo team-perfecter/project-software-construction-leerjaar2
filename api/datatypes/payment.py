@@ -7,7 +7,6 @@ class PaymentCreate(BaseModel):
     user_id: int
     transaction: Optional[str] = None
     amount: float
-    hash: Optional[str] = None
     method: Optional[str] = None
     issuer: Optional[str] = None
     bank: Optional[str] = None
@@ -16,6 +15,7 @@ class PaymentCreate(BaseModel):
 class Payment(PaymentCreate):
     id: int
     date: date
+    hash: str
     completed: bool
     refund_requested: bool
 
@@ -24,7 +24,6 @@ class PaymentUpdate(BaseModel):
     user_id: int
     transaction: Optional[str] = None
     amount: float
-    hash: Optional[str] = None
     method: Optional[str] = None
     issuer: Optional[str] = None
     bank: Optional[str] = None

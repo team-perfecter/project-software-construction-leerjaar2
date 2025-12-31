@@ -9,8 +9,8 @@ from api.models.payment_model import PaymentModel
 from api.models.session_model import SessionModel
 from fastapi import APIRouter, Depends, HTTPException, status
 from starlette.responses import JSONResponse
-
 from api.models.vehicle_model import Vehicle_model
+from api.session_calculator import generate_payment_hash, generate_transaction_validation_hash, calculate_price
 
 logging.basicConfig(
     level=logging.INFO,
@@ -115,16 +115,28 @@ async def start_parking_session(
     }
 
 @router.post("/parking-lots/{lid}/sessions/stop")
-async def stop_parking_session(vehicle_id: int, current_user: User = Depends(get_current_user)):
-    active_sessions = session_model.get_vehicle_sessions(vehicle_id)
-    if not active_sessions:
+async def stop_parking_session(
+    lid: int,
+    vehicle_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    session = session_model.get_vehicle_session(vehicle_id)
+    if not session:
         return "This vehicle has no active sessions"
-    session = session_model.stop_session(active_sessions)
-    print("current stopped session ")
-    print(session)
-    payment: PaymentCreate = PaymentCreate(
+
+    parking_lot = parking_lot_model.get_parking_lot_by_lid(session.parking_lot_id)
+    cost = calculate_price(parking_lot, session)
+
+    session = session_model.stop_session(session, cost)
+
+    vehicle = vehicle_model.get_one_vehicle(vehicle_id)
+    transaction = generate_payment_hash(str(session.id), vehicle["license_plate"])
+    payment_hash = generate_transaction_validation_hash()
+    payment = PaymentCreate(
         user_id=current_user.id,
-        amount = session["cost"]
+        amount=session.cost,
+        transaction=transaction,
+        hash=payment_hash
     )
     payment_model.create_payment(payment)
     return "Session stopped successfully"

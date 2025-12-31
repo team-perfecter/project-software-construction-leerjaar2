@@ -142,7 +142,7 @@ def setup_parking_lots(request, client_with_token):
     response = client.get("/parking-lots/", headers=headers)
     if response.status_code == 200:
         for lot in response.json():
-            client.delete(f"/parking-lots/{lot['id']}", headers=headers)
+            client.delete(f"/parking-lots/{lot['id']}/force", headers=headers)
 
     if "create" not in request.node.fspath.basename:
         lot = {

@@ -1,5 +1,6 @@
 import psycopg2
 from api.datatypes.payment import PaymentCreate, PaymentUpdate
+from api.session_calculator import generate_transaction_validation_hash
 
 
 class PaymentModel:
@@ -14,6 +15,7 @@ class PaymentModel:
     @classmethod
     def create_payment(cls, p: PaymentCreate):
         cursor = cls.connection.cursor()
+        payment_hash = generate_transaction_validation_hash()
         try:
             cursor.execute("""
                 INSERT INTO payments
@@ -22,7 +24,7 @@ class PaymentModel:
                 RETURNING id;
             """,
                            (p.user_id, p.transaction, p.amount,
-                            p.hash, p.method, p.issuer, p.bank))
+                            payment_hash, p.method, p.issuer, p.bank))
             created = cursor.fetchone()
             cls.connection.commit()
             print("Created:", created)
@@ -72,13 +74,13 @@ class PaymentModel:
         cursor.execute("""
             UPDATE payments
             SET user_id = %s, transaction = %s, amount = %s,
-                hash = %s, method = %s, issuer = %s, bank = %s, completed = %s,
+                method = %s, issuer = %s, bank = %s, completed = %s,
                 date = NOW(), refund_requested = %s
             WHERE id = %s
             RETURNING id;
         """, (p.user_id, p.transaction, p.amount,
-              p.hash, p.method,
-              p.issuer, p.bank, p.completed, p.refund_requested, id,))
+              p.method, p.issuer, p.bank, p.completed,
+              p.refund_requested, id,))
         updated = cursor.fetchone()
         cls.connection.commit()
         return updated is not None
