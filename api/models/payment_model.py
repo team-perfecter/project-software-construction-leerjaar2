@@ -28,7 +28,8 @@ class PaymentModel:
             created = cursor.fetchone()
             cls.connection.commit()
             print("Created:", created)
-            return created is not None
+            if created:
+                return created[0]
         except Exception as e:
             print("DB Error:", e)
             cls.connection.rollback()

@@ -107,9 +107,10 @@ CREATE TABLE IF NOT EXISTS reservations (
     vehicle_id INTEGER REFERENCES vehicles(id),
     user_id INTEGER REFERENCES users(id),
     parking_lot_id INTEGER REFERENCES parking_lots(id),
+    payment_id INTEGER REFERENCES payments(id),
     start_time TIMESTAMP,
     end_time TIMESTAMP,
-    status VARCHAR,
+    status VARCHAR DEFAULT 'Payment Pending',
     created_at TIMESTAMP DEFAULT NOW(),
     cost INTEGER
 );

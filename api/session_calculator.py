@@ -4,10 +4,15 @@ import math
 import uuid
 
 
-def calculate_price(parking_lot, session):
-    price = 0
-    start = session.started
-    end = session.stopped or datetime.now()
+def calculate_price(parking_lot, obj):
+    if hasattr(obj, "started"):
+        start = obj.started
+        end = obj.stopped or datetime.now()
+    elif hasattr(obj, "start_time"):
+        start = obj.start_time
+        end = obj.end_time or datetime.now()
+    else:
+        raise ValueError("Object must be a Session or Reservation with appropriate time fields.")
 
     diff = end - start
     hours = math.ceil(diff.total_seconds() / 3600)
