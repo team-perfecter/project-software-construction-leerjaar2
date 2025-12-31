@@ -443,71 +443,71 @@ def update_parking_lot_reserved_count(lid: int, action: str) -> bool:
 
 # endregion
 
+#######NOT NEEDED - just a status change
+# # region DELETE
+# @router.delete("/parking-lots/{lid}")
+# async def delete_parking_lot(
+#     lid: int,
+#     _: User = Depends(require_role(UserRole.SUPERADMIN)),
+# ):
+#     """
+#     Deletes a parking lot based on id. must be logged in as superadmin.
+#     @param: lid
+#     """
+#     # logging.info(
+#     #     "User with id %i attempting to delete parking lot with id %i",
+#     #     current_user.id,
+#     #     lid,
+#     # )
 
-# region DELETE
-@router.delete("/parking-lots/{lid}")
-async def delete_parking_lot(
-    lid: int,
-    _: User = Depends(require_role(UserRole.SUPERADMIN)),
-):
-    """
-    Deletes a parking lot based on id. must be logged in as superadmin.
-    @param: lid
-    """
-    # logging.info(
-    #     "User with id %i attempting to delete parking lot with id %i",
-    #     current_user.id,
-    #     lid,
-    # )
+#     # Check if parking lot exists
+#     logging.debug("Checking if parking lot %i exists", lid)
+#     _ = get_lot_if_exists(lid)
 
-    # Check if parking lot exists
-    logging.debug("Checking if parking lot %i exists", lid)
-    _ = get_lot_if_exists(lid)
+#     # Check if parking lot has active sessions
+#     logging.debug("Checking for active sessions in parking lot %i", lid)
+#     sessions = parking_lot_model.get_all_sessions_by_lid(lid)
+#     active_sessions = [s for s in sessions if s.stopped is None]
 
-    # Check if parking lot has active sessions
-    logging.debug("Checking for active sessions in parking lot %i", lid)
-    sessions = parking_lot_model.get_all_sessions_by_lid(lid)
-    active_sessions = [s for s in sessions if s.end_time is None]
+#     if active_sessions:
+#         logging.warning(
+#             "Cannot delete parking lot with id %i - has %i active sessions",
+#             lid,
+#             len(active_sessions),
+#         )
+#         raise HTTPException(
+#             status_code=409,
+#             detail={
+#                 "error": "Conflict",
+#                 "message": f"Cannot delete parking lot with active sessions. Found {len(active_sessions)} active sessions.",
+#                 "code": "ACTIVE_SESSIONS_EXIST",
+#             },
+#         )
 
-    if active_sessions:
-        logging.warning(
-            "Cannot delete parking lot with id %i - has %i active sessions",
-            lid,
-            len(active_sessions),
-        )
-        raise HTTPException(
-            status_code=409,
-            detail={
-                "error": "Conflict",
-                "message": f"Cannot delete parking lot with active sessions. Found {len(active_sessions)} active sessions.",
-                "code": "ACTIVE_SESSIONS_EXIST",
-            },
-        )
+#     logging.info(
+#         "No active sessions found, proceeding with deletion of parking lot %i", lid
+#     )
 
-    logging.info(
-        "No active sessions found, proceeding with deletion of parking lot %i", lid
-    )
+#     # Delete the parking lot
+#     logging.debug("Attempting to delete parking lot %i from database", lid)
+#     success = parking_lot_model.delete_parking_lot(lid)
 
-    # Delete the parking lot
-    logging.debug("Attempting to delete parking lot %i from database", lid)
-    success = parking_lot_model.delete_parking_lot(lid)
+#     if not success:
+#         logging.error("Failed to delete parking lot with id %i from database", lid)
+#         raise HTTPException(
+#             status_code=500,
+#             detail={
+#                 "error": "Internal Server Error",
+#                 "message": "Failed to delete parking lot",
+#                 "code": "DELETE_FAILED",
+#             },
+#         )
 
-    if not success:
-        logging.error("Failed to delete parking lot with id %i from database", lid)
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "error": "Internal Server Error",
-                "message": "Failed to delete parking lot",
-                "code": "DELETE_FAILED",
-            },
-        )
-
-    logging.info("Successfully deleted parking lot with id %i", lid)
-    return {
-        "message": "Parking lot deleted successfully",
-        "parking_lot_id": lid,
-    }
+#     logging.info("Successfully deleted parking lot with id %i", lid)
+#     return {
+#         "message": "Parking lot deleted successfully",
+#         "parking_lot_id": lid,
+#     }
 
 
 # TODO: delete session by session lid (admin only)  /parking-lots/{lid}/sessions/{sid}
