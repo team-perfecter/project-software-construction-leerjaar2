@@ -7,6 +7,7 @@ from api.datatypes.vehicle import Vehicle, VehicleCreate
 from api.datatypes.user import UserRole
 import logging
 from starlette.responses import JSONResponse
+import psycopg2
 
 router = APIRouter(tags=["vehicles"])
 
@@ -116,14 +117,43 @@ async def vehicle_update(vehicle_id: int, vehicle: dict = Body(...), user: User 
 async def vehicle_delete(vehicle_id: int, user: User = Depends(get_current_user)):
     vehicle: Vehicle | None = vehicle_model.get_one_vehicle(vehicle_id)
 
-    if vehicle == None:
-        logging.warning("A user with the ID of %i tried to delete a vehicle with the ID of %i, but the vehicle could not be found.", user.id, vehicle_id)
+    if vehicle is None:
+        logging.warning(
+            "A user with the ID of %i tried to delete a vehicle with the ID of %i, but the vehicle could not be found.",
+            user.id, vehicle_id
+        )
         raise HTTPException(status_code=404, detail={"error": "vehicle not found"})
 
     if vehicle["user_id"] != user.id:
-        logging.warning("A user with the ID of %i tried to delete a vehicle with the ID of %i, but the vehicle does not belong to the user.", user.id, vehicle_id)
-        raise HTTPException(status_code=403, detail={"error": "Not authoized to delete this vehicle"})
-    
-    vehicle_model.delete_vehicle(vehicle_id)
-    logging.info("A user with the ID of %i succesfully deleted a vehicle with the ID of %i.", user.id, vehicle_id)
-    return JSONResponse(content={"message": "Vehicle succesfully deleted"}, status_code=200)
+        logging.warning(
+            "A user with the ID of %i tried to delete a vehicle with the ID of %i, but the vehicle does not belong to the user.",
+            user.id, vehicle_id
+        )
+        raise HTTPException(status_code=403, detail={"error": "Not authorized to delete this vehicle"})
+
+    try:
+        vehicle_model.delete_vehicle(vehicle_id)
+        logging.info(
+            "A user with the ID of %i successfully deleted a vehicle with the ID of %i.",
+            user.id, vehicle_id
+        )
+    except psycopg2.errors.ForeignKeyViolation:
+        logging.warning(
+            "User %i tried to delete vehicle %i, but it is still referenced by active sessions.",
+            user.id, vehicle_id
+        )
+        raise HTTPException(
+            status_code=409,
+            detail={"error": "Cannot delete vehicle: it is still referenced by active sessions."}
+        )
+    except Exception as e:
+        logging.error(
+            "An error occurred while deleting vehicle %i for user %i: %s",
+            vehicle_id, user.id, str(e)
+        )
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "Internal server error", "message": str(e)}
+        )
+
+    return JSONResponse(content={"message": "Vehicle successfully deleted"}, status_code=200)
