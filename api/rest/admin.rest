@@ -10,6 +10,9 @@ Content-Type: application/json
   "phone": "1234567890",
   "birth_year": "2002"
 }
+###
+DELETE http://127.0.0.1:8000/parking-lots/9999999/force
+Authorization: Bearer {{token}}
 
 ### Login
 # @name login

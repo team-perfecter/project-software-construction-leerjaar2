@@ -515,15 +515,13 @@ def update_parking_lot_reserved_count(lid: int, action: str) -> bool:
 # endregion
 
 
-@router.delete("/parking-lots/{lid}/force", tags=["testing"])
+@router.delete("/parking-lots/{lid}/force")
 async def force_delete_parking_lot(
     lid: int,
     _: User = Depends(require_role(UserRole.SUPERADMIN)),
 ):
-    """
-    Forcefully deletes a parking lot and all dependent sessions and reservations.
-    ONLY USE FOR TESTING!
-    """
+    
+    get_lot_if_exists(lid)
     # Delete dependent sessions
     session_model = SessionModel()
     cursor = session_model.connection.cursor()
