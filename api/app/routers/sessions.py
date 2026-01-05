@@ -31,7 +31,7 @@ async def start_parking_session(
     lid: int, vehicle_id: int, current_user: User = Depends(get_current_user)
 ):
     logging.info(
-        "User with id %i attempting to start session at parking lot %i",
+        "User %i attempting to start session at parking lot %i",
         current_user.id,
         lid,
     )
@@ -39,19 +39,17 @@ async def start_parking_session(
     # parking lot check
     parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
     if not parking_lot:
-        logging.warning("Parking lot with id %i does not exist", lid)
+        logging.warning("Parking lot %i does not exist", lid)
         raise HTTPException(
             status_code=404,
             detail={
                 "error": "Parking lot not found",
-                "message": f"Parking lot with ID {lid} does not exist",
+                "message": f"Parking lot {lid} does not exist",
             },
         )
 
     # vehicle en user check
     vehicle = vehicle_model.get_one_vehicle(vehicle_id)
-    print("CHECK 1")
-    print(vehicle)
     if not vehicle or vehicle["user_id"] != current_user.id:
         if not vehicle:
             logging.warning("Vehicle with id %i does not exist", vehicle_id)
@@ -98,36 +96,45 @@ async def start_parking_session(
     # Save session
     session = session_model.create_session(lid, current_user.id, vehicle_id)
     if session is None:
-        return "This vehicle already has a session"
-
+        logging.warning("Vehcile %i already has a session", vehicle_id)
+        return JSONResponse(content={"message": "This vehicle already has a session"}, status_code=209)
+    
     logging.info(
         "Successfully started session for user %i at parking lot %i with vehicle %i",
         current_user.id,
         lid,
         vehicle_id,
     )
-
-    return {
+    return JSONResponse(content= {
         "message": "Session started successfully",
         "parking_lot_id": lid,
         "vehicle_id": vehicle_id,
         "license_plate": vehicle["license_plate"],
-    }
+    }, status_code=201)
 
 @router.post("/parking-lots/{lid}/sessions/stop")
 async def stop_parking_session(vehicle_id: int, current_user: User = Depends(get_current_user)):
+    logging.info("user %i tried to stop a session of vehicle %i", current_user.id, vehicle_id)
     active_sessions = session_model.get_vehicle_sessions(vehicle_id)
     if not active_sessions:
-        return "This vehicle has no active sessions"
+        logging.warning("User %i tried to stop the session of vehicle %i, but this vehicle has no session", current_user.id, vehicle_id)
+        return JSONResponse(
+            content= {"message": "This vehicle has no active sessions"}, 
+            status_code=404
+            )
+
     session = session_model.stop_session(active_sessions)
-    print("current stopped session ")
-    print(session)
+
     payment: PaymentCreate = PaymentCreate(
         user_id=current_user.id,
         amount = session["cost"]
     )
     payment_model.create_payment(payment)
-    return "Session stopped successfully"
+    logging.info("Session of vehicle %i successfully stopped", vehicle_id)
+    return JSONResponse(
+        content= {"message": "Session stopped successfully"}, 
+        status_code=201
+        )
 
 @router.get("/sessions/active")
 async def get_active_sessions():
@@ -139,9 +146,12 @@ async def get_active_sessions():
 
 @router.get("/sessions/vehicle/{vehicle_id}")
 async def get_sessions_vehicle(vehicle_id: int, user: User = Depends(get_current_user)):
+    logging.info("User %i tried to retrieve the session of vehicle %i", user.id, vehicle_id)
     vehicle = vehicle_model.get_one_vehicle(vehicle_id)
     if not vehicle or vehicle["user_id"] != user.id:
+        logging.warning("Vehicle %i could not be found", vehicle_id)
         raise HTTPException(status_code=404, detail={"error": "Vehicle not found", "message": f"Vehicle with ID {vehicle_id} does not exist"})
     sessions = session_model.get_vehicle_sessions(vehicle_id)
     print(sessions)
+    logging.info("Session for vehicle %i found", vehicle_id)
     return JSONResponse(content={"message": sessions}, status_code=201)

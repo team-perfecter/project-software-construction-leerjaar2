@@ -27,7 +27,7 @@ logging.basicConfig(
 #Get all vehicles from logged in user or get all vehicles if loggedin is ADMIN. (User and Admin)
 @router.get("/vehicles")
 async def vehicles(user: User = Depends(get_current_user)):
-    logging.info("A user with the ID %i is trying to retrieve their vehicles", user.id)
+    logging.info("User %i is trying to retrieve their vehicles", user.id)
     #Get all vehicles if you are Admin or get all your owned vehicles if you are user.
     vehicles = vehicle_model.get_all_vehicles_of_user(user.id)
     if vehicles == []:
@@ -35,7 +35,7 @@ async def vehicles(user: User = Depends(get_current_user)):
         return JSONResponse(content={"message": "Vehicles not found"}, status_code=404)
     else:
         logging.info("%i vehicles found for user %i", len(vehicles), user.id)
-        return vehicles
+        return JSONResponse(content={"Vehicles": vehicles}, status_code=200)
 
 
 # Get one vehicle of an user. (Admin and up only)
@@ -55,7 +55,7 @@ async def vehicles(
     else:
         # Shows one vehicle if you are ADMIN or SUPERADMIN
         logging.info("Vehicle %i found", vehicle_id)
-        return vehicle
+        return JSONResponse(content={"Vehicle": vehicle}, status_code=200)
 
 
 # Get vehicles of an user. (Admin)
@@ -80,7 +80,7 @@ async def vehicles_user(
         raise HTTPException(status_code=404, detail="vehicles not found")
     else:
         logging.info("%i vehicles found for user %i", len(vehicles_user), user_id)
-        return vehicles_user
+        return JSONResponse(content={"Vehicles": vehicles_user}, status_code=200)
 
 #Post:
 
@@ -124,7 +124,7 @@ async def vehicle_update(vehicle_id: int, vehicle: dict = Body(...), user: User 
         return JSONResponse(content={"message": "Vehicle succesfully updated"}, status_code=200)
     else:
         logging.warning("Vehicle %i does not belong to user %i. The vehicle was not updated", vehicle_id, user.id)
-        raise HTTPException(detail={"message": "Something went wrong."}, status_code=401)
+        raise HTTPException(detail={"message": "Something went wrong."}, status_code=403)
 
 #delete:
 
