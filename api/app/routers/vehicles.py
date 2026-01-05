@@ -35,7 +35,7 @@ async def vehicles(user: User = Depends(get_current_user)):
         return JSONResponse(content={"message": "Vehicles not found"}, status_code=404)
     else:
         logging.info("%i vehicles found for user %i", len(vehicles), user.id)
-        return JSONResponse(content={"Vehicles": vehicles}, status_code=200)
+        return vehicles
 
 
 # Get one vehicle of an user. (Admin and up only)
@@ -44,7 +44,7 @@ async def vehicles(
     vehicle_id: int,
     user: User = require_role(UserRole.ADMIN, UserRole.SUPERADMIN),
 ):
-    logging.info("Admin %i tried to retrieve information about vehicle %i", user.id, vehicle_id)
+    logging.info("An admin tried to retrieve information about vehicle %i", vehicle_id)
     # Get user vehicle
     vehicle = vehicle_model.get_one_vehicle(vehicle_id)
 
@@ -55,7 +55,7 @@ async def vehicles(
     else:
         # Shows one vehicle if you are ADMIN or SUPERADMIN
         logging.info("Vehicle %i found", vehicle_id)
-        return JSONResponse(content={"Vehicle": vehicle}, status_code=200)
+        return vehicle
 
 
 # Get vehicles of an user. (Admin)
@@ -64,7 +64,7 @@ async def vehicles_user(
     user_id: int,
     user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPERADMIN)),
 ):
-    logging.info("Admin %i tried to retrieve all vehicles of user %i", user.id, user_id)
+    logging.info("An admin tried to retrieve all vehicles of user %i", user_id)
     # Check if user exists
     existing_user = user_model.get_user_by_id(user_id)
     if not existing_user:
@@ -80,7 +80,7 @@ async def vehicles_user(
         raise HTTPException(status_code=404, detail="vehicles not found")
     else:
         logging.info("%i vehicles found for user %i", len(vehicles_user), user_id)
-        return JSONResponse(content={"Vehicles": vehicles_user}, status_code=200)
+        return vehicles_user
 
 #Post:
 

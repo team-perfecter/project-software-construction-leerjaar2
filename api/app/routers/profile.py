@@ -63,14 +63,14 @@ async def get_user(user_id: int, current_user: User = Depends(require_role(UserR
     if user is None:
         logging.warning("User %i could not be found", user_id)
         return JSONResponse(status_code=404, content={"message": "User not found"})
-    return JSONResponse(status_code=200, content={"username: " + user.username, "password: " + user.password}) 
+    return {"username: " + user.username, "password: " + user.password}
 
 
 @router.get("/users")
 async def admin_get_all_users(current_user: User = Depends(require_role(UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.PAYMENTADMIN))):
     logging.info("Admin %i tried to receive data of all users", current_user.id)
     users = user_model.get_all_users()
-    return JSONResponse(status_code=200, content={"users": users})
+    return users
 
 
 @router.get("/profile", response_model=User)
@@ -81,7 +81,7 @@ async def get_me(user: User = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="User not found")
     else:
         logging.info("User %i received information about their profile", user.id)
-        return JSONResponse(status_code=200, content={"information": user})
+        return user
 
 
 @router.post("/logout")
@@ -103,7 +103,7 @@ async def update_me(update_data: UserUpdate, current_user: User = Depends(get_cu
     update_fields = update_data.dict(exclude_unset=True)
     user_model.update_user(current_user.id, update_fields)
     logging.info("User %i successfully updated %s of their profile", current_user.id, update_fields)
-    return JSONResponse(status_code=201, content={"message": "Profile updated successfully"})
+    return JSONResponse(status_code=200, content={"message": "Profile updated successfully"})
 
 
 @router.delete("/users/{user_id}")

@@ -39,7 +39,7 @@ async def reservations(vehicle_id: int, user: User = Depends(get_current_user)):
 
     reservation_list: list[Reservation] = reservation_model.get_reservation_by_vehicle(vehicle_id)
     logging.info("Found %i reservations for vehicle %i", len(reservation_list), vehicle_id)
-    return JSONResponse(content= {"reservations": reservation_list}, status_code=200)
+    return reservation_list
 
 @router.post("/reservations/create")
 async def create_reservation(reservation: ReservationCreate, user: User = Depends(get_current_user)):

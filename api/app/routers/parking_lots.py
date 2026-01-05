@@ -113,9 +113,7 @@ async def create_parking_lot(
                 "code": "CREATE_FAILED",
             },
         )
-
-    # logging.info("Parking lot creation completed successfully for user %i", current_user.id)
-    return JSONResponse(content={"parking lot successfully created": parking_lot}, status_code=201)
+    return parking_lot
 
 
 # endregion
@@ -141,7 +139,7 @@ async def get_all_parking_lots():
             },
         )
     logging.info("Successfully retrieved %i parking lots", len(parking_lots))
-    return JSONResponse(content={"parking lots": parking_lots}, status_code=200)
+    return parking_lots
 
 
 @router.get("/parking-lots/{lid}")
@@ -177,7 +175,7 @@ async def get_all_sessions_by_lid(
         len(sessions),
         lid,
     )
-    return JSONResponse(content={"sessions": sessions}, status_code=200)
+    return sessions
 
 
 @router.get("/parking-lots/{lid}/sessions/{sid}")
@@ -202,7 +200,7 @@ async def get_session_by_lid_and_sid(
         logging.info(
             "Successfully retrieved session %i for parking lot %i", sid, lid
         )
-        return JSONResponse(content={"sessions": session}, status_code=200)
+        return session
 
     logging.warning("Session %i does not exist for parking lot %i", sid, lid)
     raise HTTPException(
@@ -254,7 +252,7 @@ async def get_parking_lots_by_location(
         len(parking_lots),
         location,
     )
-    return JSONResponse(content={"parking lots": parking_lots}, status_code=200)
+    return parking_lots
 
 
 # TODO? PO ok maar eerst de rest: get parking lot reservations                /parking-lots/{id}/reservations

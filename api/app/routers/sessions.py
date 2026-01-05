@@ -154,4 +154,4 @@ async def get_sessions_vehicle(vehicle_id: int, user: User = Depends(get_current
     sessions = session_model.get_vehicle_sessions(vehicle_id)
     print(sessions)
     logging.info("Session for vehicle %i found", vehicle_id)
-    return JSONResponse(content={"message": sessions}, status_code=201)
+    return sessions

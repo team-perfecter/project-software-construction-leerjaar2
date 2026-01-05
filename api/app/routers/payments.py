@@ -46,7 +46,7 @@ async def get_my_payments(current_user: User = Depends(get_current_user)):
                             detail="No payments not found")
     logging.info("User ID %i retrieved their own payments",
                  current_user.id)
-    return JSONResponse(content={"payments": payments_list}, status_code=200)
+    return payments_list
 
 
 
@@ -59,7 +59,7 @@ async def get_my_open_payments(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="No payments not found")
     logging.info("User ID %i retrieved their own payments",
                  current_user.id)
-    return JSONResponse(content={"payments": payments_list}, status_code=200)
+    return payments_list
 
 
 @router.get("/payments/user/{user_id}")
@@ -79,7 +79,7 @@ async def get_payments_by_user(user_id: int,
         raise HTTPException(status_code=404, detail="No payments not found")
     logging.info("Admin ID %i retrieved payments of User ID %i",
                  current_user.id, user_id)
-    return JSONResponse(content={"payments": payments_list}, status_code=200)
+    return payments_list
 
 
 @router.get("/payments/user/{user_id}/open")
@@ -99,7 +99,7 @@ async def get_open_payments_by_user(user_id: int,
                             detail="No payments not found")
     logging.info("Admin ID %i retrieved payments of User ID %i",
                  current_user.id, user_id)
-    return JSONResponse(content={"payments": payments_list}, status_code=200)
+    return payments_list
 
 
 @router.post("/payments/{payment_id}/pay")
@@ -132,7 +132,7 @@ async def pay_payment(payment_id: int,
                             detail="Payment has failed")
     logging.info("Payment ID %i has succesfully been paid by User ID %i",
                  payment_id, current_user.id)
-    return JSONResponse(content={"message": "Payment completed successfully"}, status_code=201)
+    return JSONResponse(content={"message": "Payment completed successfully"}, status_code=200)
 
 
 @router.put("/payments/{payment_id}")
@@ -159,7 +159,7 @@ async def update_payment(payment_id: int,
                      current_user.id, payment_id)
         raise HTTPException(status_code=500,
                             detail="Payment has failed")
-    return JSONResponse(content={"message": "Payment updated successfully"}, status_code=201)
+    return JSONResponse(content={"message": "Payment updated successfully"}, status_code=200)
 
 
 @router.get("/payments/refunds")
@@ -182,7 +182,7 @@ async def get_refund_requests(user_id: int | None = None,
                             detail="No refunds found")
     logging.info("Admin ID %i retrieved refunds",
                  current_user.id)
-    return JSONResponse(content={"refunds": refunds}, status_code=200)
+    return refunds
 
 
 @router.post("/payments/{payment_id}/request_refund")
@@ -219,7 +219,7 @@ async def request_refund(payment_id: int,
              current_user.id, payment_id)
         raise HTTPException(status_code=500,
                             detail="Request has failed")
-    return JSONResponse(content={"message": "Refund reuested successfully"}, status_code=201)
+    return JSONResponse(content={"message": "Refund reuested successfully"}, status_code=200)
 
 
 @router.get("/payments/{payment_id}")
@@ -234,7 +234,7 @@ async def get_payment_by_id(payment_id: int,
                             detail="Payment not found")
     logging.info("Admin ID %i retrieved Payment ID %i",
                  current_user.id, payment_id)
-    return JSONResponse(content={"payment": payment}, status_code=200)
+    return payment
 
 
 @router.delete("/payments/{payment_id}")
