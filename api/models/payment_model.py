@@ -33,11 +33,11 @@ class PaymentModel:
             return False
 
     @classmethod
-    def get_payment_by_payment_id(cls, id):
+    def get_payment_by_payment_id(cls, payment_id):
         cursor = cls.connection.cursor()
         cursor.execute("""
             SELECT * FROM payments WHERE id = %s;
-                       """, (id,))
+                       """, (payment_id,))
         row = cursor.fetchone()
         if row:
             columns = [desc[0] for desc in cursor.description]
@@ -67,7 +67,7 @@ class PaymentModel:
         return result
 
     @classmethod
-    def update_payment(cls, id, p: PaymentUpdate):
+    def update_payment(cls, payment_id, p: PaymentUpdate):
         cursor = cls.connection.cursor()
         cursor.execute("""
             UPDATE payments
@@ -78,7 +78,7 @@ class PaymentModel:
             RETURNING id;
         """, (p.user_id, p.transaction, p.amount,
               p.hash, p.method,
-              p.issuer, p.bank, p.completed, p.refund_requested, id,))
+              p.issuer, p.bank, p.completed, p.refund_requested, payment_id,))
         updated = cursor.fetchone()
         cls.connection.commit()
         return updated is not None
@@ -97,14 +97,14 @@ class PaymentModel:
         return updated is not None
 
     @classmethod
-    def mark_refund_request(cls, id):
+    def mark_refund_request(cls, payment_id):
         cursor = cls.connection.cursor()
         cursor.execute("""
             UPDATE payments
             SET refund_requested = TRUE
             WHERE id = %s
             RETURNING id;
-        """, (id,))
+        """, (payment_id,))
         updated = cursor.fetchone()
         cls.connection.commit()
         return updated is not None
@@ -131,10 +131,10 @@ class PaymentModel:
         return result
 
     @classmethod
-    def delete_payment(cls, id):
+    def delete_payment(cls, payment_id):
         cursor = cls.connection.cursor()
         cursor.execute("DELETE FROM payments WHERE id = %s RETURNING id;",
-                       (id,))
+                       (payment_id,))
         deleted = cursor.fetchone()
         cls.connection.commit()
         return deleted is not None

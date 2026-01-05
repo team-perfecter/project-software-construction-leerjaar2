@@ -67,3 +67,4 @@ def test_create_parking_lot_missing_required_fields(client_with_token):
     }
     response = superadmin_client.post("/parking-lots", json=incomplete_data, headers=headers)
     assert response.status_code in [400, 422]
+    

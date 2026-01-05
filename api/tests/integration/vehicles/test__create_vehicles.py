@@ -1,5 +1,3 @@
-import pytest
-
 # Controleer of het voertuig correct is aangemaakt
 def test_create_vehicle(client_with_token) -> None:
     client, headers = client_with_token("superadmin")
@@ -69,7 +67,7 @@ def test_create_vehicle_no_userid_in_json(client_with_token) -> None:
     vehicle_data = response.json()
     assert "message" in vehicle_data
 
-# Testen wat er gebeurt als een gebruiker een user_id meegeeft die niet van de ingelogde gebruiker is
+#Testen wat er gebeurt als een gebruiker een user_id meegeeft die niet van de ingelogde gebruiker is
 def test_create_vehicle_wrong_userid(client_with_token) -> None:
     client, headers = client_with_token("superadmin")
 

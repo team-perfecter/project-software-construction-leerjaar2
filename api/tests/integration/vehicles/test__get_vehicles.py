@@ -1,5 +1,5 @@
-from api.tests.conftest import get_last_vid
 import pytest
+from api.tests.conftest import get_last_vid
 
 @pytest.mark.asyncio
 def test_get_all_vehicles(client_with_token):
@@ -36,7 +36,7 @@ def test_get_vehicles_of_user(client_with_token):
     response = client.get("/vehicles/user/1", headers=headers)
     assert response.status_code == 200
     vehicles = response.json()
-    
+
     # Controleren dat ons aangemaakte vehicle in de lijst zit
     vehicle_ids = [v["id"] for v in vehicles]
     assert vehicle_id in vehicle_ids

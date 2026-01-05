@@ -2,10 +2,10 @@
 this file contains all queries related to parking lots.
 """
 
-import psycopg2
-from api.datatypes.parking_lot import Parking_lot, Parking_lot_create
-from api.datatypes.session import Session
 from typing import List, Optional
+import psycopg2
+from api.datatypes.parking_lot import ParkingLot, ParkingLotCreate
+from api.datatypes.session import Session
 
 
 class ParkingLotModel:
@@ -22,20 +22,20 @@ class ParkingLotModel:
         )
 
     # region get
-    def get_all_parking_lots(self) -> List[Parking_lot]:
+    def get_all_parking_lots(self) -> List[ParkingLot]:
         """
         Returns a list of all parking lots
-        @return: list of Parking_lot objects
+        @return: list of ParkingLot objects
         """
         cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM parking_lots;")
         return self.map_to_parking_lot(cursor)
 
-    def get_parking_lot_by_lid(self, lot_id: int) -> Optional[Parking_lot]:
+    def get_parking_lot_by_lid(self, lot_id: int) -> Optional[ParkingLot]:
         """
         return a specific parking lot based on the given id
         @param: lot_id
-        @returns: Parking_lot object based on id
+        @returns: ParkingLot object based on id
         """
         cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM parking_lots WHERE id = %s;", (lot_id,))
@@ -98,7 +98,7 @@ class ParkingLotModel:
         min_tariff: float = None,
         max_tariff: float = None,
         has_availability: bool = None,
-    ) -> List[Parking_lot]:
+    ) -> List[ParkingLot]:
         """
         Finds parking lots based on data provided with this method.
         @param: lot_id
@@ -110,7 +110,7 @@ class ParkingLotModel:
         @param: min_tariff
         @param: max_tariff
         @param: has_availability
-        @return: list of Parking_lot objects
+        @return: list of ParkingLot objects
         """
         cursor = self.connection.cursor()
 
@@ -159,7 +159,7 @@ class ParkingLotModel:
 
     # region post
 
-    def create_parking_lot(self, lot: Parking_lot) -> None:
+    def create_parking_lot(self, lot: ParkingLot) -> None:
         """
         Creates a parking lot based on the data provided.
         @param: lot
@@ -168,7 +168,20 @@ class ParkingLotModel:
         cursor.execute(
             """
             INSERT INTO parking_lots 
-            (name, location, address, capacity, reserved, tariff, daytariff, created_at, lat, lng, status, closed_reason, closed_date)
+            (name, 
+            location, 
+            address, 
+            capacity, 
+            reserved, 
+            tariff, 
+            daytariff, 
+            created_at, 
+            lat, 
+            lng, 
+            status, 
+            closed_reason, 
+            closed_date
+            )
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
         """,
             (
@@ -191,7 +204,7 @@ class ParkingLotModel:
 
     # region update
 
-    def update_parking_lot(self, lot_id: int, lot: Parking_lot_create) -> bool:
+    def update_parking_lot(self, lot_id: int, lot: ParkingLotCreate) -> bool:
         """
         Updates a parking lot based on the data provided.
         @param: lot_id
@@ -260,18 +273,18 @@ class ParkingLotModel:
         return cursor.rowcount > 0
 
     @staticmethod
-    def map_to_parking_lot(cursor) -> List[Parking_lot]:
+    def map_to_parking_lot(cursor) -> List[ParkingLot]:
         """
         Maps the cursor to a list of parking lot objects
         @param: cursor
-        @return: list of Parking_lot objects
+        @return: list of ParkingLot objects
         """
         columns = [desc[0] for desc in cursor.description]
         parking_lots = []
         for row in cursor.fetchall():
             row_dict = dict(zip(columns, row))
             try:
-                parking_lot = Parking_lot.model_validate(row_dict)
+                parking_lot = ParkingLot.model_validate(row_dict)
                 parking_lots.append(parking_lot)
             except Exception as e:
                 print("Failed to map row to parking_lot:", row_dict, e)

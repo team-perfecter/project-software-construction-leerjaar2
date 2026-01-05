@@ -4,13 +4,12 @@ This file contains all endpoints related to parking lots.
 
 import logging
 from datetime import date
-from typing import Optional
-
-from api.models.parking_lot_model import ParkingLotModel
-from api.datatypes.parking_lot import Parking_lot, Parking_lot_create
-from api.datatypes.user import User, UserRole
-from api.auth_utils import get_current_user, require_lot_access, require_role
 from fastapi import APIRouter, HTTPException, status, Depends
+from api.models.parking_lot_model import ParkingLotModel
+from api.datatypes.parking_lot import ParkingLot, ParkingLotCreate
+from api.datatypes.user import User, UserRole
+from api.auth_utils import get_current_user, require_role
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -24,7 +23,8 @@ parking_lot_model: ParkingLotModel = ParkingLotModel()
 
 def get_lot_if_exists(lid: int):
     """
-    Gets a parking lot based on a specific is. if the parking lot cannot be found, it raises a 404 exception.
+    Gets a parking lot based on a specific is. 
+    If the parking lot cannot be found, it raises a 404 exception.
     @param: lid
     @return: ParkingLot or 404 exception
 
@@ -47,7 +47,7 @@ def get_lot_if_exists(lid: int):
 # region POST
 @router.post("/parking-lots", status_code=status.HTTP_201_CREATED)
 async def create_parking_lot(
-    parking_lot_data: Parking_lot_create,
+    parking_lot_data: ParkingLotCreate,
     _: User = Depends(require_role(UserRole.SUPERADMIN)),
 ):
     """
@@ -73,7 +73,7 @@ async def create_parking_lot(
         parking_lot_data.capacity,
     )
 
-    parking_lot = Parking_lot(
+    parking_lot = ParkingLot(
         id=new_id,
         name=parking_lot_data.name,
         location=parking_lot_data.location,
@@ -278,7 +278,7 @@ async def get_parking_lots_by_location(
 @router.put("/parking-lots/{lid}")
 async def update_parking_lot(
     lid: int,
-    updated_lot: Parking_lot_create,
+    updated_lot: ParkingLotCreate,
     _: User = Depends(require_role(UserRole.SUPERADMIN)),
 ):
     """
@@ -360,7 +360,10 @@ async def update_parking_lot_status(
 
     valid_statuses = ["open", "closed", "deleted", "maintenance", "full"]
     if lot_status not in valid_statuses:
-        logging.warning("Invalid status '%s' provided for parking lot %i", lot_status, lid)
+        logging.warning(
+            "Invalid status '%s' provided for parking lot %i", 
+            lot_status, lid
+            )
         raise HTTPException(
             status_code=400,
             detail={
@@ -387,7 +390,7 @@ async def update_parking_lot_status(
         if not closed_date:
             closed_date = date.today()
 
-    updated_lot = Parking_lot_create(**parking_lot.model_dump())
+    updated_lot = ParkingLotCreate(**parking_lot.model_dump())
     updated_lot.status = lot_status
     updated_lot.closed_reason = closed_reason if lot_status == "closed" else None
     updated_lot.closed_date = closed_date if lot_status == "closed" else None
@@ -422,7 +425,7 @@ def update_parking_lot_reserved_count(lid: int, action: str) -> bool:
     """
     try:
         parking_lot = get_lot_if_exists(lid)
-        parking_lot = Parking_lot(**parking_lot.model_dump())
+        parking_lot = ParkingLot(**parking_lot.model_dump())
         if not parking_lot:
             return False
 
@@ -479,7 +482,8 @@ async def delete_parking_lot(
             status_code=409,
             detail={
                 "error": "Conflict",
-                "message": f"Cannot delete parking lot with active sessions. Found {len(active_sessions)} active sessions.",
+                "message": "Cannot delete parking lot with active sessions." 
+                f" Found {len(active_sessions)} active sessions.",
                 "code": "ACTIVE_SESSIONS_EXIST",
             },
         )

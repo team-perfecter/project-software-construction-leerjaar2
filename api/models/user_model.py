@@ -25,7 +25,13 @@ class UserModel:
         cursor.execute("""
             INSERT INTO users (username, password, name, email, phone, birth_year, role)
             VALUES (%s, %s, %s, %s, %s, %s, %s);
-        """, (user.username, user.password, user.name, user.email, user.phone, user.birth_year, user.role))
+        """, (user.username,
+              user.password,
+              user.name,
+              user.email,
+              user.phone,
+              user.birth_year,
+              user.role))
         self.connection.commit()
 
 
@@ -102,7 +108,7 @@ class UserModel:
             except Exception as e:
                 print("Failed to map row to User:", row_dict, e)
         return users
-    
+
     def get_parking_lots_for_admin(self, user_id: int) -> list[int]:
         cursor = self.connection.cursor()
         cursor.execute("""
@@ -112,7 +118,7 @@ class UserModel:
         """, (user_id,))
         rows = cursor.fetchall()
         return [r[0] for r in rows]
-    
+
     def add_parking_lot_access(self, admin_id: int, lot_id: int):
         cursor = self.connection.cursor()
 
@@ -130,3 +136,4 @@ class UserModel:
         deleted = cursor.fetchone()
         self.connection.commit()
         return deleted
+    

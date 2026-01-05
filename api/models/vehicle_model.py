@@ -1,7 +1,7 @@
 
-from api.datatypes.vehicle import Vehicle, VehicleCreate
-from psycopg2.extras import RealDictCursor
 import psycopg2
+from psycopg2.extras import RealDictCursor
+from api.datatypes.vehicle import Vehicle, VehicleCreate
 
 class Vehicle_model:
     def __init__(self):
@@ -18,13 +18,13 @@ class Vehicle_model:
         cursor = self.connection.cursor(cursor_factory=RealDictCursor)
         cursor.execute("SELECT * FROM vehicles WHERE user_id = %s", (user_id,))
         return cursor.fetchall()
-    
+
     #return all vehicles of user.
     def get_all_user_vehicles(self, user_id):
         cursor = self.connection.cursor(cursor_factory=RealDictCursor)
         cursor.execute("SELECT * FROM vehicles WHERE user_id = %s", (user_id,))
         return cursor.fetchall()
-    
+
     # #Return a vehicle.
     def get_one_vehicle(self, id):
         cursor = self.connection.cursor(cursor_factory=RealDictCursor)
@@ -49,7 +49,12 @@ class Vehicle_model:
             INSERT INTO vehicles (user_id, license_plate, make, model, color, year)
             VALUES (%s, %s, %s, %s, %s, %s)
             RETURNING id;
-        """, (vehicle.user_id, vehicle.license_plate, vehicle.make, vehicle.model, vehicle.color, vehicle.year))
+        """, (vehicle.user_id,
+              vehicle.license_plate,
+              vehicle.make,
+              vehicle.model,
+              vehicle.color,
+              vehicle.year))
         created = cursor.fetchone()
         self.connection.commit()
         return created is not None
@@ -60,7 +65,12 @@ class Vehicle_model:
             UPDATE vehicles
             SET license_plate=%s, make=%s, model=%s, color=%s, year=%s
             WHERE id=%s
-        """, (vehicle["license_plate"], vehicle["make"], vehicle["model"], vehicle["color"], vehicle["year"], vehicle_id,))
+        """, (vehicle["license_plate"],
+              vehicle["make"],
+              vehicle["model"],
+              vehicle["color"],
+              vehicle["year"],
+              vehicle_id,))
 
     #Delete a vehicle.
     def delete_vehicle(self, vehicle_id):
@@ -78,3 +88,4 @@ class Vehicle_model:
                 ON reservations.parking_lot_id = parkinglots.parking_lot_id
             WHERE reservations.user_id = %s
         """, (user_id,))
+        

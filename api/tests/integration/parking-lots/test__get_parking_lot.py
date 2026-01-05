@@ -51,7 +51,7 @@ def test_get_parking_lot_by_lid_success(client):
 
 def test_get_parking_lot_by_lid_not_found(client):
     """Test: GET /parking-lots/{id} - Niet bestaande parking lot"""
-    response = client.get(f"/parking-lots/9999")
+    response = client.get("/parking-lots/9999")
     assert response.status_code == 404
 
 def test_get_parking_lot_by_lid_unauthorized(client):
@@ -96,7 +96,10 @@ def test_get_parking_lots_sessions(client_with_token):
     """Test: GET /parking-lots/{id}/sessions - Alle sessies van een parking lot"""
     superadmin_client, headers = client_with_token("superadmin")
     parking_lot_id = get_last_pid(superadmin_client)
-    response = superadmin_client.get(f"/parking-lots/{parking_lot_id}/sessions", headers=headers, params={"lid": parking_lot_id})
+    response = superadmin_client.get(f"/parking-lots/{parking_lot_id}/sessions", 
+                                     headers=headers, 
+                                     params={"lid": parking_lot_id}
+                                     )
     assert response.status_code == 200
 
     data = response.json()
@@ -106,7 +109,10 @@ def test_get_parking_lots_sessions_by_id_no_session(client_with_token):
     """Test: GET /parking-lots/{id}/sessions - Alle sessies van een parking lot"""
     superadmin_client, headers = client_with_token("superadmin")
     parking_lot_id = get_last_pid(superadmin_client)
-    response = superadmin_client.get(f"/parking-lots/{parking_lot_id}/sessions/99999", headers=headers, params={"lid": parking_lot_id, "sid": 999999})
+    response = superadmin_client.get(f"/parking-lots/{parking_lot_id}/sessions/99999", 
+                                     headers=headers, 
+                                     params={"lid": parking_lot_id, "sid": 999999}
+                                     )
     assert response.status_code == 404
 
     data = response.json()

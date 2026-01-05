@@ -81,7 +81,8 @@ class SessionModel:
 
     def get_all_sessions_by_id(self, lid, vehicle_id):
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM sessions WHERE parking_lot_id = %s AND vehicle_id = %s;", (lid, vehicle_id,))
+        cursor.execute("SELECT * FROM sessions WHERE parking_lot_id = %s AND vehicle_id = %s;",
+                       (lid, vehicle_id,))
         session_list = self.map_to_session(cursor)
         return session_list[0] if len(session_list) > 0 else None
 

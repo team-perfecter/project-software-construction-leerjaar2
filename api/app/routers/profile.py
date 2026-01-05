@@ -1,10 +1,17 @@
+import logging
+from fastapi import Depends, APIRouter, HTTPException
 from starlette.responses import JSONResponse
 from api.datatypes.user import User, UserCreate, UserLogin, UserUpdate, UserRole, Register
 from api.models.user_model import UserModel
 from api.utilities.Hasher import hash_string
-import logging
-from fastapi import Depends, APIRouter, HTTPException
-from api.auth_utils import verify_password, create_access_token, get_current_user, revoke_token, oauth2_scheme, require_role
+from api.auth_utils import (
+    verify_password,
+    create_access_token,
+    get_current_user,
+    revoke_token,
+    oauth2_scheme,
+    require_role
+    )
 
 router = APIRouter(
     tags=["profile"]
@@ -57,7 +64,7 @@ async def login(data: UserLogin):
 
 
 @router.get("/get_user/{user_id}")
-async def get_user(user_id: int, current_user: User = Depends(require_role(UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.PAYMENTADMIN))):
+async def get_user(user_id: int, _: User = Depends(require_role(UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.PAYMENTADMIN))):
     user: User = user_model.get_user_by_id(user_id)
     if user is None:
         return JSONResponse(status_code=404, content={"message": "User not found"})
@@ -65,7 +72,7 @@ async def get_user(user_id: int, current_user: User = Depends(require_role(UserR
 
 
 @router.get("/users")
-async def admin_get_all_users(current_user: User = Depends(require_role(UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.PAYMENTADMIN))):
+async def admin_get_all_users(_: User = Depends(require_role(UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.PAYMENTADMIN))):
     users = user_model.get_all_users()
     return users
 
@@ -95,7 +102,7 @@ async def update_me(update_data: UserUpdate, current_user: User = Depends(get_cu
 
 
 @router.delete("/users/{user_id}")
-async def delete_user(user_id: int, current_user = require_role(UserRole.SUPERADMIN)):
+async def delete_user(user_id: int, _ = require_role(UserRole.SUPERADMIN)):
     user = user_model.get_user_by_id(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -106,7 +113,7 @@ async def delete_user(user_id: int, current_user = require_role(UserRole.SUPERAD
 
 
 @router.post("/create_user")
-async def create_user(user: UserCreate, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
+async def create_user(user: UserCreate, _: User = Depends(require_role(UserRole.SUPERADMIN))):
     username_check = user_model.get_user_by_username(user.username)
     if username_check is not None:
         logging.info(
@@ -122,6 +129,6 @@ async def create_user(user: UserCreate, current_user: User = Depends(require_rol
 
 
 @router.post("/admin/{admin_id}/parking-lots/{lot_id}/assign")
-async def assign_lot_to_admin(admin_id: int, lot_id: int, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
+async def assign_lot_to_admin(admin_id: int, lot_id: int, _: User = Depends(require_role(UserRole.SUPERADMIN))):
     user_model.add_parking_lot_access(admin_id, lot_id)
     return {"message": "Parking lot access added"}

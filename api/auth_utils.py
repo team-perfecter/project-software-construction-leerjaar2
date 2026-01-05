@@ -1,10 +1,9 @@
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
-from passlib.context import CryptContext
-from api.datatypes.user import User, UserRole
 from fastapi import HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
-
+from passlib.context import CryptContext
+from api.datatypes.user import User, UserRole
 from api.models.user_model import UserModel
 from api.utilities.Hasher import hash_string
 
