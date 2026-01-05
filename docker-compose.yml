@@ -7,6 +7,10 @@ services:
     depends_on:
       - db_migration
     restart: always
+    environment:
+      LOG_FILE: /var/log/parking-api/app.log
+    volumes:
+      - ./logs:/var/log/parking-api
 
   db_migration:
     build:
