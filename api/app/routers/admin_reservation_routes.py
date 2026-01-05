@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
 from api.auth_utils import get_current_user, require_role
 from api.models.reservation_model import Reservation_model
 from api.datatypes.reservation import ReservationCreate
@@ -43,7 +44,8 @@ async def admin_create_reservation(
 
     logging.info("Created reservation ID %i for user ID %i", new_id, reservation.user_id)
 
-    return {"message": "Reservation created", "reservation_id": new_id}
+    return JSONResponse(content={"message": "Reservation created", "reservation_id": new_id}, status_code=201)
+
 
 
 @router.delete("/admin/reservations/{reservation_id}")
@@ -73,5 +75,4 @@ async def admin_delete_reservation(
         "Admin ID %i successfully deleted Reservation ID %i",
         current_user.id, reservation_id
     )
-
-    return {"message": "Reservation deleted"}
+    return JSONResponse(content={"message": "Reservation deleted"}, status_code=200)
