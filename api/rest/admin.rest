@@ -25,7 +25,7 @@ Content-Type: application/json
 @token = {{login.response.body.access_token}}
 
 ### GET USER DETAILS (7.1)
-GET http://127.0.0.1:8000/admin/users/1
+GET http://127.0.0.1:8000/profile
 Authorization: Bearer {{token}}
 
 ###
@@ -72,6 +72,11 @@ Authorization: Bearer {{token}}
 }
 
 ###
+POST http://127.0.0.1:8000/sessions/start-from-reservation/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{}
 
 ### DELETE RESERVATION (7.4)
 DELETE http://127.0.0.1:8000/admin/reservations/1

@@ -14,7 +14,7 @@ class SessionModel:
         )
 
     # Nieuwe sessie starten
-    def create_session(self, parking_lot_id: int, user_id: int, vehicle_id: int) -> Session | None:
+    def create_session(self, parking_lot_id: int, user_id: int, vehicle_id: int, reservation_id: int) -> Session | None:
         cursor = self.connection.cursor()
 
         # Controleer of dit voertuig al actief is
@@ -26,10 +26,10 @@ class SessionModel:
             return None
 
         cursor.execute("""
-            INSERT INTO sessions (parking_lot_id, user_id, vehicle_id)
-            VALUES (%s, %s, %s)
+            INSERT INTO sessions (parking_lot_id, user_id, vehicle_id, reservation_id)
+            VALUES (%s, %s, %s, %s)
             RETURNING *;
-        """, (parking_lot_id, user_id, vehicle_id))
+        """, (parking_lot_id, user_id, vehicle_id, reservation_id))
 
         self.connection.commit()
         return self.map_to_session(cursor)[0]
@@ -37,17 +37,14 @@ class SessionModel:
     # Sessie stoppen (wanneer voertuig vertrekt)
     def stop_session(self, session: Session, cost: float) -> Session:
         stopped = datetime.now()
-        duration_minutes = int((stopped - session.started).total_seconds() / 60)
-
         cursor = self.connection.cursor()
         cursor.execute("""
             UPDATE sessions
             SET stopped = %s,
-                duration_minutes = %s,
                 cost = %s
             WHERE id = %s
             RETURNING *;
-        """, (stopped, duration_minutes, cost, session.id,))
+        """, (stopped, cost, session.id,))
 
         self.connection.commit()
 

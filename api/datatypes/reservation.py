@@ -13,7 +13,5 @@ class Reservation(ReservationCreate):
   user_id: int
   id: int
   created_at: datetime
-  payment_id: int
   cost: int
   status: str
-

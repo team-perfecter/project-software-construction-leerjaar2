@@ -40,8 +40,7 @@ async def reservations(vehicle_id: int, current_user: User = Depends(get_current
     if vehicle["user_id"] != current_user.id:
         raise HTTPException(status_code=403, detail="This vehicle does not belong to the logged in user")
 
-    reservation_list: list[Reservation] = reservation_model.get_reservation_by_vehicle(vehicle_id)
-
+    reservation_list: list[Reservation] = reservation_model.get_reservations_by_vehicle(vehicle_id)
     return reservation_list
 
 @router.post("/reservations/create")
@@ -73,9 +72,12 @@ async def create_reservation(reservation: ReservationCreate, current_user: User 
 
     #create a new reservation
     parking_lot = parking_lot_model.get_parking_lot_by_lid(reservation.parking_lot_id)
+    #errorhandling etc.
+
     cost = calculate_price(parking_lot, reservation)
 
-    reservation_id = reservation_model.create_reservation(reservation, current_user.id, None, cost)
+    reservation_id = reservation_model.create_reservation(reservation, current_user.id, cost)
+    #errorhandling etc.
 
     transaction = generate_payment_hash(str(reservation_id), vehicle["license_plate"])
     payment_hash = generate_transaction_validation_hash()
@@ -83,13 +85,13 @@ async def create_reservation(reservation: ReservationCreate, current_user: User 
         user_id=current_user.id,
         amount=cost,
         transaction=transaction,
-        hash=payment_hash
+        hash=payment_hash,
+        reservation_id=reservation_id
     )
-    payment_id = payment_model.create_payment(payment)
+    payment_model.create_payment(payment)
     #add error handling for payment 
 
-    reservation_model.link_payment_to_reservation(reservation_id, payment_id)
-    raise HTTPException(status_code = 201, detail = {"message": f"reservation created: {reservation_id}"})
+    return {"message": "Reservation created successfully"}
 
 @router.delete("/reservations/delete/{reservation_id}")
 async def delete_reservation(reservation_id: int, current_user: User = Depends(get_current_user)):
@@ -100,7 +102,7 @@ async def delete_reservation(reservation_id: int, current_user: User = Depends(g
         raise HTTPException(status_code=404, detail={"message": "Reservation not found"})
 
     # Controleer of de reservatie toebehoort aan de ingelogde gebruiker
-    if reservation["user_id"] != current_user.id:
+    if reservation.user_id != current_user.id:
         logging.warning("User with id %i tried to delete a reservation that does not belong to them: %i", current_user.id, reservation_id)
         raise HTTPException(status_code=403, detail={"message": "This reservation does not belong to the logged-in user"})
 

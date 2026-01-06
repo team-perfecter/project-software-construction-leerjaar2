@@ -86,28 +86,11 @@ CREATE TABLE IF NOT EXISTS parking_lots (
 """)
 
 cur.execute("""
-CREATE TABLE IF NOT EXISTS payments (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
-    transaction VARCHAR,
-    amount FLOAT,
-    completed BOOLEAN DEFAULT FALSE,
-    hash VARCHAR,
-    method VARCHAR,
-    issuer VARCHAR,
-    bank VARCHAR,
-    date TIMESTAMP DEFAULT NOW(),
-    refund_requested BOOLEAN DEFAULT FALSE
-);
-""")
-
-cur.execute("""
 CREATE TABLE IF NOT EXISTS reservations (
     id SERIAL PRIMARY KEY,
     vehicle_id INTEGER REFERENCES vehicles(id),
     user_id INTEGER REFERENCES users(id),
     parking_lot_id INTEGER REFERENCES parking_lots(id),
-    payment_id INTEGER REFERENCES payments(id),
     start_time TIMESTAMP,
     end_time TIMESTAMP,
     status VARCHAR DEFAULT 'Payment Pending',
@@ -120,13 +103,30 @@ cur.execute("""
 CREATE TABLE IF NOT EXISTS sessions (
     id SERIAL PRIMARY KEY,
     parking_lot_id INTEGER REFERENCES parking_lots(id),
-    payment_id INTEGER REFERENCES payments(id),
     user_id INTEGER REFERENCES users(id),
     vehicle_id INTEGER REFERENCES vehicles(id),
+    reservation_id INTEGER REFERENCES reservations(id),
     started TIMESTAMP DEFAULT NOW(),
     stopped TIMESTAMP,
-    duration_minutes INTEGER,
     cost FLOAT
+);
+""")
+
+cur.execute("""
+CREATE TABLE IF NOT EXISTS payments (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    reservation_id INTEGER REFERENCES reservations(id),
+    session_id INTEGER REFERENCES sessions(id),
+    transaction VARCHAR,
+    amount FLOAT,
+    completed BOOLEAN DEFAULT FALSE,
+    hash VARCHAR,
+    method VARCHAR,
+    issuer VARCHAR,
+    bank VARCHAR,
+    date TIMESTAMP DEFAULT NOW(),
+    refund_requested BOOLEAN DEFAULT FALSE
 );
 """)
 

@@ -10,6 +10,8 @@ class PaymentCreate(BaseModel):
     method: Optional[str] = None
     issuer: Optional[str] = None
     bank: Optional[str] = None
+    reservation_id: Optional[int] = None
+    session_id: Optional[int] = None
 
 
 class Payment(PaymentCreate):

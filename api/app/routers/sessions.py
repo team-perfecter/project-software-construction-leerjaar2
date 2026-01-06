@@ -10,6 +10,7 @@ from api.models.session_model import SessionModel
 from fastapi import APIRouter, Depends, HTTPException, status
 from starlette.responses import JSONResponse
 from api.models.vehicle_model import Vehicle_model
+from api.models.reservation_model import Reservation_model
 from api.session_calculator import generate_payment_hash, generate_transaction_validation_hash, calculate_price
 
 logging.basicConfig(
@@ -24,6 +25,7 @@ session_model: SessionModel = SessionModel()
 parking_lot_model: ParkingLotModel = ParkingLotModel()
 vehicle_model: Vehicle_model = Vehicle_model()
 payment_model: PaymentModel = PaymentModel()
+reservation_model: Reservation_model = Reservation_model()
 
 
 @router.post("/parking-lots/{lid}/sessions/start", status_code=status.HTTP_201_CREATED)
@@ -96,7 +98,7 @@ async def start_parking_session(
     # create new session
 
     # Save session
-    session = session_model.create_session(lid, current_user.id, vehicle_id)
+    session = session_model.create_session(lid, current_user.id, vehicle_id, None)
     if session is None:
         return "This vehicle already has a session"
 
@@ -123,6 +125,12 @@ async def stop_parking_session(
     session = session_model.get_vehicle_session(vehicle_id)
     if not session:
         return "This vehicle has no active sessions"
+    
+    if getattr(session, "reservation_id", None) is not None:
+        raise HTTPException(
+            status_code=403,
+            detail="Cannot stop a session that was started from a reservation via this endpoint."
+        )
 
     parking_lot = parking_lot_model.get_parking_lot_by_lid(session.parking_lot_id)
     cost = calculate_price(parking_lot, session)
@@ -134,9 +142,10 @@ async def stop_parking_session(
     payment_hash = generate_transaction_validation_hash()
     payment = PaymentCreate(
         user_id=current_user.id,
-        amount=session.cost,
+        amount=cost,
         transaction=transaction,
-        hash=payment_hash
+        hash=payment_hash,
+        session_id=session.id
     )
     payment_model.create_payment(payment)
     return "Session stopped successfully"
@@ -157,3 +166,33 @@ async def get_sessions_vehicle(vehicle_id: int, user: User = Depends(get_current
     sessions = session_model.get_vehicle_sessions(vehicle_id)
     print(sessions)
     return JSONResponse(content={"message": sessions}, status_code=201)
+
+
+@router.post("/sessions/start-from-reservation/{reservation_id}")
+async def start_session_from_reservation(
+    reservation_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    # Get reservation
+    reservation = reservation_model.get_reservation_by_id(reservation_id)
+    if not reservation:
+        raise HTTPException(status_code=404, detail="Reservation not found")
+    if reservation.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Reservation does not belong to current user")
+
+    # Check if session already exists for this vehicle and parking lot
+    existing_session = session_model.get_vehicle_session(reservation.vehicle_id)
+    if existing_session and existing_session.parking_lot_id == reservation.parking_lot_id:
+        raise HTTPException(status_code=409, detail="Session already exists for this reservation")
+
+    # Start session
+    session = session_model.create_session(
+        reservation.parking_lot_id,
+        reservation.user_id,
+        reservation.vehicle_id,
+        reservation.id
+    )
+    if not session:
+        raise HTTPException(status_code=500, detail="Failed to start session")
+
+    return {"message": "Session started", "session": session}
