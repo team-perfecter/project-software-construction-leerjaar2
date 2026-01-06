@@ -67,19 +67,19 @@ Authorization: Bearer {{token}}
 {
   "vehicle_id": 1,
   "parking_lot_id": 1,
-  "start_time": "2027-01-01T10:00:00",
-  "end_time": "2027-01-01T12:00:00"
+  "start_time": "2026-01-01T10:00:00",
+  "end_time": "2026-01-01T12:00:00"
 }
 
 ###
-POST http://127.0.0.1:8000/sessions/reservations/2/start
+POST http://127.0.0.1:8000/sessions/reservations/1/start
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {}
 
 ###
-POST http://127.0.0.1:8000/sessions/reservations/2/stop
+POST http://127.0.0.1:8000/sessions/reservations/1/stop
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -95,7 +95,7 @@ Authorization: Bearer {{token}}
 DELETE http://127.0.0.1:8000/admin/users/2
 Authorization: Bearer {{token}}
 ### Get current user payments
-GET http://127.0.0.1:8000/payments/me/open
+GET http://127.0.0.1:8000/payments/me
 Authorization: Bearer {{token}}
 ###
 POST http://localhost:8000/parking-lots/1/sessions/start?vehicle_id=1

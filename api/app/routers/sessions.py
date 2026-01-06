@@ -233,12 +233,13 @@ async def stop_session_from_reservation(
         if not original_payment["completed"]:
             # Add extra cost to the original payment
             updated_payment = PaymentUpdate(
-                amount=original_payment["amount"] + extra_cost,)
-            payment_model.update_payment(original_payment["id"], updated_payment)
+                amount=original_payment["amount"] + extra_cost)
+            update_fields = updated_payment.dict(exclude_unset=True)
+            payment_model.update_payment(original_payment["id"], update_fields)
             return {
-                "message": "Reservation session stopped. Extra cost added to original payment (not yet paid).",
+                "message": "Reservation session stopped. Extra cost added to original payment=.",
                 "session": session,
-                "updated_payment": updated_payment
+                "updated_payment": updated_payment.amount
             }
         else:
             # Create a new payment for the extra cost
@@ -255,9 +256,9 @@ async def stop_session_from_reservation(
             )
             payment_model.create_payment(payment)
             return {
-                "message": "Reservation session stopped. Extra payment created for overtime (original payment already paid).",
+                "message": "Reservation session stopped. Extra payment created for overtime.",
                 "session": session,
-                "extra_payment": payment
+                "extra_payment": payment.amount
             }
 
     return {

@@ -19,11 +19,11 @@ class PaymentModel:
         try:
             cursor.execute("""
                 INSERT INTO payments
-                (user_id, transaction, amount, hash, method, issuer, bank)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                (user_id, reservation_id, transaction, amount, hash, method, issuer, bank)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id;
             """,
-                           (p.user_id, p.transaction, p.amount,
+                           (p.user_id, p.reservation_id, p.transaction, p.amount,
                             payment_hash, p.method, p.issuer, p.bank))
             created = cursor.fetchone()
             cls.connection.commit()
@@ -70,21 +70,21 @@ class PaymentModel:
         return result
 
     @classmethod
-    def update_payment(cls, id, p: PaymentUpdate):
+    def update_payment(cls, payment_id: int, update_data: dict) -> None:
+        if payment_id is None or update_data is None:
+            return
+
         cursor = cls.connection.cursor()
-        cursor.execute("""
+
+        set_clauses = ", ".join(f"{key} = %s" for key in update_data.keys())
+        values = list(update_data.values()) + [payment_id]
+
+        cursor.execute(f"""
             UPDATE payments
-            SET user_id = %s, transaction = %s, amount = %s,
-                method = %s, issuer = %s, bank = %s, completed = %s,
-                date = NOW(), refund_requested = %s
-            WHERE id = %s
-            RETURNING id;
-        """, (p.user_id, p.transaction, p.amount,
-              p.method, p.issuer, p.bank, p.completed,
-              p.refund_requested, id,))
-        updated = cursor.fetchone()
+            SET {set_clauses}
+            WHERE id = %s;
+        """, values)
         cls.connection.commit()
-        return updated is not None
 
     @classmethod
     def mark_payment_completed(cls, id):

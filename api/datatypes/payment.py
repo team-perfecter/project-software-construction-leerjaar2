@@ -23,7 +23,6 @@ class Payment(PaymentCreate):
 
 
 class PaymentUpdate(BaseModel):
-    user_id: Optional[int] = None
     transaction: Optional[str] = None
     amount: Optional[float] = None
     method: Optional[str] = None
