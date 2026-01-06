@@ -47,8 +47,6 @@ class SessionModel:
         """, (stopped, cost, session.id,))
 
         self.connection.commit()
-
-        # Use map_to_session to return a Session object
         session_list = self.map_to_session(cursor)
         return session_list[0] if session_list else None
 
@@ -87,6 +85,16 @@ class SessionModel:
         """, (vehicle_id,))
         session_list = self.map_to_session(cursor)
         return session_list[0] if session_list else None
+    
+    def get_session_by_reservation_id(self, reservation_id: int) -> Session | None:
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT * FROM sessions WHERE reservation_id = %s AND stopped IS NULL;", (reservation_id,))
+        rows = cursor.fetchall()
+        if not rows:
+            return None
+        columns = [desc[0] for desc in cursor.description]
+        data = dict(zip(columns, rows[0]))
+        return Session(**data)
 
     # Helperfunctie om DB-rijen om te zetten naar Session objecten
     def map_to_session(self, cursor) -> list[Session]:

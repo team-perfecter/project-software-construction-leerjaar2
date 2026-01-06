@@ -23,11 +23,11 @@ class Payment(PaymentCreate):
 
 
 class PaymentUpdate(BaseModel):
-    user_id: int
+    user_id: Optional[int] = None
     transaction: Optional[str] = None
-    amount: float
+    amount: Optional[float] = None
     method: Optional[str] = None
     issuer: Optional[str] = None
     bank: Optional[str] = None
-    completed: bool
-    refund_requested: bool
+    completed: Optional[bool] = None
+    refund_requested: Optional[bool] = None

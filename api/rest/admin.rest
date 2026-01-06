@@ -67,12 +67,19 @@ Authorization: Bearer {{token}}
 {
   "vehicle_id": 1,
   "parking_lot_id": 1,
-  "start_time": "2025-01-01T10:00:00",
-  "end_time": "2025-01-01T12:00:00"
+  "start_time": "2027-01-01T10:00:00",
+  "end_time": "2027-01-01T12:00:00"
 }
 
 ###
-POST http://127.0.0.1:8000/sessions/start-from-reservation/1
+POST http://127.0.0.1:8000/sessions/reservations/2/start
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{}
+
+###
+POST http://127.0.0.1:8000/sessions/reservations/2/stop
 Content-Type: application/json
 Authorization: Bearer {{token}}
 

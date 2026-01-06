@@ -1,8 +1,8 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from api.auth_utils import get_current_user
-from api.datatypes.payment import PaymentCreate
+from api.datatypes.payment import PaymentCreate, PaymentUpdate
 from api.datatypes.user import User
 from api.models.parking_lot_model import ParkingLotModel
 from api.models.payment_model import PaymentModel
@@ -168,7 +168,7 @@ async def get_sessions_vehicle(vehicle_id: int, user: User = Depends(get_current
     return JSONResponse(content={"message": sessions}, status_code=201)
 
 
-@router.post("/sessions/start-from-reservation/{reservation_id}")
+@router.post("/sessions/reservations/{reservation_id}/start")
 async def start_session_from_reservation(
     reservation_id: int,
     current_user: User = Depends(get_current_user)
@@ -196,3 +196,71 @@ async def start_session_from_reservation(
         raise HTTPException(status_code=500, detail="Failed to start session")
 
     return {"message": "Session started", "session": session}
+
+
+@router.post("/sessions/reservations/{reservation_id}/stop")
+async def stop_session_from_reservation(
+    reservation_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    session = session_model.get_session_by_reservation_id(reservation_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="No active session found for this reservation")
+    if session.stopped is not None:
+        raise HTTPException(status_code=409, detail="Session already stopped")
+
+    reservation = reservation_model.get_reservation_by_id(reservation_id)
+    if not reservation:
+        raise HTTPException(status_code=404, detail="Reservation not found")
+
+    parking_lot = parking_lot_model.get_parking_lot_by_lid(session.parking_lot_id)
+    session = session_model.stop_session(session, calculate_price(parking_lot, session))
+
+    # Only create/update payment if the driver overstayed
+    if session.stopped > reservation.end_time:
+        overtime_start = reservation.end_time
+        overtime_end = session.stopped
+        overtime_session = session
+        overtime_session.started = overtime_start
+        overtime_session.stopped = overtime_end
+        extra_cost = calculate_price(parking_lot, overtime_session)
+
+        # Find the original payment for this reservation
+        original_payment = payment_model.get_payment_by_reservation_id(reservation_id)
+        if not original_payment:
+            raise HTTPException(status_code=404, detail="Original payment not found")
+
+        if not original_payment["completed"]:
+            # Add extra cost to the original payment
+            updated_payment = PaymentUpdate(
+                amount=original_payment["amount"] + extra_cost,)
+            payment_model.update_payment(original_payment["id"], updated_payment)
+            return {
+                "message": "Reservation session stopped. Extra cost added to original payment (not yet paid).",
+                "session": session,
+                "updated_payment": updated_payment
+            }
+        else:
+            # Create a new payment for the extra cost
+            vehicle = vehicle_model.get_one_vehicle(session.vehicle_id)
+            transaction = generate_payment_hash(str(session.id), vehicle["license_plate"])
+            payment_hash = generate_transaction_validation_hash()
+            payment = PaymentCreate(
+                user_id=current_user.id,
+                amount=extra_cost,
+                transaction=transaction,
+                hash=payment_hash,
+                session_id=session.id,
+                reservation_id=reservation_id
+            )
+            payment_model.create_payment(payment)
+            return {
+                "message": "Reservation session stopped. Extra payment created for overtime (original payment already paid).",
+                "session": session,
+                "extra_payment": payment
+            }
+
+    return {
+        "message": "Reservation session stopped successfully. No extra cost added.",
+        "session": session
+    }

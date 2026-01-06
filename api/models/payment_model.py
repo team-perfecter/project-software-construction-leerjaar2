@@ -141,3 +141,14 @@ class PaymentModel:
         deleted = cursor.fetchone()
         cls.connection.commit()
         return deleted is not None
+    
+
+    @classmethod
+    def get_payment_by_reservation_id(cls, reservation_id):
+        cursor = cls.connection.cursor()
+        cursor.execute("SELECT * FROM payments WHERE reservation_id = %s;", (reservation_id,))
+        row = cursor.fetchone()
+        if row:
+            columns = [desc[0] for desc in cursor.description]
+            return dict(zip(columns, row))
+        return None
