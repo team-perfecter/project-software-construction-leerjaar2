@@ -4,6 +4,8 @@ This file contains all endpoints related to parking lots.
 
 from datetime import date
 from api.models.parking_lot_model import ParkingLotModel
+from api.models.session_model import SessionModel
+from api.models.reservation_model import Reservation_model
 from api.datatypes.parking_lot import Parking_lot, Parking_lot_create
 from api.datatypes.user import User, UserRole
 from api.auth_utils import get_current_user, require_role
@@ -120,17 +122,7 @@ async def get_all_parking_lots():
     """
     logger.info("Retrieving all parking lots")
     parking_lots = parking_lot_model.get_all_parking_lots()
-    if len(parking_lots) == 0:
-        logger.warning("No parking lots found in the system")
-        raise HTTPException(
-            status_code=204,
-            detail={
-                "error": "No Content",
-                "message": "There are no parking lots",
-                "code": "PARKING_LOT_NOT_FOUND",
-            },
-        )
-    logger.info("Successfully retrieved %i parking lots", len(parking_lots))
+    logging.info("Successfully retrieved %i parking lots", len(parking_lots))
     return parking_lots
 
 
@@ -422,71 +414,71 @@ def update_parking_lot_reserved_count(lid: int, action: str) -> bool:
 
 # endregion
 
+#######NOT NEEDED - just a status change
+# # region DELETE
+# @router.delete("/parking-lots/{lid}")
+# async def delete_parking_lot(
+#     lid: int,
+#     _: User = Depends(require_role(UserRole.SUPERADMIN)),
+# ):
+#     """
+#     Deletes a parking lot based on id. must be logged in as superadmin.
+#     @param: lid
+#     """
+#     # logging.info(
+#     #     "User with id %i attempting to delete parking lot with id %i",
+#     #     current_user.id,
+#     #     lid,
+#     # )
 
-# region DELETE
-@router.delete("/parking-lots/{lid}")
-async def delete_parking_lot(
-    lid: int,
-    current_user: User = Depends(require_role(UserRole.SUPERADMIN)),
-):
-    """
-    Deletes a parking lot based on id. must be logged in as superadmin.
-    @param: lid
-    """
-    logger.info(
-        "Superadmin %i attempting to delete parking lot %i",
-        current_user.id,
-        lid,
-    )
+#     # Check if parking lot exists
+#     logging.debug("Checking if parking lot %i exists", lid)
+#     _ = get_lot_if_exists(lid)
 
-    # Check if parking lot exists
-    logger.debug("Checking if parking lot %i exists", lid)
-    _ = get_lot_if_exists(lid)
+#     # Check if parking lot has active sessions
+#     logging.debug("Checking for active sessions in parking lot %i", lid)
+#     sessions = parking_lot_model.get_all_sessions_by_lid(lid)
+#     active_sessions = [s for s in sessions if s.stopped is None]
 
-    # Check if parking lot has active sessions
-    logger.debug("Checking for active sessions in parking lot %i", lid)
-    sessions = parking_lot_model.get_all_sessions_by_lid(lid)
-    active_sessions = [s for s in sessions if s.end_time is None]
+#     if active_sessions:
+#         logging.warning(
+#             "Cannot delete parking lot with id %i - has %i active sessions",
+#             lid,
+#             len(active_sessions),
+#         )
+#         raise HTTPException(
+#             status_code=409,
+#             detail={
+#                 "error": "Conflict",
+#                 "message": f"Cannot delete parking lot with active sessions. Found {len(active_sessions)} active sessions.",
+#                 "code": "ACTIVE_SESSIONS_EXIST",
+#             },
+#         )
 
-    if active_sessions:
-        logger.warning(
-            "Cannot delete parking lot %i - has %i active sessions",
-            lid,
-            len(active_sessions),
-        )
-        raise HTTPException(
-            status_code=409,
-            detail={
-                "error": "Conflict",
-                "message": f"Cannot delete parking lot with active sessions. Found {len(active_sessions)} active sessions.",
-                "code": "ACTIVE_SESSIONS_EXIST",
-            },
-        )
+#     logging.info(
+#         "No active sessions found, proceeding with deletion of parking lot %i", lid
+#     )
 
-    logger.info(
-        "No active sessions found, proceeding with deletion of parking lot %i", lid
-    )
+#     # Delete the parking lot
+#     logging.debug("Attempting to delete parking lot %i from database", lid)
+#     success = parking_lot_model.delete_parking_lot(lid)
 
-    # Delete the parking lot
-    logger.debug("Attempting to delete parking lot %i from database", lid)
-    success = parking_lot_model.delete_parking_lot(lid)
+#     if not success:
+#         logging.error("Failed to delete parking lot with id %i from database", lid)
+#         raise HTTPException(
+#             status_code=500,
+#             detail={
+#                 "error": "Internal Server Error",
+#                 "message": "Failed to delete parking lot",
+#                 "code": "DELETE_FAILED",
+#             },
+#         )
 
-    if not success:
-        logger.error("Failed to delete parking lot with id %i from database", lid)
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "error": "Internal Server Error",
-                "message": "Failed to delete parking lot",
-                "code": "DELETE_FAILED",
-            },
-        )
-
-    logger.info("Successfully deleted parking lot with id %i", lid)
-    return {
-        "message": "Parking lot deleted successfully",
-        "parking_lot_id": lid,
-    }
+#     logging.info("Successfully deleted parking lot with id %i", lid)
+#     return {
+#         "message": "Parking lot deleted successfully",
+#         "parking_lot_id": lid,
+#     }
 
 
 # TODO: delete session by session lid (admin only)  /parking-lots/{lid}/sessions/{sid}
@@ -500,3 +492,29 @@ async def delete_parking_lot(
 
 
 # endregion
+
+
+@router.delete("/parking-lots/{lid}/force")
+async def force_delete_parking_lot(
+    lid: int,
+    _: User = Depends(require_role(UserRole.SUPERADMIN)),
+):
+    
+    get_lot_if_exists(lid)
+    # Delete dependent sessions
+    session_model = SessionModel()
+    cursor = session_model.connection.cursor()
+    cursor.execute("DELETE FROM sessions WHERE parking_lot_id = %s;", (lid,))
+    session_model.connection.commit()
+
+    # Delete dependent reservations
+    reservation_model = Reservation_model()
+    cursor = reservation_model.connection.cursor()
+    cursor.execute("DELETE FROM reservations WHERE parking_lot_id = %s;", (lid,))
+    reservation_model.connection.commit()
+
+    # Now delete the parking lot
+    success = parking_lot_model.delete_parking_lot(lid)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to delete parking lot")
+    return {"message": "Parking lot forcefully deleted", "parking_lot_id": lid}

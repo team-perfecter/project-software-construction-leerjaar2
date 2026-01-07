@@ -76,7 +76,7 @@ class UserModel:
         return user_list
 
     def update_user(self, user_id: int, update_data: dict) -> None:
-        if user_id is None or update_data is None:
+        if not user_id or not update_data is None:
             return
 
         cursor = self.connection.cursor()
