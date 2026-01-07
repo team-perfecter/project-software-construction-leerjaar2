@@ -16,24 +16,19 @@ class PaymentModel:
     def create_payment(cls, p: PaymentCreate):
         cursor = cls.connection.cursor()
         payment_hash = generate_transaction_validation_hash()
-        try:
-            cursor.execute("""
-                INSERT INTO payments
-                (user_id, reservation_id, session_id, transaction, amount, hash, method, issuer, bank)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                RETURNING id;
-            """,
-                           (p.user_id, p.reservation_id, p.session_id, p.transaction, p.amount,
-                            payment_hash, p.method, p.issuer, p.bank))
-            created = cursor.fetchone()
-            cls.connection.commit()
-            print("Created:", created)
-            if created:
-                return created[0]
-        except Exception as e:
-            print("DB Error:", e)
-            cls.connection.rollback()
-            return False
+        cursor.execute("""
+            INSERT INTO payments
+            (user_id, reservation_id, session_id, transaction, amount, hash, method, issuer, bank)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id;
+        """,
+                        (p.user_id, p.reservation_id, p.session_id, p.transaction, p.amount,
+                        payment_hash, p.method, p.issuer, p.bank))
+        created = cursor.fetchone()
+        cls.connection.commit()
+        if created:
+            return created[0]
+
 
     @classmethod
     def get_payment_by_payment_id(cls, id):

@@ -112,3 +112,28 @@ Authorization: Bearer {{token}}
 ### Stop a session
 POST http://localhost:8000/parking-lots/1/sessions/stop?vehicle_id=1
 Authorization: Bearer {{token}}
+###
+POST http://localhost:8000/discount-codes
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "code": "test",
+  "discount_type": "percentage",
+  "discount_value": 15,
+  "use_amount": 10
+}
+
+###
+GET http://localhost:8000/discount-codes
+Authorization: Bearer {{token}}
+###
+
+GET http://localhost:8000/discount-codes/active
+Authorization: Bearer {{token}}
+###
+POST http://localhost:8000/discount-codes/1/deactivate
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{}
