@@ -7,6 +7,8 @@ from datetime import date
 from typing import Optional
 
 from api.models.parking_lot_model import ParkingLotModel
+from api.models.session_model import SessionModel
+from api.models.reservation_model import Reservation_model
 from api.datatypes.parking_lot import Parking_lot, Parking_lot_create
 from api.datatypes.user import User, UserRole
 from api.auth_utils import get_current_user, require_lot_access, require_role
@@ -128,16 +130,6 @@ async def get_all_parking_lots():
     """
     logging.info("Retrieving all parking lots")
     parking_lots = parking_lot_model.get_all_parking_lots()
-    if len(parking_lots) == 0:
-        logging.warning("No parking lots found in the system")
-        raise HTTPException(
-            status_code=204,
-            detail={
-                "error": "No Content",
-                "message": "There are no parking lots",
-                "code": "PARKING_LOT_NOT_FOUND",
-            },
-        )
     logging.info("Successfully retrieved %i parking lots", len(parking_lots))
     return parking_lots
 
@@ -521,3 +513,29 @@ def update_parking_lot_reserved_count(lid: int, action: str) -> bool:
 
 
 # endregion
+
+
+@router.delete("/parking-lots/{lid}/force")
+async def force_delete_parking_lot(
+    lid: int,
+    _: User = Depends(require_role(UserRole.SUPERADMIN)),
+):
+    
+    get_lot_if_exists(lid)
+    # Delete dependent sessions
+    session_model = SessionModel()
+    cursor = session_model.connection.cursor()
+    cursor.execute("DELETE FROM sessions WHERE parking_lot_id = %s;", (lid,))
+    session_model.connection.commit()
+
+    # Delete dependent reservations
+    reservation_model = Reservation_model()
+    cursor = reservation_model.connection.cursor()
+    cursor.execute("DELETE FROM reservations WHERE parking_lot_id = %s;", (lid,))
+    reservation_model.connection.commit()
+
+    # Now delete the parking lot
+    success = parking_lot_model.delete_parking_lot(lid)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to delete parking lot")
+    return {"message": "Parking lot forcefully deleted", "parking_lot_id": lid}
