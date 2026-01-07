@@ -1,15 +1,17 @@
 from datetime import datetime
 from pydantic import BaseModel
 
-class Reservation(BaseModel):
-  id: int
-  created_at: datetime
 
 class ReservationCreate(BaseModel):
-    user_id: int
-    vehicle_id: int
-    parking_lot_id: int
-    status: str
-    start_time: datetime
-    end_time: datetime | None
-    cost: int
+  vehicle_id: int
+  parking_lot_id: int
+  start_time: datetime
+  end_time: datetime | None
+
+
+class Reservation(ReservationCreate):
+  user_id: int
+  id: int
+  created_at: datetime
+  cost: int
+  status: str

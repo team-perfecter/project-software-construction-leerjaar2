@@ -7,26 +7,26 @@ class PaymentCreate(BaseModel):
     user_id: int
     transaction: Optional[str] = None
     amount: float
-    hash: Optional[str] = None
     method: Optional[str] = None
     issuer: Optional[str] = None
     bank: Optional[str] = None
+    reservation_id: Optional[int] = None
+    session_id: Optional[int] = None
 
 
 class Payment(PaymentCreate):
     id: int
     date: date
+    hash: str
     completed: bool
     refund_requested: bool
 
 
 class PaymentUpdate(BaseModel):
-    user_id: int
     transaction: Optional[str] = None
-    amount: float
-    hash: Optional[str] = None
+    amount: Optional[float] = None
     method: Optional[str] = None
     issuer: Optional[str] = None
     bank: Optional[str] = None
-    completed: bool
-    refund_requested: bool
+    completed: Optional[bool] = None
+    refund_requested: Optional[bool] = None

@@ -319,10 +319,43 @@ def get_last_reservation_id(client_with_token):
     response = client.get("/admin/reservations", headers=headers)
 
     if response.status_code == 200:
-        data = response.json()
-        if isinstance(data, list) and len(data) > 0:
-            return data[-1]["id"]
-    return None
+        for lot in response.json():
+            client.delete(f"/parking-lots/{lot['id']}/force", headers=headers)
+
+    if "create" not in request.node.fspath.basename:
+        lot = {
+            "name": "Bedrijventerrein Almere Parkeergarage",
+            "location": "Industrial Zone",
+            "address": "Schanssingel 337, 2421 BS Almere",
+            "capacity": 100,
+            "tariff": 0.5,
+            "daytariff": 0.5,
+            "lat": 0,
+            "lng": 0
+        }
+
+        lot2 = {
+            "name": "Vlaardingen Evenementenhal Parkeerterrein",
+            "location": "Event Center",
+            "address": "Westlindepark 756, 8920 AB Vlaardingen",
+            "capacity": 50,
+            "tariff": 0.5,
+            "daytariff": 0.5,
+            "lat": 0,
+            "lng": 0
+        }
+
+        client.post("/parking-lots", json=lot, headers=headers)
+        client.post("/parking-lots", json=lot2, headers=headers)
+
+
+def get_last_pid(client):
+    """
+    Returns the id of the last parking lot.
+    """
+    response = client.get("/parking-lots/")
+    data = response.json()
+    return data[-1]["id"]
 
 
 @pytest.fixture(autouse=True)

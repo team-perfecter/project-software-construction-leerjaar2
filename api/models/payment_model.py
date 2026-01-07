@@ -1,5 +1,6 @@
 import psycopg2
 from api.datatypes.payment import PaymentCreate, PaymentUpdate
+from api.session_calculator import generate_transaction_validation_hash
 
 
 class PaymentModel:
@@ -14,19 +15,21 @@ class PaymentModel:
     @classmethod
     def create_payment(cls, p: PaymentCreate):
         cursor = cls.connection.cursor()
+        payment_hash = generate_transaction_validation_hash()
         try:
             cursor.execute("""
                 INSERT INTO payments
-                (user_id, transaction, amount, hash, method, issuer, bank)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                (user_id, reservation_id, session_id, transaction, amount, hash, method, issuer, bank)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id;
             """,
-                           (p.user_id, p.transaction, p.amount,
-                            p.hash, p.method, p.issuer, p.bank))
+                           (p.user_id, p.reservation_id, p.session_id, p.transaction, p.amount,
+                            payment_hash, p.method, p.issuer, p.bank))
             created = cursor.fetchone()
             cls.connection.commit()
             print("Created:", created)
-            return created is not None
+            if created:
+                return created[0]
         except Exception as e:
             print("DB Error:", e)
             cls.connection.rollback()
@@ -67,18 +70,21 @@ class PaymentModel:
         return result
 
     @classmethod
-    def update_payment(cls, id, p: PaymentUpdate):
+    def update_payment(cls, payment_id: int, update_data: dict):
+        if not payment_id or not update_data:
+            return
+
         cursor = cls.connection.cursor()
-        cursor.execute("""
+
+        set_clauses = ", ".join(f"{key} = %s" for key in update_data.keys())
+        values = list(update_data.values()) + [payment_id]
+
+        cursor.execute(f"""
             UPDATE payments
-            SET user_id = %s, transaction = %s, amount = %s,
-                hash = %s, method = %s, issuer = %s, bank = %s, completed = %s,
-                date = NOW(), refund_requested = %s
+            SET {set_clauses}
             WHERE id = %s
             RETURNING id;
-        """, (p.user_id, p.transaction, p.amount,
-              p.hash, p.method,
-              p.issuer, p.bank, p.completed, p.refund_requested, id,))
+        """, values)
         updated = cursor.fetchone()
         cls.connection.commit()
         return updated is not None
@@ -138,3 +144,14 @@ class PaymentModel:
         deleted = cursor.fetchone()
         cls.connection.commit()
         return deleted is not None
+    
+
+    @classmethod
+    def get_payment_by_reservation_id(cls, reservation_id):
+        cursor = cls.connection.cursor()
+        cursor.execute("SELECT * FROM payments WHERE reservation_id = %s;", (reservation_id,))
+        row = cursor.fetchone()
+        if row:
+            columns = [desc[0] for desc in cursor.description]
+            return dict(zip(columns, row))
+        return None
