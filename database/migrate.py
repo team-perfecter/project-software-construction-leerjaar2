@@ -139,8 +139,7 @@ CREATE TABLE IF NOT EXISTS discount_codes (
     use_amount INTEGER,
     used_count INTEGER DEFAULT 0,
     end_date TIMESTAMP
-    active BOOLEAN DEFAULT TRUE,
-
+    active BOOLEAN DEFAULT TRUE
 );
 """)
 
