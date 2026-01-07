@@ -19,11 +19,11 @@ class PaymentModel:
         try:
             cursor.execute("""
                 INSERT INTO payments
-                (user_id, reservation_id, transaction, amount, hash, method, issuer, bank)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                (user_id, reservation_id, session_id, transaction, amount, hash, method, issuer, bank)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id;
             """,
-                           (p.user_id, p.reservation_id, p.transaction, p.amount,
+                           (p.user_id, p.reservation_id, p.session_id, p.transaction, p.amount,
                             payment_hash, p.method, p.issuer, p.bank))
             created = cursor.fetchone()
             cls.connection.commit()
@@ -70,8 +70,8 @@ class PaymentModel:
         return result
 
     @classmethod
-    def update_payment(cls, payment_id: int, update_data: dict) -> None:
-        if payment_id is None or update_data is None:
+    def update_payment(cls, payment_id: int, update_data: dict):
+        if not payment_id or not update_data:
             return
 
         cursor = cls.connection.cursor()
@@ -82,9 +82,12 @@ class PaymentModel:
         cursor.execute(f"""
             UPDATE payments
             SET {set_clauses}
-            WHERE id = %s;
+            WHERE id = %s
+            RETURNING id;
         """, values)
+        updated = cursor.fetchone()
         cls.connection.commit()
+        return updated is not None
 
     @classmethod
     def mark_payment_completed(cls, id):
