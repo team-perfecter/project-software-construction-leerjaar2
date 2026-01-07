@@ -131,6 +131,20 @@ CREATE TABLE IF NOT EXISTS payments (
 """)
 
 cur.execute("""
+CREATE TABLE IF NOT EXISTS discount_codes (
+    id SERIAL PRIMARY KEY,
+    code VARCHAR,
+    discount_type VARCHAR,
+    discount_value INTEGER,
+    use_amount INTEGER,
+    used_count INTEGER DEFAULT 0,
+    end_date TIMESTAMP
+    active BOOLEAN DEFAULT TRUE,
+
+);
+""")
+
+cur.execute("""
 CREATE TABLE IF NOT EXISTS parking_lot_admins (
     admin_user_id INTEGER REFERENCES users(id),
     parking_lot_id INTEGER REFERENCES parking_lots(id),
