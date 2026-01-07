@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 from api.main import app
 from api.auth_utils import create_access_token
 from api.models.user_model import UserModel
+from datetime import datetime, timedelta
 
 
 pytest_plugins = "pytest_benchmark"
@@ -37,48 +38,223 @@ def client_with_token(client):
 
 
 @pytest.fixture(autouse=True)
-def setup_vehicles(request, client_with_token):
+def cleanup_database_order(request, client_with_token):
     """
-    Clears the database of vehicles before each test.
-    If the test is not testing vehicle creation, it also adds a default vehicle.
-    This fixture handles different response structures from /vehicles endpoint.
+    Ensures database cleanup happens AFTER test in correct order.
+    Order: reservations -> vehicles -> parking_lots -> users
+    """
+    # Geen cleanup VOOR test
+    yield  # Test runs here
+
+    # Cleanup NA test in reverse order of dependencies
+    client, headers = client_with_token("superadmin")
+
+    try:
+        # 1. Delete ALL reservations first
+        reservations_response = client.get("/admin/reservations", headers=headers)
+        if reservations_response.status_code == 200:
+            reservations = reservations_response.json()
+            if isinstance(reservations, list):
+                for reservation in reservations:
+                    if isinstance(reservation, dict) and "id" in reservation:
+                        client.delete(
+                            f"/admin/reservations/{reservation['id']}", headers=headers
+                        )
+
+        # 2. Then delete vehicles
+        vehicles_response = client.get("/vehicles", headers=headers)
+        if vehicles_response.status_code == 200:
+            vehicles = vehicles_response.json()
+            if isinstance(vehicles, list):
+                for vehicle in vehicles:
+                    if isinstance(vehicle, dict) and "id" in vehicle:
+                        client.delete(
+                            f"/vehicles/delete/{vehicle['id']}", headers=headers
+                        )
+
+        # 3. Then delete parking lots
+        parking_response = client.get("/parking-lots/", headers=headers)
+        if parking_response.status_code == 200:
+            parking_lots = parking_response.json()
+            if isinstance(parking_lots, list):
+                for lot in parking_lots:
+                    if isinstance(lot, dict) and "id" in lot:
+                        client.delete(f"/parking-lots/{lot['id']}", headers=headers)
+
+    except Exception as e:
+        print(f"Cleanup error: {e}")
+
+
+@pytest.fixture(autouse=True)
+def setup_parking_lots(request, client_with_token):
+    """
+    Clears the database of parking lots BEFORE test.
+    If the create endpoints are not being tested, this also adds 2 parking lots to the database
     """
     client, headers = client_with_token("superadmin")
 
-    # Haal alle voertuigen op
-    response = client.get("/vehicles", headers=headers)
+    # Delete all reservations FIRST (to avoid foreign key constraint)
     try:
-        data = response.json()
+        reservations_response = client.get("/admin/reservations", headers=headers)
+        if reservations_response.status_code == 200:
+            reservations = reservations_response.json()
+            if isinstance(reservations, list):
+                for reservation in reservations:
+                    if isinstance(reservation, dict) and "id" in reservation:
+                        client.delete(
+                            f"/admin/reservations/{reservation['id']}", headers=headers
+                        )
     except Exception:
-        data = []
+        pass
 
-    # Zorg dat we altijd een lijst van voertuigen hebben
-    if isinstance(data, dict):
-        # Bijvoorbeeld: {"message": "Vehicles not found"} → geen voertuigen
-        vehicles_list = []
-    elif isinstance(data, list):
-        vehicles_list = data
-    else:
-        # Onverwachte response
-        vehicles_list = []
+    # Now delete parking lots
+    response = client.get("/parking-lots/", headers=headers)
+    if response.status_code == 200:
+        for lot in response.json():
+            client.delete(f"/parking-lots/{lot['id']}", headers=headers)
 
-    # Verwijder alle bestaande voertuigen
-    for vehicle in vehicles_list:
-        # Controleer of vehicle dict is en 'id' bevat
-        if isinstance(vehicle, dict) and "id" in vehicle:
-            client.delete(f"/vehicles/delete/{vehicle['id']}", headers=headers)
-
-    # Voeg een standaard voertuig toe als de test geen create test is
+    # Add default parking lots if NOT testing creation
     if "create" not in request.node.fspath.basename:
-        vehicle = {
-            "user_id": 1,
-            "license_plate": "ABC123",
-            "make": "Toyota",
-            "model": "Corolla",
-            "color": "Blue",
-            "year": 2020,
+        lot = {
+            "name": "Bedrijventerrein Almere Parkeergarage",
+            "location": "Industrial Zone",
+            "address": "Schanssingel 337, 2421 BS Almere",
+            "capacity": 100,
+            "tariff": 0.5,
+            "daytariff": 0.5,
+            "lat": 0,
+            "lng": 0,
         }
-        client.post("/vehicles/create", json=vehicle, headers=headers)
+
+        lot2 = {
+            "name": "Vlaardingen Evenementenhal Parkeerterrein",
+            "location": "Event Center",
+            "address": "Westlindepark 756, 8920 AB Vlaardingen",
+            "capacity": 50,
+            "tariff": 0.5,
+            "daytariff": 0.5,
+            "lat": 0,
+            "lng": 0,
+        }
+
+        client.post("/parking-lots", json=lot, headers=headers)
+        client.post("/parking-lots", json=lot2, headers=headers)
+
+
+@pytest.fixture(autouse=True)
+def setup_vehicles(request, client_with_token):
+    """Always creates 2 vehicles before each test"""
+    client, headers = client_with_token("superadmin")
+    client_user, headers_user = client_with_token("user")
+
+    # Clean up first
+    try:
+        vehicles_response = client.get("/vehicles", headers=headers)
+        if vehicles_response.status_code == 200:
+            vehicles = vehicles_response.json()
+            if isinstance(vehicles, list):
+                for veh in vehicles:
+                    if isinstance(veh, dict) and "id" in veh:
+                        client.delete(
+                            f"/vehicles/delete/{veh['id']}", headers=headers
+                        )
+    except Exception as e:
+        print(f"Cleanup vehicles error: {e}")
+        pass
+
+    # Always create default vehicles
+    vehicle1 = {
+        "license_plate": "TEST-001",
+        "make": "Toyota",
+        "model": "Corolla",
+        "color": "Blue",
+        "year": 2020
+    }
+    
+    vehicle2 = {
+        "license_plate": "TEST-002",
+        "make": "Honda",
+        "model": "Civic",
+        "color": "Red",
+        "year": 2021
+    }
+    
+    response1 = client.post("/vehicles/create", json=vehicle1, headers=headers)
+    print(f"[DEBUG] Vehicle 1 creation: {response1.status_code}")
+    if response1.status_code != 201:
+        print(f"[DEBUG] Vehicle 1 error: {response1.text}")
+    
+    response2 = client_user.post("/vehicles/create", json=vehicle2, headers=headers_user)
+    print(f"[DEBUG] Vehicle 2 creation: {response2.status_code}")
+    if response2.status_code != 201:
+        print(f"[DEBUG] Vehicle 2 error: {response2.text}")
+    
+    check_response = client.get("/vehicles", headers=headers)
+    print(f"[DEBUG] After creation, vehicles status: {check_response.status_code}")
+    if check_response.status_code == 200:
+        print(f"[DEBUG] Vehicles count: {len(check_response.json())}")
+
+
+@pytest.fixture(autouse=True)
+def setup_reservations(request, client_with_token):
+    """
+    Clears the database of reservations before each test.
+    If the test is not testing reservation creation, it also adds a default reservation.
+    """
+    client, headers = client_with_token("superadmin")
+
+    # Delete existing reservations
+    response = client.get("/admin/reservations", headers=headers)
+    if response.status_code == 200:
+        try:
+            reservations = response.json()
+            if isinstance(reservations, list):
+                for reservation in reservations:
+                    if isinstance(reservation, dict) and "id" in reservation:
+                        client.delete(
+                            f"/admin/reservations/{reservation['id']}", headers=headers
+                        )
+        except Exception:
+            pass
+
+    # Add default reservation if not testing creation
+    if "create" not in request.node.fspath.basename:
+        vehicle_response = client.get("/vehicles", headers=headers)
+        parking_response = client.get("/parking-lots/", headers=headers)
+
+        if (
+            vehicle_response.status_code == 200
+            and vehicle_response.json()
+            and parking_response.status_code == 200
+            and parking_response.json()
+        ):
+            vehicles = vehicle_response.json()
+            parking_lots = parking_response.json()
+
+            # Check if we have data
+            if len(vehicles) > 0 and len(parking_lots) > 0:
+                vehicle_id = vehicles[0]["id"]
+                parking_lot_id = parking_lots[0]["id"]
+                user_id = 1  # superadmin id
+
+                reservation = {
+                    "user_id": user_id,
+                    "parking_lot_id": parking_lot_id,
+                    "vehicle_id": vehicle_id,
+                    "start_date": (datetime.now() + timedelta(days=3)).isoformat(),
+                    "end_date": (datetime.now() + timedelta(days=4)).isoformat(),
+                }
+
+                client.post("/admin/reservations", json=reservation, headers=headers)
+
+
+def get_last_pid(client):
+    """
+    Returns the id of the last parking lot.
+    """
+    response = client.get("/parking-lots/")
+    data = response.json()
+    return data[-1]["id"]
 
 
 @pytest.fixture(autouse=True)
@@ -134,53 +310,19 @@ def setup_users(request, client_with_token):
         client.post("/create_user", json=user5, headers=headers)
 
 
-@pytest.fixture(autouse=True)
-def setup_parking_lots(request, client_with_token):
+def get_last_reservation_id(client_with_token):
     """
-    Clears the database of parking lots.
-    If the create endpoints are not being tested, this also adds 2 parking lots to the database
+    Returns the ID of the last reservation.
+    Useful to make sure the reservation you test exists.
     """
-
     client, headers = client_with_token("superadmin")
-    response = client.get("/parking-lots/", headers=headers)
+    response = client.get("/admin/reservations", headers=headers)
+
     if response.status_code == 200:
-        for lot in response.json():
-            client.delete(f"/parking-lots/{lot['id']}", headers=headers)
-
-    if "create" not in request.node.fspath.basename:
-        lot = {
-            "name": "Bedrijventerrein Almere Parkeergarage",
-            "location": "Industrial Zone",
-            "address": "Schanssingel 337, 2421 BS Almere",
-            "capacity": 100,
-            "tariff": 0.5,
-            "daytariff": 0.5,
-            "lat": 0,
-            "lng": 0,
-        }
-
-        lot2 = {
-            "name": "Vlaardingen Evenementenhal Parkeerterrein",
-            "location": "Event Center",
-            "address": "Westlindepark 756, 8920 AB Vlaardingen",
-            "capacity": 50,
-            "tariff": 0.5,
-            "daytariff": 0.5,
-            "lat": 0,
-            "lng": 0,
-        }
-
-        client.post("/parking-lots", json=lot, headers=headers)
-        client.post("/parking-lots", json=lot2, headers=headers)
-
-
-def get_last_pid(client):
-    """
-    Returns the id of the last parking lot.
-    """
-    response = client.get("/parking-lots/")
-    data = response.json()
-    return data[-1]["id"]
+        data = response.json()
+        if isinstance(data, list) and len(data) > 0:
+            return data[-1]["id"]
+    return None
 
 
 @pytest.fixture(autouse=True)
