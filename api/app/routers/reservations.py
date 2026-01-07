@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime
 from api.auth_utils import get_current_user
 from api.datatypes.user import User
@@ -14,6 +13,9 @@ from api.models.payment_model import PaymentModel
 from api.session_calculator import generate_payment_hash, generate_transaction_validation_hash, calculate_price
 
 
+import logging
+logger = logging.getLogger(__name__)
+
 router = APIRouter(
     tags=["reservations"]
 )
@@ -25,16 +27,11 @@ session_model: SessionModel = SessionModel()
 payment_model: PaymentModel = PaymentModel()
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
-)
-
 @router.get("/reservations/vehicle/{vehicle_id}")
 async def reservations(vehicle_id: int, current_user: User = Depends(get_current_user)):
     vehicle = vehicle_model.get_one_vehicle(vehicle_id)
     if vehicle is None:
+        logger.warning("Vehicle %i not found", vehicle_id)
         raise HTTPException(status_code=404, detail="Vehicle not found")
 
     if vehicle["user_id"] != current_user.id:
@@ -47,10 +44,12 @@ async def reservations(vehicle_id: int, current_user: User = Depends(get_current
 async def create_reservation(reservation: ReservationCreate, current_user: User = Depends(get_current_user)):
     parking_lot = parking_lot_model.get_parking_lot_by_lid(reservation.parking_lot_id)
     if parking_lot == None:
+        logger.warning("Parking lot %i does not exist", reservation.parking_lot_id)
         raise HTTPException(status_code = 404, detail = {"message": f"Parking lot does not exist"})
     
     vehicle = vehicle_model.get_one_vehicle(reservation.vehicle_id)
     if vehicle == None:
+        logger.warning("Vehicle %i does not exist", reservation.vehicle_id)
         raise HTTPException(status_code = 404, detail = {"message": f"Vehicle does not exist"})
     ### deze error handling werkt niet eens!!!
     # conflicting_time: bool = False
