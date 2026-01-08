@@ -120,8 +120,9 @@ Authorization: Bearer {{token}}
 {
   "code": "test",
   "discount_type": "percentage",
-  "discount_value": 15,
-  "use_amount": 10
+  "discount_value": 5,
+  "use_amount": 5,
+  "end_date": "2027-01-01"
 }
 
 ###
@@ -130,6 +131,9 @@ Authorization: Bearer {{token}}
 ###
 
 GET http://localhost:8000/discount-codes/active
+Authorization: Bearer {{token}}
+###
+GET http://localhost:8000/discount-codes/test
 Authorization: Bearer {{token}}
 ###
 POST http://localhost:8000/discount-codes/1/deactivate

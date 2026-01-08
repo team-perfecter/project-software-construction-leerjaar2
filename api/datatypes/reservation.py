@@ -16,4 +16,4 @@ class Reservation(ReservationCreate):
   created_at: datetime
   cost: int
   status: str
-  discount_code: Optional[str] = null
+  discount_code: Optional[str] = None

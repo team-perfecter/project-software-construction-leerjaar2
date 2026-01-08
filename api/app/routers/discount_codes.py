@@ -21,12 +21,12 @@ async def create_discount_code(d: DiscountCodeCreate,
                          current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
     current_codes = discount_code_model.get_all_active_discount_codes()
     for discount_code in current_codes:
-        if d.code == discount_code.code:
+        if d.code == discount_code["code"]:
             logger.error("Admin ID %i tried to create discount code %i, "
                          "but it already exists",
                          current_user.id, d.code)
             raise HTTPException(status_code=409,
-                                deatil="Discount code already exists")
+                                detail="Discount code already exists")
     if d.discount_type != "percentage" and d.discount_type != "fixed":
         logger.error("Admin ID %i tried to create a discount code, but entered invalid discount type %i",
                      current_user.id, d.discount_type)
@@ -37,7 +37,7 @@ async def create_discount_code(d: DiscountCodeCreate,
                      current_user.id, d.discount_value)
         raise HTTPException(status_code=400,
                             detail="Discount value must be a postive number")
-    if d.use_amount and d.use_amount <= 0:
+    if d.use_amount is not None and d.use_amount <= 0:
             logger.error("Admin ID %i tried to create discount code with use amount %i",
                          current_user.id, d.use_amount)
             raise HTTPException(status_code=400,
@@ -50,10 +50,9 @@ async def create_discount_code(d: DiscountCodeCreate,
                             detail="Failed to create discount code")
     logger.info("Admin ID %i created new discount code",
                  current_user.id)
-    return JSONResponse(content={
+    return {
         "message": "Discount code created successfully",
-        "discount_code": created},
-        status_code=201)
+        "discount_code": created}
 
 
 @router.get("/discount-codes")
@@ -66,11 +65,9 @@ async def get_all_discount_codes(current_user: User = Depends(require_role(UserR
                             detail="No discount codes were found.")
     logger.info("Admin ID %i retrieved all discount codes",
                 current_user.id)
-    return JSONResponse(content={
+    return {
         "message": "Discount codes retrieved successfully",
-        "discount_code": results},
-        status_code=200)
-
+        "discount_code": results}
 
 @router.get("/discount-codes/active")
 async def get_all_discount_codes(current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
@@ -82,10 +79,9 @@ async def get_all_discount_codes(current_user: User = Depends(require_role(UserR
                             detail="No active discount codes were found.")
     logger.info("Admin ID %i retrieved all active discount codes",
                 current_user.id)
-    return JSONResponse(content={
+    return {
         "message": "Discount codes retrieved successfully",
-        "discount_code": results},
-        status_code=200)
+        "discount_code": results}
 
 
 @router.get("/discount-codes/{code}")
@@ -99,10 +95,9 @@ async def get_discord_code_by_code(code: str, current_user: User = Depends(requi
                             detail="No discount code was found.")
     logger.info("Admin ID %i retrieved data for discount code %i",
                 current_user.id, code)
-    return JSONResponse(content={
+    return {
         "message": "Discount codes retrieved successfully",
-        "discount_code": discount_code},
-        status_code=200)
+        "discount_code": discount_code}
 
 
 @router.post("/discount-codes/{did}/deactivate")
@@ -128,7 +123,6 @@ async def deactive_discount_code(did: int, current_user: User = Depends(require_
                             detail="Update was unsuccesful")
     logger.info("Admin ID %i deactived discount code %i",
                 current_user.id, did)
-    return JSONResponse(content={
+    return {
         "message": "Discount code deactivated successfully",
-        "discount_code": deactivated},
-        status_code=200)
+        "discount_code": deactivated}

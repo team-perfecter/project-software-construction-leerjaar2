@@ -23,6 +23,7 @@ class DiscountCodeModel:
         """,
                         (d.code, d.discount_type, d.discount_value, d.use_amount, d.end_date))
         row = cursor.fetchone()
+        self.connection.commit()
         if row:
             columns = [desc[0] for desc in cursor.description]
             return dict(zip(columns, row))
@@ -84,6 +85,7 @@ class DiscountCodeModel:
             RETURNING *;
         """, (id,))
         row = cursor.fetchone()
+        self.connection.commit()
         if row:
             columns = [desc[0] for desc in cursor.description]
             return dict(zip(columns, row))
