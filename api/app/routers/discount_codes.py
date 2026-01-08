@@ -17,13 +17,31 @@ discount_code_model: DiscountCodeModel = DiscountCodeModel()
 
 
 @router.post("/discount-codes")
-async def create_payment(d: DiscountCodeCreate,
+async def create_discount_code(d: DiscountCodeCreate,
                          current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
+    current_codes = discount_code_model.get_all_active_discount_codes()
+    for discount_code in current_codes:
+        if d.code == discount_code.code:
+            logger.error("Admin ID %i tried to create discount code %i, "
+                         "but it already exists",
+                         current_user.id, d.code)
+            raise HTTPException(status_code=409,
+                                deatil="Discount code already exists")
     if d.discount_type != "percentage" and d.discount_type != "fixed":
         logger.error("Admin ID %i tried to create a discount code, but entered invalid discount type %i",
                      current_user.id, d.discount_type)
         raise HTTPException(status_code=400,
                             detail="Discount type must be percentage or fixed")
+    if d.discount_value <= 0:
+        logger.error("Admin ID %i tried to create discount code with discount value %i",
+                     current_user.id, d.discount_value)
+        raise HTTPException(status_code=400,
+                            detail="Discount value must be a postive number")
+    if d.use_amount and d.use_amount <= 0:
+            logger.error("Admin ID %i tried to create discount code with use amount %i",
+                         current_user.id, d.use_amount)
+            raise HTTPException(status_code=400,
+                            detail="Discount value must be a postive number")
     created = discount_code_model.create_discount_code(d)
     if not created:
         logger.error("Admin ID %i tried to create a discount code, but failed",
@@ -67,6 +85,23 @@ async def get_all_discount_codes(current_user: User = Depends(require_role(UserR
     return JSONResponse(content={
         "message": "Discount codes retrieved successfully",
         "discount_code": results},
+        status_code=200)
+
+
+@router.get("/discount-codes/{code}")
+async def get_discord_code_by_code(code: str, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
+    discount_code = discount_code_model.get_discount_code_by_code(code)
+    if not discount_code:
+        logger.error("Admin ID %s tried to get discount code %i, "
+                     "but it was not found",
+                     current_user.id, code)
+        raise HTTPException(status_code=404,
+                            detail="No discount code was found.")
+    logger.info("Admin ID %i retrieved data for discount code %i",
+                current_user.id, code)
+    return JSONResponse(content={
+        "message": "Discount codes retrieved successfully",
+        "discount_code": discount_code},
         status_code=200)
 
 

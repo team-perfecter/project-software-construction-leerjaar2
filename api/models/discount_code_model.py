@@ -61,6 +61,18 @@ class DiscountCodeModel:
                 columns = [desc[0] for desc in cursor.description]
                 return dict(zip(columns, row))
             return None
+    
+
+    def get_discount_code_by_code(self, code):
+            cursor = self.connection.cursor()
+            cursor.execute("""
+                SELECT * FROM discount_codes WHERE code = %s;
+                        """, (code,))
+            row = cursor.fetchone()
+            if row:
+                columns = [desc[0] for desc in cursor.description]
+                return dict(zip(columns, row))
+            return None
 
 
     def deactive_discount_code(self, id):

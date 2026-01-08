@@ -1,5 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel
+from typing import Optional
 
 
 class ReservationCreate(BaseModel):
@@ -15,3 +16,4 @@ class Reservation(ReservationCreate):
   created_at: datetime
   cost: int
   status: str
+  discount_code: Optional[str] = null
