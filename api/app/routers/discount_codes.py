@@ -15,6 +15,7 @@ router = APIRouter(
 
 discount_code_model: DiscountCodeModel = DiscountCodeModel()
 
+retrieved_succesfully_message = "Discount codes retrieved successfully"
 
 @router.post("/discount-codes")
 async def create_discount_code(d: DiscountCodeCreate,
@@ -37,11 +38,16 @@ async def create_discount_code(d: DiscountCodeCreate,
                      current_user.id, d.discount_value)
         raise HTTPException(status_code=400,
                             detail="Discount value must be a postive number")
+    if d.minimum_price is not None and d.minimum_price <= 0:
+            logger.error("Admin ID %i tried to create discount code with minimum price %i",
+                         current_user.id, d.use_amount)
+            raise HTTPException(status_code=400,
+                            detail="Minimum price must be a postive number")
     if d.use_amount is not None and d.use_amount <= 0:
             logger.error("Admin ID %i tried to create discount code with use amount %i",
                          current_user.id, d.use_amount)
             raise HTTPException(status_code=400,
-                            detail="Discount value must be a postive number")
+                            detail="Use amount must be a postive number")
     created = discount_code_model.create_discount_code(d)
     if not created:
         logger.error("Admin ID %i tried to create a discount code, but failed",
@@ -51,7 +57,7 @@ async def create_discount_code(d: DiscountCodeCreate,
     logger.info("Admin ID %i created new discount code",
                  current_user.id)
     return {
-        "message": "Discount code created successfully",
+        "message": retrieved_succesfully_message,
         "discount_code": created}
 
 
@@ -66,7 +72,7 @@ async def get_all_discount_codes(current_user: User = Depends(require_role(UserR
     logger.info("Admin ID %i retrieved all discount codes",
                 current_user.id)
     return {
-        "message": "Discount codes retrieved successfully",
+        "message": retrieved_succesfully_message,
         "discount_code": results}
 
 @router.get("/discount-codes/active")
@@ -80,7 +86,7 @@ async def get_all_discount_codes(current_user: User = Depends(require_role(UserR
     logger.info("Admin ID %i retrieved all active discount codes",
                 current_user.id)
     return {
-        "message": "Discount codes retrieved successfully",
+        "message": retrieved_succesfully_message,
         "discount_code": results}
 
 
@@ -96,7 +102,7 @@ async def get_discord_code_by_code(code: str, current_user: User = Depends(requi
     logger.info("Admin ID %i retrieved data for discount code %i",
                 current_user.id, code)
     return {
-        "message": "Discount codes retrieved successfully",
+        "message": retrieved_succesfully_message,
         "discount_code": discount_code}
 
 

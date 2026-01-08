@@ -106,8 +106,8 @@ CREATE TABLE IF NOT EXISTS sessions (
     user_id INTEGER REFERENCES users(id),
     vehicle_id INTEGER REFERENCES vehicles(id),
     reservation_id INTEGER REFERENCES reservations(id),
-    started TIMESTAMP DEFAULT NOW(),
-    stopped TIMESTAMP,
+    start_time TIMESTAMP DEFAULT NOW(),
+    end_time TIMESTAMP,
     cost FLOAT
 );
 """)
@@ -135,9 +135,10 @@ CREATE TABLE IF NOT EXISTS discount_codes (
     id SERIAL PRIMARY KEY,
     code VARCHAR,
     discount_type VARCHAR,
-    discount_value INTEGER,
+    discount_value FLOAT,
     use_amount INTEGER,
     used_count INTEGER DEFAULT 0,
+    minimum_price FLOAT,
     end_date TIMESTAMP,
     active BOOLEAN DEFAULT TRUE
 );

@@ -12,6 +12,6 @@ class SessionCreate(BaseModel):
 
 class Session(SessionCreate):
     id: int
-    started: datetime
-    stopped: Optional[datetime] = None
+    start_time: datetime
+    end_time: Optional[datetime] = None
     cost: Optional[float] = None
