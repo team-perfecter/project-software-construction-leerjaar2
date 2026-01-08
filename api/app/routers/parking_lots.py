@@ -22,12 +22,16 @@ router = APIRouter(tags=["parking lot"])
 parking_lot_model: ParkingLotModel = ParkingLotModel()
 
 def get_lot_if_exists(lid: int):
-    """
-    Gets a parking lot based on a specific is. 
-    If the parking lot cannot be found, it raises a 404 exception.
-    @param: lid
-    @return: ParkingLot or 404 exception
+    """Gets a parking lot based on a specific lot id. 
 
+    Args:
+        lid (int): The id of the parking lot.
+
+    Returns:
+        ParkingLot: Information about the requested parking lot.
+
+    Raises:
+        HTTPException: Raises 404 if there are no parking lots with the specified id.
     """
     parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
     if parking_lot:
@@ -50,12 +54,19 @@ async def create_parking_lot(
     parking_lot_data: ParkingLotCreate,
     _: User = Depends(require_role(UserRole.SUPERADMIN)),
 ):
-    """
-    Creates a parking lot based on the provided data.
-    In order to successfully create a parking lot, the user must be a superadmin.
-    @param: parking_lot_data
-    @param: current_user
-    @return: parking_lot
+    """Creates a new parking lot based on provided data. 
+
+    Args:
+        parking_lot_data (ParkingLotCreate): The information about the parking lot.
+        _ (User): Checks if the logged in user is a super admin.
+
+    Returns:
+        ParkingLot: The information about the newly created parking lot.
+
+    Raises:
+        HTTPException: Raises 500 if there is an error in creating a new parking lot.
+        HTTPException: Raises 403 if the logged in user is not a super admin.
+        HTTPException: Raises 401 if there is no user logged in.
     """
     # logging.info(
     #     "User with id %i attempting to create a new parking lot", current_user.id
@@ -122,9 +133,13 @@ async def create_parking_lot(
 # region GET
 @router.get("/parking-lots/")
 async def get_all_parking_lots():
-    """
-    Gets all parking lots
-    @return: all parking lots
+    """Returns a list of all parking lots. 
+
+    Returns:
+        [ParkingLot]: Information about all the parking lots.
+
+    Raises:
+        HTTPException: Raises 204 if there are no parking lots in the system.
     """
     logging.info("Retrieving all parking lots")
     parking_lots = parking_lot_model.get_all_parking_lots()
@@ -144,10 +159,13 @@ async def get_all_parking_lots():
 
 @router.get("/parking-lots/{lid}")
 async def get_parking_lot_by_lid(lid: int):
-    """
-    Gets a single parking lot by id
-    @param: lid
-    @return: a single parking lot
+    """Gets a parking lot based on a specific lot id. 
+
+    Args:
+        lid (int): The id of the parking lot.
+
+    Returns:
+        ParkingLot: Information about the requested parking lot.
     """
     # logging.info(
     #     "User with id %i retrieving parking lot with id %i", current_user.id, lid
@@ -162,10 +180,19 @@ async def get_all_sessions_by_lid(
     lid: int,
     _: User = Depends(require_role(UserRole.SUPERADMIN)),
 ):
-    """
-    Gets all sessions for a parking lot by id
-    @param: lid
-    @return: all sessions of a speccific parking lot
+    """Gets all sessions of a specified parking lot. 
+
+    Args:
+        lid (int): The id of the parking lot.
+        _ (User): Checks if the logged in user is a super admin
+
+    Returns:
+        [Session]: Information about all the sessions of a specified parking lot.
+
+    Raises:
+        HTTPException: Raises 404 if there are no parking lots with the specified id.
+        HTTPException: Raises 403 if the logged in user is not a super admin.
+        HTTPException: Raises 401 if there is no user logged in.
     """
     # logging.info(
     #     "User with id %i retrieving all sessions from parking lot with id %i",
@@ -191,11 +218,20 @@ async def get_session_by_lid_and_sid(
     sid: int,
     _: User = Depends(require_role(UserRole.SUPERADMIN)),
 ):
-    """
-    Gets a single session for a parking lot by id
-    @param: lid
-    @param: sid
-    @return: a single session of a specfic parking lot
+    """Retrieves a specific session from a specific parking lot. 
+
+    Args:
+        lid (int): The id of the parking lot.
+        sid (int): The id of the session.
+        _ (User): Checks if the logged in user is a super admin.
+
+    Returns:
+        Session: Information about the specified session.
+
+    Raises:
+        HTTPException: Raises 404 if the specified session does not exist.
+        HTTPException: Raises 403 if the logged in user is not a super admin.
+        HTTPException: Raises 401 if there is no user logged in.
     """
     # logging.info(
     #     "User with id %i retrieving session %i from parking lot %i",
@@ -237,10 +273,16 @@ async def get_session_by_lid_and_sid(
 async def get_parking_lots_by_location(
     location: str
 ):
-    """
-    Gets all parking lot based on a location
-    @param: location
-    @return: all parking lot based of a location
+    """Retrieves all parking lots of a specified location. 
+
+    Args:
+        location (str): The location of the parking lots.
+
+    Returns:
+        [ParkingLot]: Information about all the parking lots in the specified location.
+
+    Raises:
+        HTTPException: Raises 404 if there are no parking lots at the specified location.
     """
     # logging.info(
     #     "User with id %i retrieving parking lots in location: %s",
@@ -268,8 +310,8 @@ async def get_parking_lots_by_location(
     return parking_lots
 
 
-# TODO? PO ok maar eerst de rest: get parking lot reservations                /parking-lots/{id}/reservations
-# TODO? PO ok maar eerst de rest: get parking lot stats (admin only)          /parking-lots/{id}/stats
+# TODO? PO ok maar eerst de rest: get parking lot reservations       /parking-lots/{id}/reservations
+# TODO? PO ok maar eerst de rest: get parking lot stats (admin only) /parking-lots/{id}/stats
 # endregion
 # endregion
 
@@ -281,11 +323,20 @@ async def update_parking_lot(
     updated_lot: ParkingLotCreate,
     _: User = Depends(require_role(UserRole.SUPERADMIN)),
 ):
-    """
-    Updeates a parking lot based on values provided by a superadmin.
-    to use this endpoint, it must be called by an admin.
-    @param: lid
-    @param: updated_lot
+    """Updates the information about the specified parking lot. 
+
+    Args:
+        lid (int): The id of the parking lot to be updated.
+        updated_lot (ParkingLotCreate): The new information of the parking lot.
+        _ (User): Checks if the logged in user is a super admin.
+
+    Returns:
+        ParkingLotCreate: Information of the updated parking lot.
+
+    Raises:
+        HTTPException: Raises 500 if there is an error when updateng the parking lot.
+        HTTPException: Raises 403 if the logged in user is not a super admin.
+        HTTPException: Raises 401 if there is no user logged in.
     """
     # logging.info(
     #     "User with id %i attempting to update parking lot with id %i",
@@ -341,13 +392,24 @@ async def update_parking_lot_status(
     _: User = Depends(get_current_user),
     __: None = Depends(require_role(UserRole.SUPERADMIN)),  # Access check only
 ):
-    """
-    Updates the status of a parking lot.
-    Must be called by a super admin.
-    @param: lid
-    @param: lot_status
-    @param: closed_reason
-    @param: closed_date
+    """Updates the status of the specified parking lot. 
+
+    Args:
+        lid (int): The id of the parking lot.
+        lot_status (str): The new status of the parking lot.
+        closed_reason (str): The reason why a parking lot is set to closed.
+        closed_date (date): The date of when the parking lot was closed.
+        _ (User): Checks if there is a user logged in.
+        __ (None): Checks if the logged in user is a super admin.
+
+    Returns:
+        dict[str, str]: The new status of the parking lot.
+
+    Raises:
+        HTTPException: Raises 500 if there is an error when updateng the parking lot.
+        HTTPException: Raises 400 if the provided data is invalid.
+        HTTPException: Raises 403 if the logged in user is not a super admin.
+        HTTPException: Raises 401 if there is no user logged in.
     """
     # logging.info(
     #     "User with id %i attempting to update status of parking lot %i to '%s'",
@@ -418,10 +480,14 @@ async def update_parking_lot_status(
 
 @router.put("/parking-lots/{lid}/reserved")
 def update_parking_lot_reserved_count(lid: int, action: str) -> bool:
-    """
-    Updates the amount of people that currently have a reservation in a specific parking lot.
-    @param: lid
-    @param: action
+    """Updates the amount of people that currently have a reservation in a specific parking lot.
+
+    Args:
+        lid (int): The id of the parking lot.
+        action (str): Whether to increase or decrease the amount of reservations.
+    
+    Returns:
+        boolean: Whether the update was a success or not.
     """
     try:
         parking_lot = get_lot_if_exists(lid)
@@ -453,9 +519,22 @@ async def delete_parking_lot(
     lid: int,
     _: User = Depends(require_role(UserRole.SUPERADMIN)),
 ):
-    """
-    Deletes a parking lot based on id. must be logged in as superadmin.
-    @param: lid
+    """Deletes a parking lot based on id. Must be logged in as superadmin.
+
+    Args:
+        lid (int): The id of the parking lot.
+        _ (User): Checks if the logged in user is a super admin.
+
+    Returns:
+        dict[str, str]: A confirmation that the parking lot has been deleted.
+
+    Raises:
+        HTTPException: Raises 404 if there are no parking lots with the specified id.
+        HTTPException: Raises 409 if there are active sessions in this parking lot.
+        HTTPException: Raises 500 if there is an error when updateng the parking lot.
+        HTTPException: Raises 400 if the provided data is invalid.
+        HTTPException: Raises 403 if the logged in user is not a super admin.
+        HTTPException: Raises 401 if there is no user logged in.
     """
     # logging.info(
     #     "User with id %i attempting to delete parking lot with id %i",

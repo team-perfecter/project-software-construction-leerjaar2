@@ -1,3 +1,7 @@
+"""
+This file contains all dataclasses related to payments.
+"""
+
 from datetime import date
 from pydantic import BaseModel
 from typing import Optional

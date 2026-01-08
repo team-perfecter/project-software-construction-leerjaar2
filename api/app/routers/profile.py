@@ -1,3 +1,7 @@
+"""
+This file contains all endpoints related to profile.
+"""
+
 import logging
 from fastapi import Depends, APIRouter, HTTPException
 from starlette.responses import JSONResponse

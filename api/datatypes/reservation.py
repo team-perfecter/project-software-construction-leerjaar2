@@ -1,3 +1,7 @@
+"""
+This file contains all dataclasses related to reservations.
+"""
+
 from datetime import datetime
 from pydantic import BaseModel
 

@@ -1,5 +1,15 @@
+"""
+Main file of the API.
+"""
+
 from fastapi import FastAPI
-from api.app.routers import parking_lots, sessions, payments, admin_reservation_routes, profile, reservations, vehicles
+from api.app.routers import (parking_lots,
+                             sessions,
+                             payments,
+                             admin_reservation_routes,
+                             profile,
+                             reservations,
+                             vehicles)
 
 app = FastAPI()
 

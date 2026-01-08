@@ -1,3 +1,7 @@
+"""
+This file contains all endpoints related to reservations.
+"""
+
 import logging
 from datetime import datetime
 from fastapi import Depends, APIRouter, HTTPException
@@ -26,10 +30,16 @@ logging.basicConfig(
 async def reservations(vehicle_id: int, user: User = Depends(get_current_user)):
     vehicle = vehicle_model.get_one_vehicle(vehicle_id)
     if vehicle is None:
-        raise HTTPException(status_code=404, detail="Vehicle not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Vehicle not found"
+        )
 
     if vehicle["user_id"] != user.id:
-        raise HTTPException(status_code=403, detail="This vehicle does not belong to the logged in user")
+        raise HTTPException(
+            status_code=403,
+            detail="This vehicle does not belong to the logged in user"
+        )
 
     reservation_list: list[Reservation] = reservation_model.get_reservation_by_vehicle(vehicle_id)
 
@@ -46,24 +56,24 @@ async def create_reservation(reservation: ReservationCreate, user: User = Depend
         raise HTTPException(status_code = 404, detail = {"message": "Vehicle does not exist"})
 
     conflicting_time: bool = False
-    vehicle_reservations: list[Reservation] = reservation_model.get_reservation_by_vehicle(vehicle["id"])
-    for reservation in vehicle_reservations:
+    reservations: list[Reservation] = reservation_model.get_reservation_by_vehicle(vehicle["id"])
+    for reservation in reservations:
         if reservation["start_date"] < reservation["end_date"]:
             if reservation["end_date"] > reservation["start_date"]:
                 conflicting_time = True
                 break
     if conflicting_time:
         raise HTTPException(
-            status_code = 401, 
+            status_code = 401,
             detail = {
-                "message": "Requested date has an overlap with another reservation for this vehicle"}
+                "message": "Requested date overlaps with another reservation for this vehicle"}
             )
 
     # check if start date is later than the current date
     if reservation.start_date < datetime.now():
         raise HTTPException(
             status_code = 403, 
-            detail = {"message": f"invalid start date. "
+            detail = {"message": "invalid start date. "
                       "The start date cannot be earlier than the current date. "
                       f"current date: {datetime.now()}, received date: {reservation.start_date}"}
             )

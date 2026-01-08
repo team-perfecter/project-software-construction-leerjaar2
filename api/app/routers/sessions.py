@@ -1,15 +1,16 @@
-import logging
-from datetime import datetime
+"""
+This file contains all endpoints related to sessions.
+"""
 
+import logging
+from starlette.responses import JSONResponse
+from fastapi import APIRouter, Depends, HTTPException, status
 from api.auth_utils import get_current_user
 from api.datatypes.payment import PaymentCreate
 from api.datatypes.user import User
 from api.models.parking_lot_model import ParkingLotModel
 from api.models.payment_model import PaymentModel
 from api.models.session_model import SessionModel
-from fastapi import APIRouter, Depends, HTTPException, status
-from starlette.responses import JSONResponse
-
 from api.models.vehicle_model import Vehicle_model
 
 logging.basicConfig(
@@ -28,8 +29,25 @@ payment_model: PaymentModel = PaymentModel()
 
 @router.post("/parking-lots/{lid}/sessions/start", status_code=status.HTTP_201_CREATED)
 async def start_parking_session(
-    lid: int, vehicle_id: int, current_user: User = Depends(get_current_user)
+    lid: int,
+    vehicle_id: int,
+    current_user: User = Depends(get_current_user)
 ):
+    """Starts a session on a specified parking lot.
+
+    Args:
+        lid (int): The parking lot of the session.
+        vehicle_id (int): The vehicle that started the session.
+        current_user (User): The logged in user.
+    
+    Returns:
+        dict[str, str]: Confirmation that the session was created successfully.
+
+    Raises:
+        HTTPException: Raises 404 if the vehicle or parking lot does not exist.
+        HTTPException: Raises 403 if the vhicle does not belong to the logged in user.
+        HTTPException: Raises 409 if this vehicle already has a session.
+    """
     logging.info(
         "User with id %i attempting to start session at parking lot %i",
         current_user.id,
@@ -50,8 +68,6 @@ async def start_parking_session(
 
     # vehicle en user check
     vehicle = vehicle_model.get_one_vehicle(vehicle_id)
-    print("CHECK 1")
-    print(vehicle)
     if not vehicle or vehicle["user_id"] != current_user.id:
         if not vehicle:
             logging.warning("Vehicle with id %i does not exist", vehicle_id)
@@ -89,7 +105,7 @@ async def start_parking_session(
             status_code=409,
             detail={
                 "error": "Session already exists",
-                "message": f"An active session already exists for this vehicle at this parking lot",
+                "message": "An active session already exists for this vehicle at this parking lot",
             },
         )
 
@@ -115,13 +131,22 @@ async def start_parking_session(
     }
 
 @router.post("/parking-lots/{lid}/sessions/stop")
-async def stop_parking_session(vehicle_id: int, current_user: User = Depends(get_current_user)):
+async def stop_parking_session(vehicle_id: int,
+                               current_user: User = Depends(get_current_user)):
+    """stops a session on a specified parking lot.
+
+    Args:
+        lid (int): The parking lot of the session.
+        vehicle_id (int): The id of the vehicle.
+        current_user (User): The logged in user.
+    
+    Returns:
+        str: Confirmation whether the session was stopped successfully.
+    """
     active_sessions = session_model.get_vehicle_sessions(vehicle_id)
     if not active_sessions:
         return "This vehicle has no active sessions"
     session = session_model.stop_session(active_sessions)
-    print("current stopped session ")
-    print(session)
     payment: PaymentCreate = PaymentCreate(
         user_id=current_user.id,
         amount = session["cost"]
@@ -131,17 +156,34 @@ async def stop_parking_session(vehicle_id: int, current_user: User = Depends(get
 
 @router.get("/sessions/active")
 async def get_active_sessions():
-    """
-    Geeft een lijst van alle actieve sessies.
+    """Retrieves all sessions.
+    
+    Returns:
+        dict[str, [Session]]: Information of all the sessions.
     """
     sessions = session_model.get_active_sessions()
     return {"active_sessions": sessions}
 
 @router.get("/sessions/vehicle/{vehicle_id}")
-async def get_sessions_vehicle(vehicle_id: int, user: User = Depends(get_current_user)):
+async def get_sessions_vehicle(vehicle_id: int,
+                               user: User = Depends(get_current_user)):
+    """Retrieves the sessions of the specified vehicle.
+
+    Args:
+        vehicle_id (int): The vehicle that started the session.
+        current_user (User): The logged in user.
+    
+    Returns:
+        JSONResponse: A list of the sessions of a vehicle.
+
+    Raises:
+        HTTPException: Raises 404 if the vehicle does not exist.
+    """
     vehicle = vehicle_model.get_one_vehicle(vehicle_id)
     if not vehicle or vehicle["user_id"] != user.id:
-        raise HTTPException(status_code=404, detail={"error": "Vehicle not found", "message": f"Vehicle with ID {vehicle_id} does not exist"})
+        raise HTTPException(status_code=404,
+                            detail={"error": "Vehicle not found", 
+                                    "message": f"Vehicle with ID {vehicle_id} does not exist"
+                                    })
     sessions = session_model.get_vehicle_sessions(vehicle_id)
-    print(sessions)
     return JSONResponse(content={"message": sessions}, status_code=201)

@@ -1,3 +1,7 @@
+"""
+This file contains all dataclasses related to users.
+"""
+
 from click import DateTime
 from pydantic import BaseModel
 from typing import Optional

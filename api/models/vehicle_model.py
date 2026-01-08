@@ -1,10 +1,20 @@
+"""
+This file contains all queries related to vehicles.
+"""
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from api.datatypes.vehicle import Vehicle, VehicleCreate
+from api.datatypes.vehicle import VehicleCreate
 
 class Vehicle_model:
+    """
+    Handles all database operations related to vehicles.
+    """
+
     def __init__(self):
+        """
+        Initialize a new Vehicle_model instance and connect to the database.
+        """
         self.connection = psycopg2.connect(
             host="db",
             port=5432,
@@ -13,37 +23,65 @@ class Vehicle_model:
             password="password",
         )
 
-    #Return all vehicles
-    def get_all_vehicles_of_user(self, user_id: int):
+    def get_all_vehicles_of_user(self, user_id: int) -> list[dict]:
+        """
+        Retrieve all vehicles owned by a specific user.
+
+        Args:
+            user_id (int): The ID of the user.
+
+        Returns:
+            list[dict]: List of vehicle records as dictionaries.
+        """
         cursor = self.connection.cursor(cursor_factory=RealDictCursor)
         cursor.execute("SELECT * FROM vehicles WHERE user_id = %s", (user_id,))
         return cursor.fetchall()
 
-    #return all vehicles of user.
-    def get_all_user_vehicles(self, user_id):
+    def get_all_user_vehicles(self, user_id: int) -> list[dict]:
+        """
+        Alias for get_all_vehicles_of_user.
+        Retrieves all vehicles for a user.
+
+        Args:
+            user_id (int): The ID of the user.
+
+        Returns:
+            list[dict]: List of vehicle records as dictionaries.
+        """
         cursor = self.connection.cursor(cursor_factory=RealDictCursor)
         cursor.execute("SELECT * FROM vehicles WHERE user_id = %s", (user_id,))
         return cursor.fetchall()
 
-    # #Return a vehicle.
-    def get_one_vehicle(self, id):
-        cursor = self.connection.cursor(cursor_factory=RealDictCursor)
-        cursor.execute("SELECT id, license_plate FROM vehicles")
-        print("ALL VEHICLES (inside reservation):", cursor.fetchall(), flush=True)
-        print("vehicle_id type:", type(id), "value:", id, flush=True)
+    def get_one_vehicle(self, vehicle_id: int) -> dict | None:
+        """
+        Retrieve a single vehicle by its ID.
 
+        Args:
+            vehicle_id (int): The ID of the vehicle.
+
+        Returns:
+            dict | None: Vehicle data as a dictionary, or None if not found.
+        """
         cursor = self.connection.cursor()
         cursor.execute("""
             SELECT * FROM vehicles WHERE id = %s;
-                       """, (id,))
+        """, (vehicle_id,))
         row = cursor.fetchone()
         if row:
             columns = [desc[0] for desc in cursor.description]
             return dict(zip(columns, row))
         return None
 
-    #Create a vehicle.
-    def create_vehicle(self, vehicle: VehicleCreate):
+    def create_vehicle(self, vehicle: VehicleCreate) -> bool:
+        """
+        Create a new vehicle record in the database.
+
+        Args:
+            vehicle (VehicleCreate): Data for the new vehicle.
+
+        Returns:
+            bool: True if the vehicle was successfully created, False otherwise.
+        """
         cursor = self.connection.cursor()
         cursor.execute("""
             INSERT INTO vehicles (user_id, license_plate, make, model, color, year)
@@ -59,7 +97,17 @@ class Vehicle_model:
         self.connection.commit()
         return created is not None
 
-    def update_vehicle(self, vehicle, vehicle_id):
+    def update_vehicle(self, vehicle: dict, vehicle_id: int) -> None:
+        """
+        Update an existing vehicle's details.
+
+        Args:
+            vehicle (dict): Vehicle data to update.
+            vehicle_id (int): The ID of the vehicle to update.
+
+        Returns:
+            None
+        """
         cursor = self.connection.cursor()
         cursor.execute("""
             UPDATE vehicles
@@ -71,14 +119,34 @@ class Vehicle_model:
               vehicle["color"],
               vehicle["year"],
               vehicle_id,))
+        self.connection.commit()
 
-    #Delete a vehicle.
-    def delete_vehicle(self, vehicle_id):
+    def delete_vehicle(self, vehicle_id: int) -> None:
+        """
+        Delete a vehicle from the database by its ID.
+
+        Args:
+            vehicle_id (int): The ID of the vehicle to delete.
+
+        Returns:
+            None
+        """
         cursor = self.connection.cursor()
         cursor.execute("DELETE FROM vehicles WHERE id=%s", (vehicle_id,))
+        self.connection.commit()
 
-    def get_all_Reservations_history_vehicles(self, user_id):
-        cursor = self.connection.cursor()
+    def get_all_reservations_history_vehicles(self, user_id: int) -> list[dict]:
+        """
+        Retrieve the reservation history for all vehicles of a specific user,
+        including joined data from vehicles and parking lots.
+
+        Args:
+            user_id (int): The ID of the user.
+
+        Returns:
+            list[dict]: List of reservation records with vehicle and parking lot info.
+        """
+        cursor = self.connection.cursor(cursor_factory=RealDictCursor)
         cursor.execute("""
             SELECT *
             FROM reservations
@@ -88,4 +156,4 @@ class Vehicle_model:
                 ON reservations.parking_lot_id = parkinglots.parking_lot_id
             WHERE reservations.user_id = %s
         """, (user_id,))
-        
+        return cursor.fetchall()

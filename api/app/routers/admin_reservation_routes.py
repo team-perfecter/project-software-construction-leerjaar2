@@ -1,3 +1,7 @@
+"""
+This file contains all endpoints related to admin reservations.
+"""
+
 import logging
 from fastapi import APIRouter, Depends, HTTPException
 from api.auth_utils import require_role
@@ -22,6 +26,19 @@ async def admin_create_reservation(
         reservation: ReservationCreate,
         _ = require_role(UserRole.ADMIN, UserRole.SUPERADMIN)
 ):
+    """Creates a new reservation based on provided data. Must be an admin or super admin.
+
+    Args:
+        reservation (ReservationCreate): The data of the reservation.
+        _ (Any): Checks if the logged in user is an admin or a super admin.
+
+    Raises:
+        HTTPException: Raises 404 if the user lot specified in the provided data does not exist.
+        HTTPException: Raises 404 if the vehicle specified in the provided data does not exist.
+        HTTPException: Raises 404 if the parking lot specified in the provided data does not exist.
+        HTTPException: Raises 403 if the logged in user is not an admin or a super admin.
+        HTTPException: Raises 401 if there is no user logged in.
+    """
     # Check of user bestaat.
     user = user_model.get_user_by_id(reservation.user_id)
     if not user:
@@ -61,6 +78,21 @@ async def admin_delete_reservation(
         reservation_id: int,
         current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPERADMIN))
 ):
+    """Deletes a specified reservation. Must be an admin or super admin.
+
+    Args:
+        reservation_id (int): The id of the reservation.
+        _ (Any): Checks if the logged in user is an admin or a super admin.
+    
+    Returns:
+        dict[str, str]: Confirmation that the reservation has been deleted.
+
+    Raises:
+        HTTPException: Raises 404 if the specified reservation does not exist.
+        HTTPException: Raises 500 if an error occured.
+        HTTPException: Raises 403 if the logged in user is not an admin or a super admin.
+        HTTPException: Raises 401 if there is no user logged in.
+    """
     # Check of de reservatie bestaat
     reservation = reservation_model.get_reservation_by_id(reservation_id)
     if not reservation:

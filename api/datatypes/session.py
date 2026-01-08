@@ -1,3 +1,7 @@
+"""
+This file contains all dataclasses related to sessions.
+"""
+
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional

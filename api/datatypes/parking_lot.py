@@ -1,3 +1,7 @@
+"""
+This file contains all dataclasses related to parking lots.
+"""
+
 from typing import Optional
 from pydantic import BaseModel
 from datetime import date
