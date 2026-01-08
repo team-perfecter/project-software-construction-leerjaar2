@@ -1,3 +1,6 @@
+"""
+This file contains functions related to hashing
+"""
 import hashlib
 # from argon2 import PasswordHasher
 # A function that hashes a string.
@@ -6,6 +9,15 @@ import hashlib
 
 
 def hash_string(string: str) -> str:
+    """
+    Hashes a string.
+
+    Args:
+        string (str): The string to be hashed.
+    
+    Returns:
+        str: The hashed string.
+    """
     # use argon 2 bool
     # For now passwords are stored in MD5,
     # so there is no point in hashing with argon2.

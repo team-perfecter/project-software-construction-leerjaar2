@@ -4,6 +4,7 @@ This file contains all queries related to payments.
 
 import psycopg2
 from api.datatypes.payment import PaymentCreate, PaymentUpdate
+from api.models.connection import get_connection
 
 
 class PaymentModel:
@@ -11,15 +12,9 @@ class PaymentModel:
     Handles all database operations related to payments.
 
     Attributes:
-        connection (psycopg2.connection): PostgreSQL database connection shared by all class methods.
+        connection (psycopg2.connection): PostgreSQL database connection.
     """
-    connection = psycopg2.connect(
-        host="db",
-        port=5432,
-        database="database",
-        user="user",
-        password="password",
-    )
+    connection = get_connection()
 
     @classmethod
     def create_payment(cls, p: PaymentCreate) -> bool:
@@ -46,7 +41,7 @@ class PaymentModel:
             cls.connection.commit()
             print("Created:", created)
             return created is not None
-        except Exception as e:
+        except psycopg2.DatabaseError as e:
             print("DB Error:", e)
             cls.connection.rollback()
             return False

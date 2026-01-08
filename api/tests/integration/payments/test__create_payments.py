@@ -3,10 +3,6 @@ this file contains all tests related to post payments endpoints.
 """
 
 from unittest.mock import patch
-from fastapi.testclient import TestClient
-from api.main import app
-
-client = TestClient(app)
 
 
 def test_create_payment_with_superadmin(client_with_token):

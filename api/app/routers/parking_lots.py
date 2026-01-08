@@ -6,7 +6,7 @@ import logging
 from datetime import date
 from fastapi import APIRouter, HTTPException, status, Depends
 from api.models.parking_lot_model import ParkingLotModel
-from api.datatypes.parking_lot import ParkingLot, ParkingLotCreate
+from api.datatypes.parking_lot import ParkingLot, ParkingLotCreate, ParkingLotFilter
 from api.datatypes.user import User, UserRole
 from api.auth_utils import get_current_user, require_role
 
@@ -289,7 +289,8 @@ async def get_parking_lots_by_location(
     #     current_user.id,
     #     location,
     # )
-    parking_lots = parking_lot_model.find_parking_lots(location=location)
+    filters: ParkingLotFilter = ParkingLotFilter(location=location)
+    parking_lots = parking_lot_model.find_parking_lots(filters=filters)
 
     if len(parking_lots) == 0:
         logging.warning("No parking lots found in location: %s", location)

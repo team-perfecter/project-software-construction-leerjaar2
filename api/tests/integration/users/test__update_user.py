@@ -2,11 +2,6 @@
 this file contains all tests related to put user endpoints.
 """
 
-from fastapi.testclient import TestClient
-from api.main import app
-
-client = TestClient(app)
-
 
 def test_update_profile(client_with_token):
     """Updates the profile of the authenticated user successfully.

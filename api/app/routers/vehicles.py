@@ -7,7 +7,7 @@ from fastapi import HTTPException, Body, Depends, APIRouter
 from starlette.responses import JSONResponse
 from api.auth_utils import get_current_user, require_role
 from api.datatypes.user import User
-from api.models.vehicle_model import Vehicle_model
+from api.models.vehicle_model import VehicleModel
 from api.models.user_model import UserModel
 from api.datatypes.vehicle import Vehicle, VehicleCreate
 from api.datatypes.user import UserRole
@@ -16,7 +16,7 @@ router = APIRouter(tags=["vehicles"])
 
 
 #Models:
-vehicle_model: Vehicle_model = Vehicle_model()
+vehicle_model: VehicleModel = VehicleModel()
 user_model: UserModel = UserModel()
 
 #Logging configuration

@@ -10,7 +10,7 @@ from api.datatypes.reservation import ReservationCreate
 from api.datatypes.user import User, UserRole
 from api.models.user_model import UserModel
 
-from api.models.vehicle_model import Vehicle_model
+from api.models.vehicle_model import VehicleModel
 from api.models.parking_lot_model import ParkingLotModel
 
 
@@ -18,7 +18,7 @@ router = APIRouter(tags=["admin-reservations"])
 
 reservation_model = ReservationModel()
 user_model = UserModel()
-vehicle_model = Vehicle_model()
+vehicle_model = VehicleModel()
 parking_lot_model = ParkingLotModel()
 
 @router.post("/admin/reservations")

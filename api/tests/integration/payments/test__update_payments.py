@@ -3,11 +3,7 @@ this file contains all tests related to update payments endpoints.
 """
 
 from unittest.mock import patch
-from fastapi.testclient import TestClient
 from api.tests.conftest import get_last_payment_id
-from api.main import app
-
-client = TestClient(app)
 
 
 # payments/{payment_id}

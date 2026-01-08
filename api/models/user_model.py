@@ -2,8 +2,9 @@
 This file contains all queries related to users.
 """
 
-import psycopg2
+from pydantic_core import ValidationError
 from api.datatypes.user import UserCreate, User, UserLogin
+from api.models.connection import get_connection
 
 
 class UserModel:
@@ -15,20 +16,14 @@ class UserModel:
         """
         Initialize a new UserModel instance and connect to the database.
         """
-        self.connection = psycopg2.connect(
-            host="db",
-            port=5432,
-            database="database",
-            user="user",
-            password="password",
-        )
+        self.connection = get_connection()
 
     def create_user(self, user: UserCreate) -> None:
         """
         Create a new user without specifying a role.
 
         Args:
-            user (UserCreate): User data including username, password, name, email, phone, and birth_year.
+            user (UserCreate): User data.
 
         Returns:
             None
@@ -45,7 +40,7 @@ class UserModel:
         Create a new user and assign a role.
 
         Args:
-            user (UserCreate): User data including username, password, name, email, phone, birth_year, and role.
+            user (UserCreate): User data.
 
         Returns:
             None
@@ -174,7 +169,7 @@ class UserModel:
             try:
                 user = User.parse_obj(row_dict)
                 users.append(user)
-            except Exception as e:
+            except ValidationError as e:
                 print("Failed to map row to User:", row_dict, e)
         return users
 

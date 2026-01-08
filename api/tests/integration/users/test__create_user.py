@@ -2,12 +2,6 @@
 this file contains all tests related to post user endpoints.
 """
 
-from fastapi.testclient import TestClient
-from api.main import app
-
-client = TestClient(app)
-
-
 def test_register_not_all_field_filled(client):
     """Attempts to register a user with missing required fields.
 

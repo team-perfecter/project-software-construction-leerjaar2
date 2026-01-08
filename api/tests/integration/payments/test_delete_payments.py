@@ -3,11 +3,9 @@ this file contains all tests related to delete payments endpoints.
 """
 
 from unittest.mock import patch
-from fastapi.testclient import TestClient
-from api.main import app
 from api.tests.conftest import get_last_payment_id
 
-client = TestClient(app)
+
 
 
 # /payments/{payment_id}

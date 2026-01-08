@@ -10,7 +10,7 @@ from api.datatypes.user import User
 from api.datatypes.reservation import Reservation, ReservationCreate
 from api.models.parking_lot_model import ParkingLotModel
 from api.models.reservation_model import ReservationModel
-from api.models.vehicle_model import Vehicle_model
+from api.models.vehicle_model import VehicleModel
 
 router = APIRouter(
     tags=["reservations"]
@@ -18,7 +18,7 @@ router = APIRouter(
 
 reservation_model: ReservationModel = ReservationModel()
 parkingLot_model: ParkingLotModel = ParkingLotModel()
-vehicle_model: Vehicle_model = Vehicle_model()
+vehicle_model: VehicleModel = VehicleModel()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,7 +27,22 @@ logging.basicConfig(
 )
 
 @router.get("/reservations/vehicle/{vehicle_id}")
-async def reservations(vehicle_id: int, user: User = Depends(get_current_user)):
+async def vehicle_reservations(vehicle_id: int, user: User = Depends(get_current_user)):
+    """
+    Retrieve all reservations for a specific vehicle owned by the logged-in user.
+
+    Args:
+        vehicle_id (int): The ID of the vehicle for which to fetch reservations.
+        user (User): The currently authenticated user (injected via dependency).
+
+    Raises:
+        HTTPException: 404 if the vehicle does not exist.
+        HTTPException: 403 if the vehicle does not belong to the logged-in user.
+
+    Returns:
+        list[Reservation]: A list of reservations associated with the vehicle.
+    """
+
     vehicle = vehicle_model.get_one_vehicle(vehicle_id)
     if vehicle is None:
         raise HTTPException(
@@ -46,7 +61,25 @@ async def reservations(vehicle_id: int, user: User = Depends(get_current_user)):
     return reservation_list
 
 @router.post("/reservations/create")
-async def create_reservation(reservation: ReservationCreate, user: User = Depends(get_current_user)):
+async def create_reservation(reservation: ReservationCreate,
+                             user: User = Depends(get_current_user)):
+    """
+    Create a new reservation for a vehicle at a specific parking lot.
+
+    Args:
+        reservation (ReservationCreate): The reservation data.
+        user (User): The currently authenticated user (injected via dependency).
+
+    Raises:
+        HTTPException: 404 if the parking lot or vehicle does not exist.
+        HTTPException: 401 if the date overlaps with another reservation for the same vehicle.
+        HTTPException: 403 if the start date is earlier than the current date.
+        HTTPException: 403 if the start_date >= end_date
+
+    Returns:
+        dict: Confirmation message indicating the reservation was successfully created.
+    """
+
     parking_lot = parkingLot_model.get_parking_lot_by_lid(reservation.parking_lot_id)
     if parking_lot is None:
         raise HTTPException(status_code = 404, detail = {"message": "Parking lot does not exist"})
@@ -72,7 +105,7 @@ async def create_reservation(reservation: ReservationCreate, user: User = Depend
     # check if start date is later than the current date
     if reservation.start_date < datetime.now():
         raise HTTPException(
-            status_code = 403, 
+            status_code = 403,
             detail = {"message": "invalid start date. "
                       "The start date cannot be earlier than the current date. "
                       f"current date: {datetime.now()}, received date: {reservation.start_date}"}
@@ -103,6 +136,22 @@ async def create_reservation(reservation: ReservationCreate, user: User = Depend
 
 @router.delete("/reservations/delete/{reservation_id}")
 async def delete_reservation(reservation_id: int, user: User = Depends(get_current_user)):
+    """
+    Delete a reservation belonging to the logged-in user.
+
+    Args:
+        reservation_id (int): The ID of the reservation to delete.
+        user (User): The currently authenticated user (injected via dependency).
+
+    Raises:
+        HTTPException: 404 if the reservation does not exist.
+        HTTPException: 403 if the reservation does not belong to the logged-in user.
+        HTTPException: 500 if deletion fails due to a database error.
+
+    Returns:
+        dict: Confirmation message indicating the reservation was successfully deleted.
+    """
+
     # Controleer of de reservatie bestaat
     reservation: Reservation | None = reservation_model.get_reservation_by_id(reservation_id)
     if reservation is None:

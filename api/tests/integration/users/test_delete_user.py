@@ -2,11 +2,7 @@
 this file contains all tests related to delete user endpoints.
 """
 
-from fastapi.testclient import TestClient
-from api.main import app
 from api.tests.conftest import get_last_uid
-
-client = TestClient(app)
 
 
 def test_delete_user(client_with_token):

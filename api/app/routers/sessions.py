@@ -11,7 +11,7 @@ from api.datatypes.user import User
 from api.models.parking_lot_model import ParkingLotModel
 from api.models.payment_model import PaymentModel
 from api.models.session_model import SessionModel
-from api.models.vehicle_model import Vehicle_model
+from api.models.vehicle_model import VehicleModel
 
 logging.basicConfig(
     level=logging.INFO,
@@ -23,7 +23,7 @@ router = APIRouter(tags=["sessions"])
 
 session_model: SessionModel = SessionModel()
 parking_lot_model: ParkingLotModel = ParkingLotModel()
-vehicle_model: Vehicle_model = Vehicle_model()
+vehicle_model: VehicleModel = VehicleModel()
 payment_model: PaymentModel = PaymentModel()
 
 

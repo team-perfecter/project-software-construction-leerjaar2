@@ -2,8 +2,8 @@
 This file contains all queries related to reservations.
 """
 
-import psycopg2
 from api.datatypes.reservation import ReservationCreate, Reservation
+from api.models.connection import get_connection
 
 
 class ReservationModel:
@@ -18,13 +18,7 @@ class ReservationModel:
         """
         Initialize a new ReservationModel instance and connect to the database.
         """
-        self.connection = psycopg2.connect(
-            host="db",
-            port=5432,
-            database="database",
-            user="user",
-            password="password",
-        )
+        self.connection = get_connection()
 
     def get_all_reservations(self) -> list[Reservation]:
         """

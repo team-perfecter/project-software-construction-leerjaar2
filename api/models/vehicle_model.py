@@ -2,26 +2,20 @@
 This file contains all queries related to vehicles.
 """
 
-import psycopg2
 from psycopg2.extras import RealDictCursor
 from api.datatypes.vehicle import VehicleCreate
+from api.models.connection import get_connection
 
-class Vehicle_model:
+class VehicleModel:
     """
     Handles all database operations related to vehicles.
     """
 
     def __init__(self):
         """
-        Initialize a new Vehicle_model instance and connect to the database.
+        Initialize a new VehicleModel instance and connect to the database.
         """
-        self.connection = psycopg2.connect(
-            host="db",
-            port=5432,
-            database="database",
-            user="user",
-            password="password",
-        )
+        self.connection = get_connection()
 
     def get_all_vehicles_of_user(self, user_id: int) -> list[dict]:
         """

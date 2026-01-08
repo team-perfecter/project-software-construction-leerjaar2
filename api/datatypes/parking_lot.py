@@ -36,3 +36,17 @@ class ParkingLotCreate(BaseModel):
     status: Optional[str] = None
     closed_reason: Optional[str] = None
     closed_date: Optional[date] = None
+
+class ParkingLotFilter(BaseModel):
+    """
+    Filter options for the find_parking_lots() method in the parking lot model.
+    """
+    lot_id: Optional[int] = None
+    name: Optional[str] = None
+    location: Optional[str] = None
+    city: Optional[str] = None
+    min_capacity: Optional[int] = None
+    max_capacity: Optional[int] = None
+    min_tariff: Optional[float] = None
+    max_tariff: Optional[float] = None
+    has_availability: Optional[bool] = None

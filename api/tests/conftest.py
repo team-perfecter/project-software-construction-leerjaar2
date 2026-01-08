@@ -3,13 +3,14 @@ This file sets up the data required for running each test.
 It also contains fixtures that provide clients to communicate with the API.
 """
 
+from json import JSONDecodeError
 import pytest
 from fastapi.testclient import TestClient
 from api.main import app
 from api.auth_utils import create_access_token
 from api.models.user_model import UserModel
 
-pytest_plugins = "pytest_benchmark"
+PYTEST_PLUGINS = "pytest_benchmark"
 
 
 def pytest_configure(config):
@@ -18,9 +19,23 @@ def pytest_configure(config):
     """
     config.option.benchmark_min_rounds = 20
 
+def run_fixture_on_test(filters, request) -> bool:
+    """
+    A filter for the setup fixtures.
+    only continues fixtures if the filename passes the filter.
+    this improves performance for the tests.
+    
+    filters: The names of the files the fixture should run in
+    """
+    can_continue = False
+    for f in filters:
+        if f in request.node.fspath.basename.lower():
+            can_continue = True
+            break
+    return can_continue
 
-@pytest.fixture
-def client():
+@pytest.fixture(scope="session", name="client")
+def test_client():
     """
     Provides a FastAPI TestClient instance for making HTTP requests without authentication.
     
@@ -30,10 +45,11 @@ def client():
     return TestClient(app)
 
 
-@pytest.fixture
-def client_with_token(client):
+@pytest.fixture(scope="session", name="client_with_token")
+def test_client_with_token(client):
     """
-    Provides a TestClient instance along with headers containing a JWT token for a specified user role.
+    Provides a TestClient instance along 
+    with headers containing a JWT token for a specified user role.
     
     Usage:
         client, headers = client_with_token("superadmin")
@@ -62,25 +78,33 @@ def client_with_token(client):
     return _client_with_role
 
 
-@pytest.fixture(autouse=True)
-def setup_vehicles(request, client_with_token):
+@pytest.fixture(scope="session", autouse=True)
+def seed_all_data(client_with_token):
     """
-    Fixture to clear all vehicles before each test and optionally seed a default vehicle.
-    
-    If the test filename contains "create", no vehicle is seeded. 
-    Otherwise, one default vehicle is added.
-    
-    Args:
-        request: pytest request object.
-        client_with_token: Fixture that returns a client with JWT headers.
+    Seed all required data once per test session before any tests run.
+    Calls other seeding functions for vehicles, users, parking lots, payments, etc.
     """
+
     client, headers = client_with_token("superadmin")
 
+    seed_vehicles(client, headers, True)
+
+    seed_users(client, headers, True)
+
+    seed_parking_lots(client, headers, True)
+
+    seed_payments(client, headers, True)
+
+
+def seed_vehicles(client, headers, create_default):
+    """
+    Seeds data for payments.
+    """
     # Get all vehicles
     response = client.get("/vehicles", headers=headers)
     try:
         data = response.json()
-    except Exception:
+    except JSONDecodeError:
         data = []
 
     # Ensure vehicles_list is a list
@@ -97,7 +121,8 @@ def setup_vehicles(request, client_with_token):
             client.delete(f"/vehicles/delete/{vehicle['id']}", headers=headers)
 
     # Seed a default vehicle if not testing creation
-    if "create" not in request.node.fspath.basename:
+    #if "create" not in request.node.fspath.basename:
+    if create_default:
         vehicle = {
             "user_id": 1,
             "license_plate": "ABC123",
@@ -108,21 +133,13 @@ def setup_vehicles(request, client_with_token):
         }
         client.post("/vehicles/create", json=vehicle, headers=headers)
 
-
-@pytest.fixture(autouse=True)
-def setup_users(request, client_with_token):
+def seed_users(client, headers, create_default):
     """
-    Fixture to clear all users above the system default users.
-    Seeds 4 default users if the test is not a creation test.
-    
-    Args:
-        request: pytest request object.
-        client_with_token: Fixture that returns a client with JWT headers.
+    Seeds data for payments.
     """
-    client, headers = client_with_token("superadmin")
     response = client.get("/users/", headers=headers)
 
-    if "create" not in request.node.fspath.basename:
+    if create_default:
         # Delete users with id > 4
         for user in response.json():
             if user['id'] > 4:
@@ -135,7 +152,7 @@ def setup_users(request, client_with_token):
             "email": "bla@bla.com",
             "name": "admin",
             "role": "admin"
-        }    
+        }
         user3 = {
             "username": "paymentadmin",
             "password": "admin123",
@@ -163,24 +180,16 @@ def setup_users(request, client_with_token):
         client.post("/create_user", json=user4, headers=headers)
         client.post("/create_user", json=user5, headers=headers)
 
-
-@pytest.fixture(autouse=True)
-def setup_parking_lots(request, client_with_token):
+def seed_parking_lots(client, headers, create_default):
     """
-    Fixture to clear all parking lots before each test.
-    Adds two default parking lots unless testing creation endpoints.
-    
-    Args:
-        request: pytest request object.
-        client_with_token: Fixture that returns a client with JWT headers.
+    Seeds data for payments.
     """
-    client, headers = client_with_token("superadmin")
     response = client.get("/parking-lots/", headers=headers)
     if response.status_code == 200:
         for lot in response.json():
             client.delete(f"/parking-lots/{lot['id']}", headers=headers)
 
-    if "create" not in request.node.fspath.basename:
+    if create_default:
         lot = {
             "name": "Bedrijventerrein Almere Parkeergarage",
             "location": "Industrial Zone",
@@ -204,6 +213,106 @@ def setup_parking_lots(request, client_with_token):
         client.post("/parking-lots", json=lot, headers=headers)
         client.post("/parking-lots", json=lot2, headers=headers)
 
+def seed_payments(client, headers, create_default):
+    """
+    Seeds data for payments.
+    """
+    user_model = UserModel()
+
+    # Ensure superadmin exists
+    user = user_model.get_user_by_username("superadmin")
+    if not user:
+        raise RuntimeError("Superadmin must exist in the DB")
+    # Delete all payments for superadmin
+    response = client.get("/payments/me", headers=headers)
+    if response.status_code == 200:
+        for payment in response.json():
+            client.delete(f"/payments/{payment['id']}", headers=headers)
+
+    # Seed 5 payments if not testing creation
+    if create_default:
+        for i in range(5):
+            payment = {
+                "user_id": user.id,
+                "transaction": f"transaction{i+1}",
+                "amount": 100 + i,
+                "hash": f"hash{i+1}",
+                "method": f"method{i+1}",
+                "issuer": f"issuer{i+1}",
+                "bank": f"bank{i+1}"
+            }
+            client.post("/payments", json=payment, headers=headers)
+
+@pytest.fixture(autouse=True)
+def setup_vehicles(request, client_with_token):
+    """
+    Fixture to clear all vehicles before each test and optionally seed a default vehicle.
+    
+    If the test filename contains "create", no vehicle is seeded. 
+    Otherwise, one default vehicle is added.
+    
+    Args:
+        request: pytest request object.
+        client_with_token: Fixture that returns a client with JWT headers.
+    """
+    if not run_fixture_on_test(["vehicles"], request):
+        return
+    client, headers = client_with_token("superadmin")
+    create_default = "create" not in request.node.fspath.basename
+    seed_vehicles(client, headers, create_default)
+
+
+
+@pytest.fixture(autouse=True)
+def setup_users(request, client_with_token):
+    """
+    Fixture to clear all users above the system default users.
+    Seeds 4 default users if the test is not a creation test.
+    
+    Args:
+        request: pytest request object.
+        client_with_token: Fixture that returns a client with JWT headers.
+    """
+    if not run_fixture_on_test(["user"], request):
+        return
+    client, headers = client_with_token("superadmin")
+    create_default = "create" not in request.node.fspath.basename
+    seed_users(client, headers, create_default)
+
+
+@pytest.fixture(autouse=True)
+def setup_parking_lots(request, client_with_token):
+    """
+    Fixture to clear all parking lots before each test.
+    Adds two default parking lots unless testing creation endpoints.
+    
+    Args:
+        request: pytest request object.
+        client_with_token: Fixture that returns a client with JWT headers.
+    """
+    if not run_fixture_on_test(["parking_lot"], request):
+        return
+    client, headers = client_with_token("superadmin")
+    create_default = "create" not in request.node.fspath.basename
+    seed_parking_lots(client, headers, create_default)
+
+
+@pytest.fixture(autouse=True)
+def setup_payments(request, client_with_token):
+    """
+    Fixture to clear all payments for superadmin,
+    and seed 5 payments if not testing creation endpoints.
+    
+    Args:
+        request: pytest request object.
+        client_with_token: Fixture that returns a client with JWT headers.
+    """
+    if not run_fixture_on_test(["payments"], request):
+        return
+    client, headers = client_with_token("superadmin")
+    create_default = "create" not in request.node.fspath.basename
+    seed_payments(client, headers, create_default)
+
 
 def get_last_pid(client):
     """
@@ -218,44 +327,6 @@ def get_last_pid(client):
     response = client.get("/parking-lots/")
     data = response.json()
     return data[-1]["id"]
-
-
-@pytest.fixture(autouse=True)
-def setup_payments(request, client_with_token):
-    """
-    Fixture to clear all payments for superadmin and seed 5 payments if not testing creation endpoints.
-    
-    Args:
-        request: pytest request object.
-        client_with_token: Fixture that returns a client with JWT headers.
-    """
-    user_model = UserModel()
-    client, headers = client_with_token("superadmin")
-
-    # Ensure superadmin exists
-    user = user_model.get_user_by_username("superadmin")
-    if not user:
-        raise Exception("Superadmin must exist in the DB for benchmarks")
-
-    # Delete all payments for superadmin
-    response = client.get("/payments/me", headers=headers)
-    if response.status_code == 200:
-        for payment in response.json():
-            client.delete(f"/payments/{payment['id']}", headers=headers)
-
-    # Seed 5 payments if not testing creation
-    if "create" not in request.node.fspath.basename:
-        for i in range(5):
-            payment = {
-                "user_id": user.id,
-                "transaction": f"transaction{i+1}",
-                "amount": 100 + i,
-                "hash": f"hash{i+1}",
-                "method": f"method{i+1}",
-                "issuer": f"issuer{i+1}",
-                "bank": f"bank{i+1}"
-            }
-            client.post("/payments", json=payment, headers=headers)
 
 
 def get_last_payment_id(client_with_token):

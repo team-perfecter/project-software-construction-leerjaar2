@@ -2,9 +2,10 @@
 This file contains all queries related to sessions.
 """
 
-import psycopg2
 from datetime import datetime
+from pydantic import ValidationError
 from api.datatypes.session import Session
+from api.models.connection import get_connection
 
 
 class SessionModel:
@@ -16,13 +17,7 @@ class SessionModel:
         """
         Initialize a new SessionModel instance and connect to the database.
         """
-        self.connection = psycopg2.connect(
-            host="db",
-            port=5432,
-            database="database",
-            user="user",
-            password="password",
-        )
+        self.connection = get_connection()
 
     def create_session(self, parking_lot_id: int, user_id: int, vehicle_id: int) -> Session | None:
         """
@@ -34,7 +29,7 @@ class SessionModel:
             vehicle_id (int): The ID of the vehicle.
 
         Returns:
-            Session | None: The created Session object if successful, None if the vehicle already has an active session.
+            Session | None: The created Session object if successful, otherwise None.
         """
         cursor = self.connection.cursor()
 
@@ -63,7 +58,7 @@ class SessionModel:
             session (Session): The Session object representing the active session.
 
         Returns:
-            dict: A dictionary representation of the updated session with stopped time, duration, and cost.
+            dict: The updated session with stopped time, duration, and cost.
         """
         stopped = datetime.now()
         duration_minutes = int((stopped - session.started).total_seconds() / 60)
@@ -183,6 +178,6 @@ class SessionModel:
             row_dict = dict(zip(columns, row))
             try:
                 sessions.append(Session.parse_obj(row_dict))  # aliases are respected
-            except Exception as e:
+            except ValidationError as e:
                 print("Failed to map row to Session:", row_dict, e)
         return sessions

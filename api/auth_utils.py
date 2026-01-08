@@ -9,7 +9,7 @@ from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from api.datatypes.user import User, UserRole
 from api.models.user_model import UserModel
-from api.utilities.Hasher import hash_string
+from api.utilities.hasher import hash_string
 
 user_model: UserModel = UserModel()
 
@@ -121,8 +121,8 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
         if user is None:
             raise HTTPException(status_code=401, detail="Invalid token")
         return user
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    except JWTError as exc:
+        raise HTTPException(status_code=401, detail="Invalid or expired token") from exc
 
 
 def require_role(*allowed_roles):

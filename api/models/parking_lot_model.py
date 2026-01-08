@@ -3,23 +3,17 @@ this file contains all queries related to parking lots.
 """
 
 from typing import List, Optional
-import psycopg2
-from api.datatypes.parking_lot import ParkingLot, ParkingLotCreate
+from pydantic_core import ValidationError
+from api.datatypes.parking_lot import ParkingLot, ParkingLotCreate, ParkingLotFilter
 from api.datatypes.session import Session
-
+from api.models.connection import get_connection
 
 class ParkingLotModel:
     """
     This class contains all queries related to parking lots.
     """
     def __init__(self):
-        self.connection = psycopg2.connect(
-            host="db",
-            port=5432,
-            database="database",
-            user="user",
-            password="password",
-        )
+        self.connection = get_connection()
 
     # region get
     def get_all_parking_lots(self) -> List[ParkingLot]:
@@ -83,21 +77,13 @@ class ParkingLotModel:
             try:
                 session = Session.model_validate(row_dict)
                 sessions.append(session)
-            except Exception as e:
+            except ValidationError  as e:
                 print("Failed to map row to Session:", row_dict, e)
         return sessions
 
     def find_parking_lots(
         self,
-        lot_id: int = None,
-        name: str = None,
-        location: str = None,
-        city: str = None,
-        min_capacity: int = None,
-        max_capacity: int = None,
-        min_tariff: float = None,
-        max_tariff: float = None,
-        has_availability: bool = None,
+        filters: ParkingLotFilter
     ) -> List[ParkingLot]:
         """
         Finds parking lots based on data provided with this method.
@@ -117,39 +103,39 @@ class ParkingLotModel:
         query = "SELECT * FROM parking_lots WHERE 1=1"
         params = []
 
-        if lot_id is not None:
+        if filters.lot_id is not None:
             query += " AND id = %s"
-            params.append(lot_id)
+            params.append(filters.lot_id)
 
-        if name is not None:
+        if filters.name is not None:
             query += " AND name ILIKE %s"
-            params.append(f"%{name}%")
+            params.append(f"%{filters.name}%")
 
-        if location is not None:
+        if filters.location is not None:
             query += " AND location ILIKE %s"
-            params.append(f"%{location}%")
+            params.append(f"%{filters.location}%")
 
-        if city is not None:
+        if filters.city is not None:
             query += " AND SPLIT_PART(address, ' ', -1) ILIKE %s"
-            params.append(f"%{city}%")
+            params.append(f"%{filters.city}%")
 
-        if min_capacity is not None:
+        if filters.min_capacity is not None:
             query += " AND capacity >= %s"
-            params.append(min_capacity)
+            params.append(filters.min_capacity)
 
-        if max_capacity is not None:
+        if filters.max_capacity is not None:
             query += " AND capacity <= %s"
-            params.append(max_capacity)
+            params.append(filters.max_capacity)
 
-        if min_tariff is not None:
+        if filters.min_tariff is not None:
             query += " AND tariff >= %s"
-            params.append(min_tariff)
+            params.append(filters.min_tariff)
 
-        if max_tariff is not None:
+        if filters.max_tariff is not None:
             query += " AND tariff <= %s"
-            params.append(max_tariff)
+            params.append(filters.max_tariff)
 
-        if has_availability is not None and has_availability:
+        if filters.has_availability is not None and filters.has_availability:
             query += " AND (capacity - reserved) > 0"
 
         query += ";"
@@ -286,6 +272,6 @@ class ParkingLotModel:
             try:
                 parking_lot = ParkingLot.model_validate(row_dict)
                 parking_lots.append(parking_lot)
-            except Exception as e:
+            except ValidationError  as e:
                 print("Failed to map row to parking_lot:", row_dict, e)
         return parking_lots
