@@ -61,9 +61,7 @@ async def vehicles_user(user_id: int, user: User = Depends(get_current_user)):
 @router.post("/vehicles/create")
 async def vehicle_create(vehicle: VehicleCreate, user: User = Depends(get_current_user)):
     #Create vehicle.
-    print(vehicle)
     vehicle.user_id = user.id
-    print(vehicle)
     created = vehicle_model.create_vehicle(vehicle)
     if not created:
         raise HTTPException(status_code=500, detail="Failed to create vehicle")

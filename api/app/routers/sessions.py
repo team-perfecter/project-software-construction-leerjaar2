@@ -50,8 +50,6 @@ async def start_parking_session(
 
     # vehicle en user check
     vehicle = vehicle_model.get_one_vehicle(vehicle_id)
-    print("CHECK 1")
-    print(vehicle)
     if not vehicle or vehicle["user_id"] != current_user.id:
         if not vehicle:
             logging.warning("Vehicle with id %i does not exist", vehicle_id)
@@ -113,6 +111,13 @@ async def start_parking_session(
         "vehicle_id": vehicle_id,
         "license_plate": vehicle["license_plate"],
     }
+
+@router.post("/parking-lots/{lid}/sessions/start/no-login", status_code=status.HTTP_201_CREATED)
+async def start_parking_session_no_login(
+    lid: int
+):
+    
+    
 
 @router.post("/parking-lots/{lid}/sessions/stop")
 async def stop_parking_session(vehicle_id: int, current_user: User = Depends(get_current_user)):
