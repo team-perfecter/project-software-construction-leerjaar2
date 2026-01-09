@@ -119,7 +119,26 @@ class DiscountCodeModel:
             return dict(zip(columns, row))
         return None
 
-    
+
+    def update_discount_code(self, code: str, update_data: dict):
+            if not code or not update_data:
+                return
+
+            cursor = self.connection.cursor()
+
+            set_clauses = ", ".join(f"{key} = %s" for key in update_data.keys())
+            values = list(update_data.values()) + [code]
+
+            cursor.execute(f"""
+                UPDATE discount_codes
+                SET {set_clauses}
+                WHERE code = %s
+                RETURNING id;
+            """, values)
+            updated = cursor.fetchone()
+            self.connection.commit()
+            return updated is not None
+
 
     def increment_used_count(self, id):
         cursor = self.connection.cursor()

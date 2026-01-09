@@ -150,7 +150,7 @@ async def update_payment(payment_id: int,
         logging.info("Admin ID %i failed updating Payment ID %i",
                      current_user.id, payment_id)
         raise HTTPException(status_code=500,
-                            detail="Payment has failed")
+                            detail="Update has failed")
     return {"message": "Payment updated successfully"}
 
 

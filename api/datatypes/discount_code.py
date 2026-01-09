@@ -19,3 +19,18 @@ class DiscountCodeCreate(BaseModel):
 class DiscountCode(DiscountCodeCreate):
     used_count: int
     active: bool
+
+
+class DiscountCodeUpdate(BaseModel):
+    code: Optional[str] = None
+    user_id: Optional[int] = None
+    discount_type: Optional[str] = None
+    discount_value: Optional[int] = None
+    use_amount: Optional[int] = None
+    minimum_price: Optional[float] = None
+    start_applicable_time: Optional[time] = None
+    end_applicable_time: Optional[time] = None
+    end_date: Optional[date] = None
+    used_count: Optional[int] = None
+    active: Optional[bool] = None
+

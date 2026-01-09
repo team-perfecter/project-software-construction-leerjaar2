@@ -1,5 +1,5 @@
 from api.datatypes.user import User, UserRole
-from api.datatypes.discount_code import DiscountCodeCreate
+from api.datatypes.discount_code import DiscountCodeCreate, DiscountCodeUpdate
 from api.models.discount_code_model import DiscountCodeModel
 from fastapi import Depends, APIRouter, HTTPException
 from api.auth_utils import require_role
@@ -161,14 +161,14 @@ async def deactive_discount_code(code: str, current_user: User = Depends(require
 
 
 @router.delete("/discount-codes/{code}")
-async def delete_payment(code: str,
+async def delete_discount_code(code: str,
                          current_user: User = Depends(require_role(
-                          UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
+                         UserRole.SUPERADMIN))):
     discount_code = discount_code_model.get_discount_code_by_code(code)
     if not discount_code:
         logging.info("Admin ID %i tried to delete nonexistent discount code %i",
                      current_user.id, code)
-        raise HTTPException(status_code=404, detail="Payment not found")
+        raise HTTPException(status_code=404, detail="Discount code not found")
     delete = discount_code_model.delete_discount_code(code)
     if not delete:
         logging.info("Admin ID %i tried to delete discount code %i, but failed",
@@ -176,4 +176,30 @@ async def delete_payment(code: str,
         raise HTTPException(status_code=500, detail="Deletion has failed")
     logging.info("Admin ID %i deleted discount code ID %i",
                  current_user.id, code)
-    return {"message": "discount code deleted successfully"}
+    return {"message": "Siscount code deleted successfully"}
+
+
+@router.put("/discount-codes/{code}")
+async def update_discount_code(code: str,
+                         d: DiscountCodeUpdate,
+                         current_user: User = Depends(require_role(
+                         UserRole.SUPERADMIN))):
+    discount_code = discount_code_model.get_discount_code_by_code(code)
+    if not discount_code:
+        logging.info("Admin ID %i tried updating discount code %i, "
+                     "but it does not exist", current_user.id, code)
+        raise HTTPException(status_code=404,
+                            detail="Discount code not found")
+    update_fields = d.dict(exclude_unset=True)
+    if update_fields.get("code") and update_fields.get("code") != code:
+        existing = discount_code_model.get_discount_code_by_code(update_fields.get("code"))
+        if existing:
+            logging.info("Admin ID %i tried to update discount code %s to duplicate code %s", current_user.id, code, update_fields.get("code"))
+            raise HTTPException(status_code=409, detail="Discount code already exists")
+    update = discount_code_model.update_discount_code(code, update_fields)
+    if not update:
+        logging.info("Admin ID %i failed updating discount code %i",
+                    current_user.id, code)
+        raise HTTPException(status_code=500,
+                        detail="Update has has failed")
+    return {"message": "Discount code updated successfully"}
