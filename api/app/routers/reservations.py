@@ -7,10 +7,12 @@ from api.datatypes.reservation import Reservation, ReservationCreate
 from api.datatypes.vehicle import Vehicle
 from api.models.parking_lot_model import ParkingLotModel
 from api.models.reservation_model import Reservation_model
+from api.models.discount_code_model import DiscountCodeModel
 from api.models.vehicle_model import Vehicle_model
 from api.models.session_model import SessionModel
 from api.models.payment_model import PaymentModel
 from api.session_calculator import generate_payment_hash, generate_transaction_validation_hash, calculate_price
+from api.utilities.discount_code_validation import discount_code_validation
 
 
 import logging
@@ -25,6 +27,7 @@ parking_lot_model: ParkingLotModel = ParkingLotModel()
 vehicle_model: Vehicle_model = Vehicle_model()
 session_model: SessionModel = SessionModel()
 payment_model: PaymentModel = PaymentModel()
+discount_code_model: DiscountCodeModel = DiscountCodeModel()
 
 
 @router.get("/reservations/vehicle/{vehicle_id}")
@@ -73,8 +76,17 @@ async def create_reservation(reservation: ReservationCreate, current_user: User 
     parking_lot = parking_lot_model.get_parking_lot_by_lid(reservation.parking_lot_id)
     #errorhandling etc.
 
-    cost = calculate_price(parking_lot, reservation)
-
+    discount_code = discount_code_model.get_discount_code_by_code(reservation.discount_code)
+    if not discount_code:
+        logger.error("User ID %s tried to use discount code %i, "
+                     "but it was not found",
+                     current_user.id, reservation.discount_code)
+        raise HTTPException(status_code=404,
+                            detail="No discount code was found.")
+    discount_code_validation(discount_code, reservation, current_user)
+    cost = calculate_price(parking_lot, reservation, discount_code)
+    
+    
     reservation_id = reservation_model.create_reservation(reservation, current_user.id, cost)
     #errorhandling etc.
 

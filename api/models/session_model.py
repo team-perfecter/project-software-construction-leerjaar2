@@ -19,7 +19,7 @@ class SessionModel:
 
         # Controleer of dit voertuig al actief is
         cursor.execute("""
-            SELECT * FROM sessions WHERE vehicle_id = %s AND stopped IS NULL;
+            SELECT * FROM sessions WHERE vehicle_id = %s AND end_time IS NULL;
         """, (vehicle_id,))
         if cursor.fetchone():
             print("Vehicle already has an active session.")
@@ -59,7 +59,7 @@ class SessionModel:
     # Alleen actieve sessies ophalen
     def get_active_sessions(self) -> list[Session]:
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM sessions WHERE stopped IS NULL;")
+        cursor.execute("SELECT * FROM sessions WHERE end_time IS NULL;")
         rows = cursor.fetchall()
         columns = [desc[0] for desc in cursor.description]
         result = [dict(zip(columns, row)) for row in rows]

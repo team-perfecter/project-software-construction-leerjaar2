@@ -71,7 +71,8 @@ Authorization: Bearer {{token}}
   "vehicle_id": 1,
   "parking_lot_id": 1,
   "start_time": "2026-01-01T10:00:00",
-  "end_time": "2026-01-01T12:00:00"
+  "end_time": "2026-01-01T12:00:00",
+  "discount_code": "test5"
 }
 
 ###
@@ -118,11 +119,12 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "code": "test",
-  "discount_type": "percentage",
-  "discount_value": 5,
+  "code": "test5",
+  "discount_type": "fixed",
+  "discount_value": 1.555,
   "use_amount": 5,
-  "end_date": "2027-01-01"
+  "end_date": "2027-01-01",
+  "locations": ["Rotterdam", "Schiedam"]
 }
 
 ###

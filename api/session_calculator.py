@@ -2,11 +2,12 @@ from datetime import datetime
 from hashlib import md5
 import math
 import uuid
+from decimal import Decimal, ROUND_HALF_UP
 
 
 def calculate_price(parking_lot, session, discount_code):
-    start = session.started
-    end = session.stopped or datetime.now()
+    start = session.start_time
+    end = session.end_time or datetime.now()
 
     diff = end - start
     hours = math.ceil(diff.total_seconds() / 3600)
@@ -26,6 +27,8 @@ def calculate_price(parking_lot, session, discount_code):
             price *= (1 - discount_code["discount_value"] / 100)
     if price < 0:
         price = 0
+    price = Decimal(str(price))
+    price = price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     return price
 
 

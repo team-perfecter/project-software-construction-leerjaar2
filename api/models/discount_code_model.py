@@ -23,11 +23,27 @@ class DiscountCodeModel:
         """,
                         (d.code, d.discount_type, d.discount_value, d.use_amount, d.end_date))
         row = cursor.fetchone()
-        self.connection.commit()
+
+        self.add_discount_code_locations(d.code, d.locations or [])
+
         if row:
             columns = [desc[0] for desc in cursor.description]
             return dict(zip(columns, row))
         return None
+
+
+    def add_discount_code_locations(self, discount_code: str, locations: list[str]):
+        if not locations:
+            return
+
+        cursor = self.connection.cursor()
+        for loc in set(locations):
+            cursor.execute("""
+                INSERT INTO discount_code_locations (discount_code, location)
+                VALUES (%s, %s)
+                ON CONFLICT (discount_code, location) DO NOTHING;
+            """, (discount_code, loc))
+        self.connection.commit()
 
 
     def get_all_discount_codes(self):
@@ -50,18 +66,6 @@ class DiscountCodeModel:
         columns = [desc[0] for desc in cursor.description]
         result = [dict(zip(columns, row)) for row in rows]
         return result
-
-
-    def get_discount_code_by_did(self, id):
-            cursor = self.connection.cursor()
-            cursor.execute("""
-                SELECT * FROM discount_codes WHERE id = %s;
-                        """, (id,))
-            row = cursor.fetchone()
-            if row:
-                columns = [desc[0] for desc in cursor.description]
-                return dict(zip(columns, row))
-            return None
     
 
     def get_discount_code_by_code(self, code):
@@ -76,11 +80,27 @@ class DiscountCodeModel:
             return None
 
 
-    def deactive_discount_code(self, id):
+    def deactive_discount_code(self, code):
         cursor = self.connection.cursor()
         cursor.execute("""
             UPDATE discount_codes
             SET active = FALSE
+            WHERE code = %s
+            RETURNING *;
+        """, (code,))
+        row = cursor.fetchone()
+        self.connection.commit()
+        if row:
+            columns = [desc[0] for desc in cursor.description]
+            return dict(zip(columns, row))
+        return None
+    
+    
+    def increment_used_count(self, id):
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            UPDATE discount_codes
+            SET used_count = used_count + 1
             WHERE id = %s
             RETURNING *;
         """, (id,))

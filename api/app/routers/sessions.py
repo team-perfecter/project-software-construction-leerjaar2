@@ -128,7 +128,7 @@ async def stop_parking_session(
         )
 
     parking_lot = parking_lot_model.get_parking_lot_by_lid(session.parking_lot_id)
-    cost = calculate_price(parking_lot, session)
+    cost = calculate_price(parking_lot, session, None)
 
     session = session_model.stop_session(session, cost)
 

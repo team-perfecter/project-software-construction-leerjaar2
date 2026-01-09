@@ -57,7 +57,7 @@ async def create_discount_code(d: DiscountCodeCreate,
     logger.info("Admin ID %i created new discount code",
                  current_user.id)
     return {
-        "message": retrieved_succesfully_message,
+        "message": "Discount codes created successfully",
         "discount_code": created}
 
 
@@ -106,29 +106,29 @@ async def get_discord_code_by_code(code: str, current_user: User = Depends(requi
         "discount_code": discount_code}
 
 
-@router.post("/discount-codes/{did}/deactivate")
-async def deactive_discount_code(did: int, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
-    discount_code = discount_code_model.get_discount_code_by_did(did)
+@router.post("/discount-codes/{code}/deactivate")
+async def deactive_discount_code(code: str, current_user: User = Depends(require_role(UserRole.SUPERADMIN))):
+    discount_code = discount_code_model.get_discount_code_by_code(code)
     if not discount_code:
         logger.error("Admin ID %i tried to get discount code %i, but no result",
-                     current_user.id, did)
+                     current_user.id, code)
         raise HTTPException(status_code=404,
                             detail="Discount code not found")
     if discount_code["active"] is not True:
         logger.error("Admin ID %i tried to deactive discount code %i, "
                      "but it was not active",
-                     current_user.id, did)
+                     current_user.id, code)
         raise HTTPException(status_code=400,
                             detail="Discount code was not active")
-    deactivated = discount_code_model.deactive_discount_code(did)
+    deactivated = discount_code_model.deactive_discount_code(code)
     if not deactivated:
         logger.error("Admin ID %i tried to deactive discount code %i, "
                      "but something went wrong",
-                     current_user.id, did)
+                     current_user.id, code)
         raise HTTPException(status_code=500,
                             detail="Update was unsuccesful")
     logger.info("Admin ID %i deactived discount code %i",
-                current_user.id, did)
+                current_user.id, code)
     return {
         "message": "Discount code deactivated successfully",
         "discount_code": deactivated}
