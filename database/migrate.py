@@ -94,6 +94,8 @@ CREATE TABLE IF NOT EXISTS discount_codes (
     use_amount INTEGER,
     used_count INTEGER DEFAULT 0,
     minimum_price FLOAT,
+    start_applicable_time TIMESTAMP,
+    end_applicable_time TIMESTAMP,
     end_date TIMESTAMP,
     active BOOLEAN DEFAULT TRUE
 );

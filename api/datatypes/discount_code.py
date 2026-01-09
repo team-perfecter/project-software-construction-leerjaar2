@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, time
 from pydantic import BaseModel
 from typing import Optional, List
 
@@ -10,6 +10,8 @@ class DiscountCodeCreate(BaseModel):
     discount_value: float
     use_amount: Optional[int] = None
     minimum_price: Optional[float] = None
+    start_applicable_time: Optional[time] = None
+    end_applicable_time: Optional[time] = None
     end_date: Optional[date] = None
     locations: Optional[List[str]] = []
 

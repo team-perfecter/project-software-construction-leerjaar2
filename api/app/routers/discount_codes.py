@@ -1,10 +1,9 @@
-from starlette.responses import JSONResponse
 from api.datatypes.user import User, UserRole
-from api.datatypes.discount_code import DiscountCodeCreate, DiscountCode
+from api.datatypes.discount_code import DiscountCodeCreate
 from api.models.discount_code_model import DiscountCodeModel
-from api.utilities.Hasher import hash_string
 from fastapi import Depends, APIRouter, HTTPException
-from api.auth_utils import verify_password, create_access_token, get_current_user, revoke_token, oauth2_scheme, require_role
+from api.auth_utils import require_role
+from datetime import date
 
 import logging
 logger = logging.getLogger(__name__)
@@ -48,6 +47,21 @@ async def create_discount_code(d: DiscountCodeCreate,
                          current_user.id, d.use_amount)
             raise HTTPException(status_code=400,
                             detail="Use amount must be a postive number")
+    if (d.start_applicable_time is None) != (d.end_applicable_time is None):
+        logger.error("Admin ID %i tried to create discount code with only one applicable time set", current_user.id)
+        raise HTTPException(
+            status_code=400,
+            detail="Both start_applicable_time and end_applicable_time must be set together")
+    if d.start_applicable_time and d.end_applicable_time:
+        if d.start_applicable_time >= d.end_applicable_time:
+            logger.error("Admin ID %i tried to create discount code with start_applicable_time >= end_applicable_time", current_user.id)
+            raise HTTPException(
+                status_code=400,
+                detail="start_applicable_time must be before end_applicable_time")
+    if d.end_date is not None and d.end_date <= date.today():
+        logger.error("Admin ID %i tried to create discount code with end_date in the past", current_user.id)
+        raise HTTPException(status_code=400,
+                            detail="End date must be in the future")
     created = discount_code_model.create_discount_code(d)
     if not created:
         logger.error("Admin ID %i tried to create a discount code, but failed",
@@ -56,6 +70,8 @@ async def create_discount_code(d: DiscountCodeCreate,
                             detail="Failed to create discount code")
     logger.info("Admin ID %i created new discount code",
                  current_user.id)
+    locations = discount_code_model.get_all_locations_by_code(d.code)
+    created["locations"] = locations
     return {
         "message": "Discount codes created successfully",
         "discount_code": created}
@@ -71,6 +87,9 @@ async def get_all_discount_codes(current_user: User = Depends(require_role(UserR
                             detail="No discount codes were found.")
     logger.info("Admin ID %i retrieved all discount codes",
                 current_user.id)
+    for discount_code in results:
+        locations = discount_code_model.get_all_locations_by_code(discount_code["code"])
+        discount_code["locations"] = locations
     return {
         "message": retrieved_succesfully_message,
         "discount_code": results}
@@ -85,6 +104,9 @@ async def get_all_discount_codes(current_user: User = Depends(require_role(UserR
                             detail="No active discount codes were found.")
     logger.info("Admin ID %i retrieved all active discount codes",
                 current_user.id)
+    for discount_code in results:
+        locations = discount_code_model.get_all_locations_by_code(discount_code["code"])
+        discount_code["locations"] = locations
     return {
         "message": retrieved_succesfully_message,
         "discount_code": results}
@@ -101,6 +123,8 @@ async def get_discord_code_by_code(code: str, current_user: User = Depends(requi
                             detail="No discount code was found.")
     logger.info("Admin ID %i retrieved data for discount code %i",
                 current_user.id, code)
+    locations = discount_code_model.get_all_locations_by_code(code)
+    discount_code["locations"] = locations
     return {
         "message": retrieved_succesfully_message,
         "discount_code": discount_code}
@@ -129,6 +153,8 @@ async def deactive_discount_code(code: str, current_user: User = Depends(require
                             detail="Update was unsuccesful")
     logger.info("Admin ID %i deactived discount code %i",
                 current_user.id, code)
+    locations = discount_code_model.get_all_locations_by_code(code)
+    discount_code["locations"] = locations
     return {
         "message": "Discount code deactivated successfully",
         "discount_code": deactivated}

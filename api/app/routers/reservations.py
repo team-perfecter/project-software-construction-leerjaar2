@@ -83,7 +83,7 @@ async def create_reservation(reservation: ReservationCreate, current_user: User 
                      current_user.id, reservation.discount_code)
         raise HTTPException(status_code=404,
                             detail="No discount code was found.")
-    discount_code_validation(discount_code, reservation, current_user)
+    discount_code_validation(discount_code, reservation, current_user, parking_lot)
     cost = calculate_price(parking_lot, reservation, discount_code)
     
     

@@ -119,7 +119,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "code": "test5",
+  "code": "test5544",
   "discount_type": "fixed",
   "discount_value": 1.555,
   "use_amount": 5,
@@ -135,10 +135,10 @@ Authorization: Bearer {{token}}
 GET http://localhost:8000/discount-codes/active
 Authorization: Bearer {{token}}
 ###
-GET http://localhost:8000/discount-codes/test
+GET http://localhost:8000/discount-codes/test5544
 Authorization: Bearer {{token}}
 ###
-POST http://localhost:8000/discount-codes/1/deactivate
+POST http://localhost:8000/discount-codes/test5544/deactivate
 Content-Type: application/json
 Authorization: Bearer {{token}}
 

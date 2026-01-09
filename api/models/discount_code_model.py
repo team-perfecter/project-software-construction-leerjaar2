@@ -78,6 +78,15 @@ class DiscountCodeModel:
                 columns = [desc[0] for desc in cursor.description]
                 return dict(zip(columns, row))
             return None
+    
+
+    def get_all_locations_by_code(self, code):
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            SELECT location FROM discount_code_locations WHERE discount_code = %s;
+                    """, (code,))
+        rows = cursor.fetchall()
+        return [row[0] for row in rows] if rows else []
 
 
     def deactive_discount_code(self, code):
