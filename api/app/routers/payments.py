@@ -25,11 +25,11 @@ async def create_payment(p: PaymentCreate,
                           UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
     created = PaymentModel.create_payment(p)
     if not created:
-        logging.info("Admin ID %i tried to create a payment, but failed",
+        logging.info("Admin ID %s tried to create a payment, but failed",
                      current_user.id)
         raise HTTPException(status_code=500,
                             detail="Failed to create payment")
-    logging.info("Admin ID %i created new payment for user_id %i",
+    logging.info("Admin ID %s created new payment for user_id %s",
                  current_user.id, p.user_id)
     return {"message": "Payment created successfully"}
 
@@ -38,12 +38,12 @@ async def create_payment(p: PaymentCreate,
 async def get_my_payments(current_user: User = Depends(get_current_user)):
     payments_list = PaymentModel.get_payments_by_user(current_user.id)
     if not payments_list:
-        logging.info("User ID %i tried retrieving their own payments, "
+        logging.info("User ID %s tried retrieving their own payments, "
                      "but none were found",
                      current_user.id)
         raise HTTPException(status_code=404,
                             detail="No payments not found")
-    logging.info("User ID %i retrieved their own payments",
+    logging.info("User ID %s retrieved their own payments",
                  current_user.id)
     return payments_list
 
@@ -52,10 +52,10 @@ async def get_my_payments(current_user: User = Depends(get_current_user)):
 async def get_my_open_payments(current_user: User = Depends(get_current_user)):
     payments_list = PaymentModel.get_open_payments_by_user(current_user.id)
     if not payments_list:
-        logging.info("User ID %i tried retrieving their own payments"
+        logging.info("User ID %s tried retrieving their own payments"
                      ", but none were found", current_user.id)
         raise HTTPException(status_code=404, detail="No payments not found")
-    logging.info("User ID %i retrieved their own payments",
+    logging.info("User ID %s retrieved their own payments",
                  current_user.id)
     return payments_list
 
@@ -66,16 +66,16 @@ async def get_payments_by_user(user_id: int,
                                 UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
     user = user_model.get_user_by_id(user_id)
     if not user:
-        logging.info("Admin ID %i tried searching for nonexistent User ID %i",
+        logging.info("Admin ID %s tried searching for nonexistent User ID %s",
                      current_user.id, user_id)
         raise HTTPException(status_code=404, detail="No user not found")
     payments_list = PaymentModel.get_payments_by_user(user_id)
     if not payments_list:
-        logging.info("Admin ID %i tried retrieving payments from User ID %i, "
+        logging.info("Admin ID %s tried retrieving payments from User ID %s, "
                      "but none were found",
                      current_user.id, user_id)
         raise HTTPException(status_code=404, detail="No payments not found")
-    logging.info("Admin ID %i retrieved payments of User ID %i",
+    logging.info("Admin ID %s retrieved payments of User ID %s",
                  current_user.id, user_id)
     return payments_list
 
@@ -86,16 +86,16 @@ async def get_open_payments_by_user(user_id: int,
                                      UserRole.ADMIN, UserRole.SUPERADMIN))):
     user = user_model.get_user_by_id(user_id)
     if not user:
-        logging.info("Admin ID %i tried searching for nonexistent User ID %i",
+        logging.info("Admin ID %s tried searching for nonexistent User ID %s",
                      current_user.id, user_id)
         raise HTTPException(status_code=404, detail="No user not found")
     payments_list = PaymentModel.get_open_payments_by_user(user_id)
     if not payments_list:
-        logging.info("Admin ID %i tried retrieving payments from User ID %i, "
+        logging.info("Admin ID %s tried retrieving payments from User ID %s, "
                      "but none were found", current_user.id, user_id)
         raise HTTPException(status_code=404,
                             detail="No payments not found")
-    logging.info("Admin ID %i retrieved payments of User ID %i",
+    logging.info("Admin ID %s retrieved payments of User ID %s",
                  current_user.id, user_id)
     return payments_list
 
@@ -105,30 +105,30 @@ async def pay_payment(payment_id: int,
                       current_user: User = Depends(get_current_user)):
     payment = PaymentModel.get_payment_by_payment_id(payment_id)
     if not payment:
-        logging.info("User ID %i searched for Payment ID %i, "
+        logging.info("User ID %s searched for Payment ID %s, "
                      "but nothing was found",
                      current_user.id, payment_id)
         raise HTTPException(status_code=404,
                             detail="Payment not found")
     if payment["user_id"] != current_user.id:
-        logging.info("User ID %i tried paying Payment ID %i, "
+        logging.info("User ID %s tried paying Payment ID %s, "
                      "but it does not belong to user",
                      current_user.id, payment_id)
         raise HTTPException(status_code=403,
                             detail="This payment does not belong to this user")
     if payment["completed"]:
-        logging.info("User ID %i tried paying for Payment ID %i, "
+        logging.info("User ID %s tried paying for Payment ID %s, "
                      "but payment was already completed",
                      current_user.id, payment_id)
         raise HTTPException(status_code=400,
                             detail="Payment has already been paid")
     update = PaymentModel.mark_payment_completed(payment_id)
     if not update:
-        logging.info("Payment ID %i payment failed by User ID %i",
+        logging.info("Payment ID %s payment failed by User ID %s",
                      payment_id, current_user.id)
         raise HTTPException(status_code=500,
                             detail="Payment has failed")
-    logging.info("Payment ID %i has succesfully been paid by User ID %i",
+    logging.info("Payment ID %s has succesfully been paid by User ID %s",
                  payment_id, current_user.id)
     return {"message": "Payment completed successfully"}
 
@@ -140,14 +140,14 @@ async def update_payment(payment_id: int,
                           UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
     payment = PaymentModel.get_payment_by_payment_id(payment_id)
     if not payment:
-        logging.info("Admin ID %i tried updating Payment ID %i, "
+        logging.info("Admin ID %s tried updating Payment ID %s, "
                      "but payment does not exist", current_user.id, payment_id)
         raise HTTPException(status_code=404,
                             detail="Payment not found")
     update_fields = p.dict(exclude_unset=True)
     update = PaymentModel.update_payment(payment_id, update_fields)
     if not update:
-        logging.info("Admin ID %i failed updating Payment ID %i",
+        logging.info("Admin ID %s failed updating Payment ID %s",
                      current_user.id, payment_id)
         raise HTTPException(status_code=500,
                             detail="Update has failed")
@@ -161,18 +161,18 @@ async def get_refund_requests(user_id: int | None = None,
     if user_id:
         user = user_model.get_user_by_id(user_id)
         if not user:
-            logging.info("Admin ID %i tried getting refunds from"
-                         "nonexistent User ID %i",
+            logging.info("Admin ID %s tried getting refunds from"
+                         "nonexistent User ID %s",
                          current_user.id, user_id)
             raise HTTPException(status_code=404,
                                 detail="User not found")
     refunds = PaymentModel.get_refund_requests(user_id)
     if not refunds:
-        logging.info("Admin ID %i tried getting refunds, "
+        logging.info("Admin ID %s tried getting refunds, "
                      "but none were found", current_user.id)
         raise HTTPException(status_code=404,
                             detail="No refunds found")
-    logging.info("Admin ID %i retrieved refunds",
+    logging.info("Admin ID %s retrieved refunds",
                  current_user.id)
     return refunds
 
@@ -185,7 +185,7 @@ async def request_refund(payment_id: int,
         raise HTTPException(status_code=404,
                             detail="Payment not found")
     if payment["user_id"] != current_user.id:
-        logging.info("User ID %i tried request refund for Payment ID %i, "
+        logging.info("User ID %s tried request refund for Payment ID %s, "
                      "but it does not belong to user",
                      current_user.id, payment_id)
         raise HTTPException(status_code=403,
@@ -209,11 +209,11 @@ async def get_payment_by_id(payment_id: int,
                              UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
     payment = PaymentModel.get_payment_by_payment_id(payment_id)
     if not payment:
-        logging.info("Admin ID %i tried to delete nonexistent Payment ID %i",
+        logging.info("Admin ID %s tried to delete nonexistent Payment ID %s",
                      current_user.id, payment_id)
         raise HTTPException(status_code=404,
                             detail="Payment not found")
-    logging.info("Admin ID %i retrieved Payment ID %i",
+    logging.info("Admin ID %s retrieved Payment ID %s",
                  current_user.id, payment_id)
     return payment
 
@@ -224,15 +224,15 @@ async def delete_payment(payment_id: int,
                           UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
     payment = PaymentModel.get_payment_by_payment_id(payment_id)
     if not payment:
-        logging.info("Admin ID %i tried to delete nonexistent Payment ID %i",
+        logging.info("Admin ID %s tried to delete nonexistent Payment ID %s",
                      current_user.id, payment_id)
         raise HTTPException(status_code=404, detail="Payment not found")
     delete = PaymentModel.delete_payment(payment_id)
     if not delete:
-        logging.info("Admin ID %i tried to delete Payment ID %i, but failed",
+        logging.info("Admin ID %s tried to delete Payment ID %s, but failed",
                      current_user.id, payment_id)
         raise HTTPException(status_code=500, detail="Deletion has failed")
-    logging.info("Admin ID %i deleted Payment ID %i",
+    logging.info("Admin ID %s deleted Payment ID %s",
                  current_user.id, payment_id)
     return {"message": "Payment deleted successfully"}
 

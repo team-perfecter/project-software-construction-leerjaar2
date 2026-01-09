@@ -15,21 +15,27 @@ class DiscountCodeModel:
 
     def create_discount_code(self, d: DiscountCodeCreate):
         cursor = self.connection.cursor()
-        cursor.execute("""
-            INSERT INTO discount_codes
-            (code, discount_type, discount_value, use_amount, end_date)
-            VALUES (%s, %s, %s, %s, %s)
-            RETURNING *;
-        """,
-                        (d.code, d.discount_type, d.discount_value, d.use_amount, d.end_date))
-        row = cursor.fetchone()
-
-        self.add_discount_code_locations(d.code, d.locations or [])
-
-        if row:
-            columns = [desc[0] for desc in cursor.description]
-            return dict(zip(columns, row))
-        return None
+        try:
+            cursor.execute("""
+                INSERT INTO discount_codes
+                (code, discount_type, discount_value, use_amount, minimum_price, 
+                start_applicable_time, end_applicable_time, start_date, end_date)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING *;
+            """,
+                (d.code, d.discount_type, d.discount_value, d.use_amount, d.minimum_price,
+                d.start_applicable_time, d.end_applicable_time, d.start_date, d.end_date))
+            row = cursor.fetchone()
+            self.add_discount_code_locations(d.code, d.locations or [])
+            if row:
+                columns = [desc[0] for desc in cursor.description]
+                self.connection.commit()
+                return dict(zip(columns, row))
+            self.connection.commit()
+            return None
+        except Exception as e:
+            self.connection.rollback()
+            raise
 
 
     def add_discount_code_locations(self, discount_code: str, locations: list[str]):
@@ -108,8 +114,8 @@ class DiscountCodeModel:
     def delete_discount_code(self, code):
         cursor = self.connection.cursor()
         cursor.execute("""
-            DELETE discount_codes
-            WHERE code = %i
+            DELETE FROM discount_codes
+            WHERE code = %s
             RETURNING *;
         """, (code,))
         row = cursor.fetchone()
@@ -128,16 +134,19 @@ class DiscountCodeModel:
 
             set_clauses = ", ".join(f"{key} = %s" for key in update_data.keys())
             values = list(update_data.values()) + [code]
-
-            cursor.execute(f"""
-                UPDATE discount_codes
-                SET {set_clauses}
-                WHERE code = %s
-                RETURNING id;
-            """, values)
-            updated = cursor.fetchone()
-            self.connection.commit()
-            return updated is not None
+            try:
+                cursor.execute(f"""
+                    UPDATE discount_codes
+                    SET {set_clauses}
+                    WHERE code = %s
+                    RETURNING id;
+                """, values)
+                updated = cursor.fetchone()
+                self.connection.commit()
+                return updated is not None
+            except Exception as e:
+                self.connection.rollback()
+                raise
 
 
     def increment_used_count(self, id):

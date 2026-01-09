@@ -27,10 +27,10 @@ def get_lot_if_exists(lid: int):
     """
     parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
     if parking_lot:
-        logger.info("Successfully retrieved parking lot with id %i", lid)
+        logger.info("Successfully retrieved parking lot with id %s", lid)
         return parking_lot
 
-    logger.warning("Parking lot with id %i does not exist", lid)
+    logger.warning("Parking lot with id %s does not exist", lid)
     raise HTTPException(
         status_code=404,
         detail={
@@ -54,16 +54,16 @@ async def create_parking_lot(
     @return: parking_lot
     """
     # logger.info(
-    #     "User with id %i attempting to create a new parking lot", current_user.id
+    #     "User with id %s attempting to create a new parking lot", current_user.id
     # )
 
     logger.debug("Generating new ID for parking lot")
     parking_lots = parking_lot_model.get_all_parking_lots()
     new_id = max([lot.id for lot in parking_lots], default=0) + 1
-    logger.debug("Generated new parking lot ID: %i", new_id)
+    logger.debug("Generated new parking lot ID: %s", new_id)
 
     logger.debug(
-        "Creating parking lot object with data: name='%s', location='%s', capacity=%i",
+        "Creating parking lot object with data: name='%s', location='%s', capacity=%s",
         parking_lot_data.name,
         parking_lot_data.location,
         parking_lot_data.capacity,
@@ -87,7 +87,7 @@ async def create_parking_lot(
     )
 
     logger.info(
-        "Creating parking lot with id %i and name '%s' at location '%s'",
+        "Creating parking lot with id %s and name '%s' at location '%s'",
         new_id,
         parking_lot.name,
         parking_lot.location,
@@ -95,7 +95,7 @@ async def create_parking_lot(
 
     try:
         parking_lot_model.create_parking_lot(parking_lot)
-        logger.info("Successfully created parking lot with id %i in database", new_id)
+        logger.info("Successfully created parking lot with id %s in database", new_id)
 
     except Exception as e:
         logger.error("Failed to create parking lot in database: %s", str(e))
@@ -122,7 +122,7 @@ async def get_all_parking_lots():
     """
     logger.info("Retrieving all parking lots")
     parking_lots = parking_lot_model.get_all_parking_lots()
-    logging.info("Successfully retrieved %i parking lots", len(parking_lots))
+    logging.info("Successfully retrieved %s parking lots", len(parking_lots))
     return parking_lots
 
 
@@ -148,14 +148,14 @@ async def get_all_sessions_by_lid(
     @param: lid
     @return: all sessions of a speccific parking lot
     """
-    logger.info("A superadmin is trying to retrieve all sessions of parking lot %i", lid)
+    logger.info("A superadmin is trying to retrieve all sessions of parking lot %s", lid)
 
     _ = get_lot_if_exists(lid)
 
-    logger.info("A superadmin retrieved all sessions for parking lot %i", lid)
+    logger.info("A superadmin retrieved all sessions for parking lot %s", lid)
     sessions = parking_lot_model.get_all_sessions_by_lid(lid)
     logger.info(
-        "Successfully retrieved %i sessions for parking lot %i",
+        "Successfully retrieved %s sessions for parking lot %s",
         len(sessions),
         lid,
     )
@@ -174,19 +174,19 @@ async def get_session_by_lid_and_sid(
     @param: sid
     @return: a single session of a specfic parking lot
     """
-    logger.info("A superadmin is trying to receive session %i from parking lot %i", sid, lid)
+    logger.info("A superadmin is trying to receive session %s from parking lot %s", sid, lid)
 
     _ = get_lot_if_exists(lid)
 
-    logger.info("Retrieving session %i for parking lot %i", sid, lid)
+    logger.info("Retrieving session %s for parking lot %s", sid, lid)
     session = parking_lot_model.get_session_by_lid_and_sid(lid, sid)
     if session:
         logger.info(
-            "Successfully retrieved session %i for parking lot %i", sid, lid
+            "Successfully retrieved session %s for parking lot %s", sid, lid
         )
         return session
 
-    logger.warning("Session %i does not exist for parking lot %i", sid, lid)
+    logger.warning("Session %s does not exist for parking lot %s", sid, lid)
     raise HTTPException(
         status_code=404,
         detail={
@@ -232,7 +232,7 @@ async def get_parking_lots_by_location(
         )
 
     logger.info(
-        "Successfully retrieved %i parking lots in location: %s",
+        "Successfully retrieved %s parking lots in location: %s",
         len(parking_lots),
         location,
     )
@@ -259,28 +259,28 @@ async def update_parking_lot(
     @param: updated_lot
     """
     logger.info(
-        "Superadmin %i attempting to update parking lot %i",
+        "Superadmin %s attempting to update parking lot %s",
         current_user.id,
         lid,
     )
 
-    logger.debug("Checking if parking lot %i exists", lid)
+    logger.debug("Checking if parking lot %s exists", lid)
     parking_lot = get_lot_if_exists(lid)
 
     if parking_lot.capacity != updated_lot.capacity:
         logger.info(
-            "Updating parking lot '%s' (capacity: %i -> %i)",
+            "Updating parking lot '%s' (capacity: %s -> %s)",
             parking_lot.name,
             parking_lot.capacity,
             updated_lot.capacity,
         )
-    logger.debug("Attempting database update for parking lot %i", lid)
+    logger.debug("Attempting database update for parking lot %s", lid)
 
     try:
         success = parking_lot_model.update_parking_lot(lid, updated_lot)
         if not success:
             logger.error(
-                "Database update failed for parking lot %i - no rows affected", lid
+                "Database update failed for parking lot %s - no rows affected", lid
             )
             raise HTTPException(
                 status_code=500,
@@ -291,7 +291,7 @@ async def update_parking_lot(
                 },
             )
 
-        logger.info("Successfully updated parking lot with id %i", lid)
+        logger.info("Successfully updated parking lot with id %s", lid)
         return {
             "message": "Parking lot updated successfully",
             "parking_lot_id": lid,
@@ -299,7 +299,7 @@ async def update_parking_lot(
         }
 
     except Exception as e:
-        logger.error("Exception during parking lot %i update: %s", lid, str(e))
+        logger.error("Exception during parking lot %s update: %s", lid, str(e))
         raise HTTPException(status_code=500, detail="Database error occurred")
 
 
@@ -321,7 +321,7 @@ async def update_parking_lot_status(
     @param: closed_date
     """
     logger.info(
-        "Superadmin %i attempting to update status of parking lot %i to '%s'",
+        "Superadmin %s attempting to update status of parking lot %s to '%s'",
         current_user.id,
         lid,
         lot_status,
@@ -331,7 +331,7 @@ async def update_parking_lot_status(
 
     valid_statuses = ["open", "closed", "deleted", "maintenance", "full"]
     if lot_status not in valid_statuses:
-        logger.warning("Invalid status '%s' provided for parking lot %i", lot_status, lid)
+        logger.warning("Invalid status '%s' provided for parking lot %s", lot_status, lid)
         raise HTTPException(
             status_code=400,
             detail={
@@ -344,7 +344,7 @@ async def update_parking_lot_status(
     if lot_status == "closed":
         if not closed_reason:
             logger.warning(
-                "Closed reason required when setting status to closed for parking lot %i",
+                "Closed reason required when setting status to closed for parking lot %s",
                 lid,
             )
             raise HTTPException(
@@ -365,7 +365,7 @@ async def update_parking_lot_status(
 
     success = parking_lot_model.update_parking_lot(lid, updated_lot)
     if not success:
-        logger.error("Failed to update status for parking lot %i", lid)
+        logger.error("Failed to update status for parking lot %s", lid)
         raise HTTPException(
             status_code=500,
             detail={
@@ -375,7 +375,7 @@ async def update_parking_lot_status(
             },
         )
 
-    logger.info("Successfully updated parking lot %i status to '%s'", lid, lot_status)
+    logger.info("Successfully updated parking lot %s status to '%s'", lid, lot_status)
     return {
         "message": "Parking lot status updated successfully",
         "parking_lot_id": lid,
@@ -407,7 +407,7 @@ def update_parking_lot_reserved_count(lid: int, action: str) -> bool:
         return parking_lot_model.update_parking_lot_reserved(lid, parking_lot.reserved)
     except Exception as e:
         logger.error(
-            "Failed to update reserved count for parking lot %i: %s", lid, str(e)
+            "Failed to update reserved count for parking lot %s: %s", lid, str(e)
         )
         return False
 
@@ -426,23 +426,23 @@ def update_parking_lot_reserved_count(lid: int, action: str) -> bool:
 #     @param: lid
 #     """
 #     # logging.info(
-#     #     "User with id %i attempting to delete parking lot with id %i",
+#     #     "User with id %s attempting to delete parking lot with id %s",
 #     #     current_user.id,
 #     #     lid,
 #     # )
 
 #     # Check if parking lot exists
-#     logging.debug("Checking if parking lot %i exists", lid)
+#     logging.debug("Checking if parking lot %s exists", lid)
 #     _ = get_lot_if_exists(lid)
 
 #     # Check if parking lot has active sessions
-#     logging.debug("Checking for active sessions in parking lot %i", lid)
+#     logging.debug("Checking for active sessions in parking lot %s", lid)
 #     sessions = parking_lot_model.get_all_sessions_by_lid(lid)
 #     active_sessions = [s for s in sessions if s.stopped is None]
 
 #     if active_sessions:
 #         logging.warning(
-#             "Cannot delete parking lot with id %i - has %i active sessions",
+#             "Cannot delete parking lot with id %s - has %s active sessions",
 #             lid,
 #             len(active_sessions),
 #         )
@@ -456,15 +456,15 @@ def update_parking_lot_reserved_count(lid: int, action: str) -> bool:
 #         )
 
 #     logging.info(
-#         "No active sessions found, proceeding with deletion of parking lot %i", lid
+#         "No active sessions found, proceeding with deletion of parking lot %s", lid
 #     )
 
 #     # Delete the parking lot
-#     logging.debug("Attempting to delete parking lot %i from database", lid)
+#     logging.debug("Attempting to delete parking lot %s from database", lid)
 #     success = parking_lot_model.delete_parking_lot(lid)
 
 #     if not success:
-#         logging.error("Failed to delete parking lot with id %i from database", lid)
+#         logging.error("Failed to delete parking lot with id %s from database", lid)
 #         raise HTTPException(
 #             status_code=500,
 #             detail={
@@ -474,7 +474,7 @@ def update_parking_lot_reserved_count(lid: int, action: str) -> bool:
 #             },
 #         )
 
-#     logging.info("Successfully deleted parking lot with id %i", lid)
+#     logging.info("Successfully deleted parking lot with id %s", lid)
 #     return {
 #         "message": "Parking lot deleted successfully",
 #         "parking_lot_id": lid,

@@ -244,37 +244,50 @@ def get_last_payment_id(client_with_token):
     data = response.json()
     return data[-1]["id"]
 
+
 @pytest.fixture(autouse=True)
 def setup_discount_codes(request, client_with_token):
     user_model = UserModel()
 
     client, headers = client_with_token("superadmin")
 
-    # Get superadmin
     user = user_model.get_user_by_username("superadmin")
     if not user:
         raise Exception("Superadmin must exist in the DB for benchmarks")
-
-    # Delete all existing payments for superadmin
+    
     response = client.get("/discount-codes", headers=headers)
     if response.status_code == 200:
-        for discount_code in response.json():
-            client.delete(f"/payments/{discount_code['code']}", headers=headers)
+        codes = response.json().get("discount_code", [])
+        for discount_code in codes:
+            client.delete(f"/discount-codes/{discount_code['code']}", headers=headers)
 
-    # Seed 5 payments if not testing creation endpoints
-    if "create" not in request.node.fspath.basename:
-        for i in range(5):
-            payment = {
-                "user_id": user.id,
-                "transaction": f"transaction{i+1}",
-                "amount": 100 + i,
-                "hash": f"hash{i+1}",
-                "method": f"method{i+1}",
-                "issuer": f"issuer{i+1}",
-                "bank": f"bank{i+1}"
-            }
-            client.post("/payments", json=payment, headers=headers)
+    code1 = {
+        "code": "test1",
+        "discount_type": "percentage",
+        "discount_value": 5,
+    }
+    code2 = {
+        "code": "test2",
+        "user_id": 1,
+        "discount_type": "fixed",
+        "discount_value": 5,
+        "use_amount": 5,
+        "minimum_price": 5,
+        "start_applicable_time": "00:01:00",
+        "end_applicable_time": "23:59:00",
+        "start_date": "2025-01-01",
+        "end_date": "2027-01-01",
+        "locations": ["Rotterdam", "Schiedam"]
+    }
+    client.post("/discount-codes", json=code1, headers=headers)
+    client.post("/discount-codes", json=code2, headers=headers)
 
 
-
-
+def get_last_discount_code(client_with_token):
+    client, headers = client_with_token("superadmin")
+    response = client.get("/discount-codes", headers=headers)
+    data = response.json()
+    codes = data.get("discount_code", [])
+    if codes:
+        return codes[-1]["code"]
+    return None 
