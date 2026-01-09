@@ -158,3 +158,22 @@ async def deactive_discount_code(code: str, current_user: User = Depends(require
     return {
         "message": "Discount code deactivated successfully",
         "discount_code": deactivated}
+
+
+@router.delete("/discount-codes/{code}")
+async def delete_payment(code: str,
+                         current_user: User = Depends(require_role(
+                          UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
+    discount_code = discount_code_model.get_discount_code_by_code(code)
+    if not discount_code:
+        logging.info("Admin ID %i tried to delete nonexistent discount code %i",
+                     current_user.id, code)
+        raise HTTPException(status_code=404, detail="Payment not found")
+    delete = discount_code_model.delete_discount_code(code)
+    if not delete:
+        logging.info("Admin ID %i tried to delete discount code %i, but failed",
+                     current_user.id, code)
+        raise HTTPException(status_code=500, detail="Deletion has failed")
+    logging.info("Admin ID %i deleted discount code ID %i",
+                 current_user.id, code)
+    return {"message": "discount code deleted successfully"}

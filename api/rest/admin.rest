@@ -120,9 +120,13 @@ Authorization: Bearer {{token}}
 
 {
   "code": "test5544",
+  "user_id": 1,
   "discount_type": "fixed",
   "discount_value": 1.555,
   "use_amount": 5,
+  "start_applicable_time":
+  "end_applicable_time":
+
   "end_date": "2027-01-01",
   "locations": ["Rotterdam", "Schiedam"]
 }

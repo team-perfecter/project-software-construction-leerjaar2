@@ -104,7 +104,23 @@ class DiscountCodeModel:
             return dict(zip(columns, row))
         return None
     
+
+    def delete_discount_code(self, code):
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            DELETE discount_codes
+            WHERE code = %i
+            RETURNING *;
+        """, (code,))
+        row = cursor.fetchone()
+        self.connection.commit()
+        if row:
+            columns = [desc[0] for desc in cursor.description]
+            return dict(zip(columns, row))
+        return None
+
     
+
     def increment_used_count(self, id):
         cursor = self.connection.cursor()
         cursor.execute("""

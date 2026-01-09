@@ -77,6 +77,15 @@ def setup_vehicles(request, client_with_token):
         }
         client.post("/vehicles/create", json=vehicle, headers=headers)
 
+def get_last_vid(client_with_token):
+    """
+    Returns the ID of the last vehicle in the database.
+    Creates a vehicle if none exists.
+    """
+    client, headers = client_with_token("superadmin")
+    response = client.get("/vehicles", headers=headers)
+    data = response.json()
+    return data[-1]["id"]
 
 @pytest.fixture(autouse=True)
 def setup_users(request, client_with_token):
@@ -130,6 +139,15 @@ def setup_users(request, client_with_token):
         client.post("/create_user", json=user3, headers=headers)
         client.post("/create_user", json=user4, headers=headers)
         client.post("/create_user", json=user5, headers=headers)
+
+def get_last_uid(client_with_token):
+    """
+    Returns the id of the last user.
+    """
+    client, headers = client_with_token("superadmin")
+    response = client.get("/users/", headers=headers)
+    data = response.json()
+    return data[-1]["id"]
 
 @pytest.fixture(autouse=True)
 def setup_parking_lots(request, client_with_token):
@@ -226,22 +244,37 @@ def get_last_payment_id(client_with_token):
     data = response.json()
     return data[-1]["id"]
 
+@pytest.fixture(autouse=True)
+def setup_discount_codes(request, client_with_token):
+    user_model = UserModel()
 
-def get_last_uid(client_with_token):
-    """
-    Returns the id of the last user.
-    """
     client, headers = client_with_token("superadmin")
-    response = client.get("/users/", headers=headers)
-    data = response.json()
-    return data[-1]["id"]
 
-def get_last_vid(client_with_token):
-    """
-    Returns the ID of the last vehicle in the database.
-    Creates a vehicle if none exists.
-    """
-    client, headers = client_with_token("superadmin")
-    response = client.get("/vehicles", headers=headers)
-    data = response.json()
-    return data[-1]["id"]
+    # Get superadmin
+    user = user_model.get_user_by_username("superadmin")
+    if not user:
+        raise Exception("Superadmin must exist in the DB for benchmarks")
+
+    # Delete all existing payments for superadmin
+    response = client.get("/discount-codes", headers=headers)
+    if response.status_code == 200:
+        for discount_code in response.json():
+            client.delete(f"/payments/{discount_code['code']}", headers=headers)
+
+    # Seed 5 payments if not testing creation endpoints
+    if "create" not in request.node.fspath.basename:
+        for i in range(5):
+            payment = {
+                "user_id": user.id,
+                "transaction": f"transaction{i+1}",
+                "amount": 100 + i,
+                "hash": f"hash{i+1}",
+                "method": f"method{i+1}",
+                "issuer": f"issuer{i+1}",
+                "bank": f"bank{i+1}"
+            }
+            client.post("/payments", json=payment, headers=headers)
+
+
+
+
