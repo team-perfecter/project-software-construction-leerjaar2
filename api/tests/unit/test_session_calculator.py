@@ -14,8 +14,8 @@ class MockParkingLot:
 
 class MockSession:
     def __init__(self, started, stopped=None):
-        self.started = started
-        self.stopped = stopped
+        self.start_time = started
+        self.end_time = stopped
 
 
 def test_calculate_price_short_session_free():
