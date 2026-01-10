@@ -38,7 +38,7 @@ async def vehicles(user: User = Depends(get_current_user)):
 @router.get("/vehicles/{vehicle_id}")
 async def vehicles(
     vehicle_id: int,
-    user: User = require_role(UserRole.ADMIN, UserRole.SUPERADMIN),
+    user: User = require_role(UserRole.LOTADMIN, UserRole.SUPERADMIN),
 ):
     logger.info("An admin tried to retrieve information about vehicle %i", vehicle_id)
     # Get user vehicle
@@ -58,7 +58,7 @@ async def vehicles(
 @router.get("/vehicles/user/{user_id}")
 async def vehicles_user(
     user_id: int,
-    user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPERADMIN)),
+    user: User = Depends(require_role(UserRole.LOTADMIN, UserRole.SUPERADMIN)),
 ):
     logger.info("An admin tried to retrieve all vehicles of user %i", user_id)
     # Check if user exists

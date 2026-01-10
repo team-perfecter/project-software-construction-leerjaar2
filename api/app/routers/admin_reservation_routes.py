@@ -21,7 +21,7 @@ parking_lot_model = ParkingLotModel()
 @router.post("/admin/reservations")
 async def admin_create_reservation(
         reservation: ReservationCreate,
-        current_user = require_role(UserRole.ADMIN, UserRole.SUPERADMIN)
+        current_user = require_role(UserRole.LOTADMIN, UserRole.SUPERADMIN)
 ):
     # Check of user bestaat.
     user = user_model.get_user_by_id(reservation.user_id)
@@ -52,7 +52,7 @@ async def admin_create_reservation(
 @router.delete("/admin/reservations/{reservation_id}")
 async def admin_delete_reservation(
         reservation_id: int,
-        current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.SUPERADMIN))
+        current_user: User = Depends(require_role(UserRole.LOTADMIN, UserRole.SUPERADMIN))
 ):
     # Check of de reservatie bestaat
     reservation = reservation_model.get_reservation_by_id(reservation_id)

@@ -95,11 +95,11 @@ def setup_users(request, client_with_token):
                 client.delete(f"/users/{user['id']}", headers=headers)
 
         user2 = {
-            "username": "admin",
+            "username": "lotadmin",
             "password": "admin123",
             "email": "bla@bla.com",
-            "name": "admin",
-            "role": "admin"
+            "name": "lotadmin",
+            "role": "lotadmin"
         }    
     
         user3 = {

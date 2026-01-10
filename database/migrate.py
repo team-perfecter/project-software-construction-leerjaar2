@@ -163,13 +163,13 @@ if not exists:
 
         cur.execute("""
             INSERT INTO users (username, password, name, email, role)
-            VALUES ('admin', %s, 'Admin', 'admin@admin.com', 'admin');
+            VALUES ('lotadmin', %s, 'LotAdmin', 'admin@admin.com', 'lotadmin');
         """, (hashed_pw,))
 
         conn.commit()
         cur.execute("""
             INSERT INTO users (username, password, name, email, role)
-            VALUES ('paymentadmin', %s, 'testuser',
+            VALUES ('paymentadmin', %s, 'paymentadmin',
                     'payment@admin.com', 'paymentadmin');
         """, (hashed_pw,))
 

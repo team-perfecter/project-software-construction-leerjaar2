@@ -54,7 +54,7 @@ async def login(data: UserLogin):
 
 
 @router.get("/get_user/{user_id}")
-async def get_user(user_id: int, current_user: User = Depends(require_role(UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.PAYMENTADMIN))):
+async def get_user(user_id: int, current_user: User = Depends(require_role(UserRole.SUPERADMIN, UserRole.LOTADMIN, UserRole.PAYMENTADMIN))):
     logger.info("Admin %i is trying to access the information of user %i", current_user.id, user_id)
     user: User = user_model.get_user_by_id(user_id)
     if user is None:
@@ -64,7 +64,7 @@ async def get_user(user_id: int, current_user: User = Depends(require_role(UserR
 
 
 @router.get("/users")
-async def admin_get_all_users(current_user: User = Depends(require_role(UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.PAYMENTADMIN))):
+async def admin_get_all_users(current_user: User = Depends(require_role(UserRole.SUPERADMIN, UserRole.LOTADMIN, UserRole.PAYMENTADMIN))):
     logger.info("Admin %i tried to receive data of all users", current_user.id)
     users = user_model.get_all_users()
     return users

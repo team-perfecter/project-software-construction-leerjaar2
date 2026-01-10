@@ -229,7 +229,7 @@ def test_request_refund_already_requested(client_with_token):
 
 def test_request_refund_not_own_payment(client_with_token):
     payment_id = get_last_payment_id(client_with_token)
-    client, headers = client_with_token("admin")
+    client, headers = client_with_token("lotadmin")
     response = client.post(f"payments/{payment_id}/request_refund",
                            json={}, headers=headers)
     assert response.status_code == 403

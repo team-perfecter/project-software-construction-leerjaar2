@@ -55,7 +55,7 @@ def test_get_my_payments(client_with_token):
 
 
 def test_get_my_payments_empty(client_with_token):
-    client, headers = client_with_token("admin")
+    client, headers = client_with_token("lotadmin")
     response = client.get("/payments/me", headers=headers)
     assert response.status_code == 404
 
@@ -73,7 +73,7 @@ def test_get_my_open_payments(client_with_token):
 
 
 def test_get_my_open_payments_empty(client_with_token):
-    client, headers = client_with_token("admin")
+    client, headers = client_with_token("lotadmin")
     response = client.get("/payments/me/open", headers=headers)
     assert response.status_code == 404
 

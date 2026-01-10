@@ -84,7 +84,7 @@ def user_can_manage_lot(user: User, lid: int, for_payments: bool) -> bool:
     if user.role == UserRole.PAYMENTADMIN and for_payments:
         return True
 
-    if user.role == UserRole.ADMIN:
+    if user.role == UserRole.LOTADMIN:
         assigned_lots = user_model.get_parking_lots_for_admin(user.id)
         return lid in assigned_lots
 
