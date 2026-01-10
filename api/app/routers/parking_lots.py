@@ -140,7 +140,7 @@ async def get_all_parking_lots():
     """
     logger.info("Retrieving all parking lots")
     parking_lots = parking_lot_model.get_all_parking_lots()
-    logging.info("Successfully retrieved %i parking lots", len(parking_lots))
+    logger.info("Successfully retrieved %i parking lots", len(parking_lots))
     return parking_lots
 
 
@@ -536,7 +536,7 @@ async def delete_parking_lot(
     active_sessions = [s for s in sessions if s.stopped is None]
 
     if active_sessions:
-        logging.warning(
+        logger.warning(
             "Cannot delete parking lot with id %i - has %i active sessions",
             lid,
             len(active_sessions),
@@ -552,11 +552,11 @@ async def delete_parking_lot(
         )
 
     # Delete the parking lot
-    logging.debug("Attempting to delete parking lot %i from database", lid)
+    logger.debug("Attempting to delete parking lot %i from database", lid)
     success = parking_lot_model.delete_parking_lot(lid)
 
     if not success:
-        logging.error("Failed to delete parking lot with id %i from database", lid)
+        logger.error("Failed to delete parking lot with id %i from database", lid)
         raise HTTPException(
             status_code=500,
             detail={
@@ -566,7 +566,7 @@ async def delete_parking_lot(
             },
         )
 
-    logging.info("Successfully deleted parking lot with id %i", lid)
+    logger.info("Successfully deleted parking lot with id %i", lid)
     return {
         "message": "Parking lot deleted successfully",
         "parking_lot_id": lid,

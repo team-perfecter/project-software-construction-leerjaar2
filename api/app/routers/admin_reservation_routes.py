@@ -13,7 +13,6 @@ from api.models.user_model import UserModel
 from api.models.vehicle_model import VehicleModel
 from api.models.parking_lot_model import ParkingLotModel
 
-import logging
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["admin-reservations"])
@@ -45,7 +44,7 @@ async def admin_create_reservation(
     user = user_model.get_user_by_id(reservation.user_id)
     if not user:
 
-        logging.info(
+        logger.info(
             "Failed to create reservation: User ID %i does not exist", 
             reservation.user_id
             )
@@ -54,7 +53,7 @@ async def admin_create_reservation(
     # Check of vehicle bestaat.
     vehicle =  vehicle_model.get_one_vehicle(reservation.vehicle_id)
     if not vehicle:
-        logging.info(
+        logger.info(
             "Failed to create reservation: Vehicle ID %i does not exist", 
             reservation.vehicle_id
             )
@@ -63,7 +62,7 @@ async def admin_create_reservation(
     # Check of parking lot bestaat.
     parking_lot = parking_lot_model.get_parking_lot_by_lid(reservation.parking_lot_id)
     if not parking_lot:
-        logging.info(
+        logger.info(
             "Failed to create reservation: Parking Lot ID %i does not exist", 
             reservation.parking_lot_id
             )

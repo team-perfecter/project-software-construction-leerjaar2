@@ -13,7 +13,9 @@ from api.models.reservation_model import ReservationModel
 from api.models.vehicle_model import VehicleModel
 from api.models.session_model import SessionModel
 from api.models.payment_model import PaymentModel
-from api.session_calculator import generate_payment_hash, generate_transaction_validation_hash, calculate_price
+from api.session_calculator import (generate_payment_hash,
+                                    generate_transaction_validation_hash,
+                                    calculate_price)
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +64,8 @@ async def vehicle_reservations(vehicle_id: int, user: User = Depends(get_current
     return reservation_list
 
 @router.post("/reservations/create")
-async def create_reservation(reservation: ReservationCreate, current_user: User = Depends(get_current_user)):
+async def create_reservation(reservation: ReservationCreate, 
+                             current_user: User = Depends(get_current_user)):
     """
     Create a new reservation for a vehicle at a specific parking lot.
 
@@ -126,7 +129,7 @@ async def create_reservation(reservation: ReservationCreate, current_user: User 
         reservation_id=reservation_id
     )
     payment_model.create_payment(payment)
-    #add error handling for payment 
+    #add error handling for payment
 
     return {"message": "Reservation created successfully"}
 
@@ -150,24 +153,30 @@ async def delete_reservation(reservation_id: int, current_user: User = Depends(g
     # Controleer of de reservatie bestaat
     reservation: Reservation | None = reservation_model.get_reservation_by_id(reservation_id)
     if reservation is None:
-        logging.warning("User with id %i tried to delete a reservation that does not exist: %i", current_user.id, reservation_id)
+        logger.warning("User with id %i tried to delete a reservation that does not exist: %i",
+                       current_user.id, reservation_id)
         raise HTTPException(status_code=404, detail={"message": "Reservation not found"})
 
     # Controleer of de reservatie toebehoort aan de ingelogde gebruiker
     if reservation.user_id != current_user.id:
-        logging.warning("User with id %i tried to delete a reservation that does not belong to them: %i", current_user.id, reservation_id)
-        raise HTTPException(status_code=403, detail={"message": "This reservation does not belong to the logged-in user"})
+        logger.warning(
+            "User with id %i tried to delete a reservation that does not belong to them: %i",
+                        current_user.id, reservation_id)
+        raise HTTPException(
+            status_code=403,
+            detail={"message": "This reservation does not belong to the logged-in user"}
+        )
 
     # Verwijder de reservatie
     success = reservation_model.delete_reservation(reservation_id)
     if not success:
-        logging.error(
+        logger.error(
             "Failed to delete reservation with id %i for user %i",
             reservation_id, current_user.id
             )
         raise HTTPException(status_code=500, detail={"message": "Failed to delete reservation"})
 
-    logging.info(
+    logger.info(
         "User with id %i successfully deleted reservation with id %i",
         current_user.id, reservation_id
         )

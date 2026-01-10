@@ -19,7 +19,11 @@ class SessionModel:
         """
         self.connection = get_connection()
 
-    def create_session(self, parking_lot_id: int, user_id: int, vehicle_id: int, reservation_id: int) -> Session | None:
+    def create_session(self,
+                        parking_lot_id: int,
+                        user_id: int,
+                        vehicle_id: int,
+                        reservation_id: int) -> Session | None:
         """
         Start a new parking session for a vehicle if it does not already have an active session.
 
@@ -151,8 +155,18 @@ class SessionModel:
         return session_list[0] if session_list else None
 
     def get_session_by_reservation_id(self, reservation_id: int) -> Session | None:
+        """
+        Retrieve all active sessions for a specific reservation.
+
+        Args:
+            reservation_id (int): The ID of the vehicle.
+
+        Returns:
+            list[dict]: A list of dictionaries representing each active session.
+        """
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM sessions WHERE reservation_id = %s AND stopped IS NULL;", (reservation_id,))
+        cursor.execute("SELECT * FROM sessions WHERE reservation_id = %s AND stopped IS NULL;",
+                       (reservation_id,))
         rows = cursor.fetchall()
 
         columns = [d[0] for d in cursor.description]

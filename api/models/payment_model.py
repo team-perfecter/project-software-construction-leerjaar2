@@ -4,7 +4,7 @@ This file contains all queries related to payments.
 
 import logging
 import psycopg2
-from api.datatypes.payment import PaymentCreate, PaymentUpdate
+from api.datatypes.payment import PaymentCreate
 from api.models.connection import get_connection
 from api.session_calculator import generate_transaction_validation_hash
 
@@ -45,7 +45,7 @@ class PaymentModel:
             cls.connection.commit()
             return created[0]
         except psycopg2.DatabaseError as e:
-            logger.error(f"DB Error: {e}")
+            logger.error("DB Error: %s", e)
             cls.connection.rollback()
             return False
 
@@ -225,6 +225,15 @@ class PaymentModel:
 
     @classmethod
     def get_payment_by_reservation_id(cls, reservation_id):
+        """
+        Retrieves a payment based on reservation id.
+
+        Args:
+            reservation_id (int): The ID of the reservation.
+
+        Returns:
+            dict | None: Payment data as a dictionary, or None if not found.
+        """
         cursor = cls.connection.cursor()
         cursor.execute("SELECT * FROM payments WHERE reservation_id = %s;", (reservation_id,))
         row = cursor.fetchone()
