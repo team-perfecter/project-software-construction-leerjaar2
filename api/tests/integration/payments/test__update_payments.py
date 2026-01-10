@@ -1,7 +1,6 @@
 from fastapi.testclient import TestClient
 from unittest.mock import patch
 from api.main import app
-import pytest
 from api.tests.conftest import get_last_payment_id, get_last_pid
 
 
@@ -49,7 +48,8 @@ def test_update_payment_no_fields(client_with_token):
     client, headers = client_with_token("superadmin")
     payment_id = get_last_payment_id(client_with_token)
     fake_payment = {}
-    response = client.put(f"/payments/{payment_id}", json=fake_payment, headers=headers)
+    response = client.put(f"/payments/{payment_id}", json=fake_payment,
+                          headers=headers)
     assert response.status_code == 500
 
 
@@ -111,7 +111,8 @@ def test_update_payment_no_authorization(client_with_token):
         "completed": False,
         "refund_requested": False
     }
-    response = client.put(f"/payments/{payment_id}", json=fake_payment, headers=headers)
+    response = client.put(f"/payments/{payment_id}", json=fake_payment,
+                          headers=headers)
     assert response.status_code == 403
 
 
@@ -222,8 +223,14 @@ def test_request_refund(client_with_token):
 def test_request_refund_already_requested(client_with_token):
     payment_id = get_last_payment_id(client_with_token)
     client, headers = client_with_token("superadmin")
+    client.post(f"/payments/{payment_id}/pay", json={}, headers=headers)
+    client.post(f"payments/{payment_id}/request_refund",
+                json={}, headers=headers)
+
+    client, headers = client_with_token("superadmin")
     response = client.post(f"payments/{payment_id}/request_refund",
                            json={}, headers=headers)
+
     assert response.status_code == 400
 
 
@@ -270,12 +277,25 @@ def test_give_refund(client_with_token):
     client, headers = client_with_token("superadmin")
     response = client.get(f"/payments/{payment_id}", headers=headers)
     assert response.status_code == 200
-
     assert response.json()["refund_accepted"] is True
     assert response.json()["admin_id"] is not None
 
 
-def test_give_refund(client_with_token):
+def test_give_refund_no_lot_access(client_with_token):
+    payment_id = get_last_payment_id(client_with_token)
+    client, headers = client_with_token("superadmin")
+    client.post(f"/payments/{payment_id}/pay", json={}, headers=headers)
+    response = client.post(f"payments/{payment_id}/give_refund",
+                           json={}, headers=headers)
+    assert response.status_code == 200
+
+    client, headers = client_with_token("lotadmin")
+    response = client.post(f"/payments/{payment_id}/give_refund",
+                           headers=headers)
+    assert response.status_code == 403
+
+
+def test_give_refund_not_paid_yet(client_with_token):
     payment_id = get_last_payment_id(client_with_token)
     client, headers = client_with_token("superadmin")
     response = client.post(f"payments/{payment_id}/give_refund",
@@ -289,6 +309,19 @@ def test_give_refund_not_found(client_with_token):
                            json={}, headers=headers)
     assert response.status_code == 404
 
+
+def test_give_refund_already_refunded(client_with_token):
+    payment_id = get_last_payment_id(client_with_token)
+    client, headers = client_with_token("superadmin")
+    client.post(f"/payments/{payment_id}/pay", json={}, headers=headers)
+    response = client.post(f"payments/{payment_id}/give_refund",
+                           json={}, headers=headers)
+    assert response.status_code == 200
+
+    client, headers = client_with_token("superadmin")
+    response = client.post(f"payments/{payment_id}/give_refund",
+                           json={}, headers=headers)
+    assert response.status_code == 400
 
 
 # GET payments/refunds
