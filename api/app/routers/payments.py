@@ -161,16 +161,6 @@ async def update_payment(
                             detail="Payment not found")
     if not user_can_manage_lot(current_user, payment["parking_lot_id"], for_payments=True):
         raise HTTPException(status_code=403, detail="Not enough permissions for this lot")
-    user = user_model.get_user_by_id(p.user_id)
-    if not user:
-        logger.warning("Admin ID %i tried creating a payment for nonexistent User ID %i",
-                     current_user.id, p.user_id)
-        raise HTTPException(status_code=404, detail="No user not found")
-    lot = parking_lot_model.get_parking_lot_by_lid(p.parking_lot_id)
-    if not lot:
-        logger.warning("Admin ID %i tried creating a payment for nonexistent Lot ID %i",
-                     current_user.id, p.parking_lot_id)
-        raise HTTPException(status_code=404, detail="No parking lot not found")
     update_fields = p.dict(exclude_unset=True)
     update = PaymentModel.update_payment(payment_id, update_fields)
     if not update:
