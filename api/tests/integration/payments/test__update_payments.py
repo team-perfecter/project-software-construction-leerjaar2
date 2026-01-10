@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch
 from api.main import app
 import pytest
-from api.tests.conftest import get_last_payment_id
+from api.tests.conftest import get_last_payment_id, get_last_pid
 
 
 client = TestClient(app)
@@ -93,7 +93,17 @@ def test_update_payment_nonexistent_payment(client_with_token):
 
 
 def test_update_payment_no_authorization(client_with_token):
+    client, headers = client_with_token("superadmin")
+    pid = get_last_pid(client)
+    fake_payment = {
+        "user_id": 1,
+        "parking_lot_id": pid,
+        "amount": 200,
+        "method": "method1"
+    }
+    client.post("/payments", json=fake_payment, headers=headers)
     client, headers = client_with_token("user")
+    payment_id = get_last_payment_id(client_with_token)
     fake_payment = {
         "user_id": 1,
         "amount": 200,
@@ -101,7 +111,7 @@ def test_update_payment_no_authorization(client_with_token):
         "completed": False,
         "refund_requested": False
     }
-    response = client.put("/payments/1", json=fake_payment, headers=headers)
+    response = client.put(f"/payments/{payment_id}", json=fake_payment, headers=headers)
     assert response.status_code == 403
 
 

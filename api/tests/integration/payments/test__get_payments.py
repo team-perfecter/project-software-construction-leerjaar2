@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 from api.main import app
-from api.tests.conftest import get_last_payment_id
+from api.tests.conftest import get_last_payment_id, get_last_pid
+
 
 client = TestClient(app)
 
@@ -15,6 +16,14 @@ def test_get_payment_by_id(client_with_token):
 
 def test_get_payment_by_id_no_auth(client_with_token):
     client, headers = client_with_token("superadmin")
+    pid = get_last_pid(client)
+    fake_payment = {
+        "user_id": 1,
+        "parking_lot_id": pid,
+        "amount": 200,
+        "method": "method1"
+    }
+    client.post("/payments", json=fake_payment, headers=headers)
     payment_id = get_last_payment_id(client_with_token)
     client, headers = client_with_token("user")
     response = client.get(f"/payments/{payment_id}", headers=headers)

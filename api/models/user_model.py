@@ -117,9 +117,8 @@ class UserModel:
         cursor = self.connection.cursor()
 
         cursor.execute("""
-            INSERT INTO admin_parking_lots (admin_id, lot_id)
-            VALUES (%s, %s)
-            ON CONFLICT DO NOTHING;
+            INSERT INTO parking_lot_admins (admin_user_id, parking_lot_id)
+            VALUES (%s, %s);
         """, (admin_id, lot_id))
         self.connection.commit()
 

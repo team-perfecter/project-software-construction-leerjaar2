@@ -162,7 +162,8 @@ async def update_payment(
 @router.get("/payments/refunds")
 async def get_refund_requests(
     user_id: int | None = None,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_role(
+        UserRole.SUPERADMIN, UserRole.PAYMENTADMIN))
 ):
     if user_id:
         user = user_model.get_user_by_id(user_id)

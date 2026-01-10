@@ -125,8 +125,8 @@ async def create_user(user: UserCreate, current_user: User = Depends(require_rol
     username_check = user_model.get_user_by_username(user.username)
     if username_check is not None:
         logger.info(
-            "A superadmin tried to create a profile, but the name was already created: %s", user.name)
-        raise HTTPException(status_code=409, detail="Name already taken")
+            "A superadmin tried to create a profile, but the username was already created: %s", user.username)
+        raise HTTPException(status_code=409, detail="Username already taken")
     hashed_password = hash_string(user.password)
     user.password = hashed_password
     user_model.create_user_with_role(user)
