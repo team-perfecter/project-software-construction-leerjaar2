@@ -154,3 +154,40 @@ def test_create_payment_wrong_data_type(client_with_token):
     }
     response = client.post("/payments", json=fake_payment, headers=headers)
     assert response.status_code == 422
+
+
+def test_create_payment_nonexistent_user(client_with_token):
+    client, headers = client_with_token("superadmin")
+    lot2 = {
+            "name": "Vlaardingen Evenementenhal Parkeerterrein",
+            "location": "Event Center",
+            "address": "Westlindepark 756, 8920 AB Vlaardingen",
+            "capacity": 50,
+            "tariff": 0.5,
+            "daytariff": 0.5,
+            "lat": 0,
+            "lng": 0
+        }
+
+    client.post("/parking-lots", json=lot2, headers=headers)
+    pid = get_last_pid(client)
+    fake_payment = {
+        "user_id": 53478653653753,
+        "parking_lot_id": pid,
+        "amount": 200,
+        "method": "method1"
+    }
+    response = client.post("/payments", json=fake_payment, headers=headers)
+    assert response.status_code == 404
+
+
+def test_create_payment_nonexistent_lot(client_with_token):
+    client, headers = client_with_token("superadmin")
+    fake_payment = {
+        "user_id": 1,
+        "parking_lot_id": 353453523687,
+        "amount": 200,
+        "method": "method1"
+    }
+    response = client.post("/payments", json=fake_payment, headers=headers)
+    assert response.status_code == 404
