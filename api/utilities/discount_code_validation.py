@@ -2,7 +2,7 @@ from api.models.discount_code_model import DiscountCodeModel
 from api.datatypes.reservation import ReservationCreate
 from api.datatypes.parking_lot import Parking_lot
 from api.datatypes.user import User
-from api.datatypes.discount_code import DiscountCodeCreate
+from api.datatypes.discount_code import DiscountCodeCreate, DiscountCodeUpdate
 from fastapi import HTTPException
 from datetime import datetime, date
 from typing import Dict, Any
@@ -66,7 +66,7 @@ def use_discount_code_validation(discount_code: Dict[str, Any], reservation: Res
                             detail="Failed to increment discount code's use count")
 
 
-def create_or_update_discount_code_validation(d: DiscountCodeCreate, current_user: User):
+def create_or_update_discount_code_validation(d: DiscountCodeCreate | DiscountCodeUpdate, current_user: User):
     if d.discount_type is not None and d.discount_type != "percentage" and d.discount_type != "fixed":
         logger.error("Admin ID %s tried to create a discount code, but entered invalid discount type %s",
                      current_user.id, d.discount_type)

@@ -150,7 +150,7 @@ CREATE TABLE IF NOT EXISTS payments (
 
 cur.execute("""
 CREATE TABLE IF NOT EXISTS parking_lot_admins (
-    admin_user_id INTEGER REFERENCES users(id),
+    admin_user_id INTEGER REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     parking_lot_id INTEGER REFERENCES parking_lots(id),
     PRIMARY KEY (admin_user_id, parking_lot_id)
 );
@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS parking_lot_admins (
 
 cur.execute("""
 CREATE TABLE IF NOT EXISTS discount_code_locations (
-    discount_code VARCHAR REFERENCES discount_codes(code) ON DELETE CASCADE,
+    discount_code VARCHAR REFERENCES discount_codes(code) ON DELETE CASCADE ON UPDATE CASCADE,
     location VARCHAR,
     PRIMARY KEY (discount_code, location)
 );

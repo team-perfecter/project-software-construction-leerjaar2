@@ -31,7 +31,7 @@ class DiscountCodeUpdate(BaseModel):
     minimum_price: Optional[float] = None
     start_applicable_time: Optional[time] = None
     end_applicable_time: Optional[time] = None
+    start_date: Optional[date] = None
     end_date: Optional[date] = None
     used_count: Optional[int] = None
     active: Optional[bool] = None
-

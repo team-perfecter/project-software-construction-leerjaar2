@@ -4,6 +4,7 @@ from api.main import app
 
 client = TestClient(app)
 
+
 def test_create_discount_code_with_superadmin(client_with_token):
     client, headers = client_with_token("superadmin")
     fake_code = {
@@ -177,7 +178,3 @@ def test_create_discount_code_invalid_start_with_end_date(client_with_token):
     }
     response = client.post("/discount-codes", json=fake_code, headers=headers)
     assert response.status_code == 400
-    
-            
-
-        
