@@ -77,8 +77,11 @@ def require_role(*allowed_roles):
     return wrapper
 
 
-def user_can_manage_lot(user: User, lid: int) -> bool:
+def user_can_manage_lot(user: User, lid: int, for_payments: bool) -> bool:
     if user.role == UserRole.SUPERADMIN:
+        return True
+    
+    if user.role == UserRole.PAYMENTADMIN and for_payments:
         return True
 
     if user.role == UserRole.ADMIN:
@@ -88,12 +91,12 @@ def user_can_manage_lot(user: User, lid: int) -> bool:
     return False
 
 
-def require_lot_access():      
+def require_lot_access(for_payments: bool = False):      
     def wrapper(
         lid: int,
         current_user: User = Depends(get_current_user)
     ):
-        if not user_can_manage_lot(current_user, lid):
+        if not user_can_manage_lot(current_user, lid, for_payments):
             raise HTTPException(403, "Not enough permissions for this lot")
         return current_user
     return wrapper

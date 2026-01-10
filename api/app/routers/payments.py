@@ -4,7 +4,7 @@ from api.datatypes.user import User, UserRole
 from api.datatypes.payment import PaymentCreate, PaymentUpdate
 from api.models.payment_model import PaymentModel
 from api.models.user_model import UserModel
-from api.auth_utils import get_current_user, require_role
+from api.auth_utils import get_current_user, require_role, require_lot_access, user_can_manage_lot
 
 import logging
 logger = logging.getLogger(__name__)
@@ -17,17 +17,17 @@ user_model: UserModel = UserModel()
 
 
 @router.post("/payments", status_code=201)
-async def create_payment(p: PaymentCreate,
-                         current_user: User = Depends(require_role(
-                          UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
+async def create_payment(
+    p: PaymentCreate,
+    current_user: User = Depends(get_current_user)
+):
+    if not user_can_manage_lot(current_user, p.parking_lot_id, for_payments=True):
+        raise HTTPException(status_code=403, detail="Not enough permissions for this lot")
     created = PaymentModel.create_payment(p)
     if not created:
-        logger.error("Admin ID %i tried to create a payment, but failed",
-                     current_user.id)
-        raise HTTPException(status_code=500,
-                            detail="Failed to create payment")
-    logger.info("Admin ID %i created new payment for user_id %i",
-                 current_user.id, p.user_id)
+        logger.error("Admin ID %i tried to create a payment, but failed", current_user.id)
+        raise HTTPException(status_code=500, detail="Failed to create payment")
+    logger.info("Admin ID %i created new payment for user_id %i", current_user.id, p.user_id)
     return JSONResponse(content={"message": "Payment created successfully"}, status_code=201)
 
 
@@ -59,9 +59,11 @@ async def get_my_open_payments(current_user: User = Depends(get_current_user)):
 
 
 @router.get("/payments/user/{user_id}")
-async def get_payments_by_user(user_id: int,
-                               current_user: User = Depends(require_role(
-                                UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
+async def get_payments_by_user(
+    user_id: int,
+    current_user: User = Depends(require_role(
+        UserRole.SUPERADMIN, UserRole.PAYMENTADMIN))
+):
     user = user_model.get_user_by_id(user_id)
     if not user:
         logger.warning("Admin ID %i tried searching for nonexistent User ID %i",
@@ -79,9 +81,11 @@ async def get_payments_by_user(user_id: int,
 
 
 @router.get("/payments/user/{user_id}/open")
-async def get_open_payments_by_user(user_id: int,
-                                    current_user: User = Depends(require_role(
-                                     UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
+async def get_open_payments_by_user(
+    user_id: int,
+    current_user: User = Depends(require_role(
+        UserRole.SUPERADMIN, UserRole.PAYMENTADMIN))
+):
     user = user_model.get_user_by_id(user_id)
     if not user:
         logger.warning("Admin ID %i tried searching for nonexistent User ID %i",
@@ -132,16 +136,19 @@ async def pay_payment(payment_id: int,
 
 
 @router.put("/payments/{payment_id}")
-async def update_payment(payment_id: int,
-                         p: PaymentUpdate,
-                         current_user: User = Depends(require_role(
-                          UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
+async def update_payment(
+    payment_id: int,
+    p: PaymentUpdate,
+    current_user: User = Depends(get_current_user)
+):
     payment = PaymentModel.get_payment_by_payment_id(payment_id)
     if not payment:
         logger.warning("Admin ID %i tried updating Payment ID %i, "
                      "but payment does not exist", current_user.id, payment_id)
         raise HTTPException(status_code=404,
                             detail="Payment not found")
+    if not user_can_manage_lot(current_user, payment["parking_lot_id"], for_payments=True):
+        raise HTTPException(status_code=403, detail="Not enough permissions for this lot")
     update_fields = p.dict(exclude_unset=True)
     update = PaymentModel.update_payment(payment_id, update_fields)
     if not update:
@@ -153,9 +160,10 @@ async def update_payment(payment_id: int,
 
 
 @router.get("/payments/refunds")
-async def get_refund_requests(user_id: int | None = None,
-                              current_user: User = Depends(require_role(
-                               UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
+async def get_refund_requests(
+    user_id: int | None = None,
+    current_user: User = Depends(get_current_user)
+):
     if user_id:
         user = user_model.get_user_by_id(user_id)
         if not user:
@@ -213,15 +221,18 @@ async def request_refund(payment_id: int,
 
 
 @router.post("/payments/{payment_id}/give_refund")
-async def give_refund(payment_id: int,
-                         current_user: User = Depends(require_role(
-                               UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
+async def give_refund(
+    payment_id: int,
+    current_user: User = Depends(get_current_user)
+):
     payment = PaymentModel.get_payment_by_payment_id(payment_id)
     if not payment:
         logger.warning("User ID %i tried refunding payment %i, "
                 "but it was not found", current_user.id, payment_id)
         raise HTTPException(status_code=404,
                             detail="Payment not found")
+    if not user_can_manage_lot(current_user, payment["parking_lot_id"], for_payments=True):
+        raise HTTPException(status_code=403, detail="Not enough permissions for this lot")
     if not payment["completed"]:
         logger.info("User ID %i tried refundnig Payment ID %i, "
              "but it has not yet been paid",
@@ -245,29 +256,35 @@ async def give_refund(payment_id: int,
 
 
 @router.get("/payments/{payment_id}")
-async def get_payment_by_id(payment_id: int,
-                            current_user: User = Depends(require_role(
-                             UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
+async def get_payment_by_id(
+    payment_id: int,
+    current_user: User = Depends(get_current_user)
+):
     payment = PaymentModel.get_payment_by_payment_id(payment_id)
     if not payment:
         logger.info("Admin ID %i tried to delete nonexistent Payment ID %i",
                      current_user.id, payment_id)
         raise HTTPException(status_code=404,
                             detail="Payment not found")
+    if not user_can_manage_lot(current_user, payment["parking_lot_id"], for_payments=True):
+        raise HTTPException(status_code=403, detail="Not enough permissions for this lot")
     logger.info("Admin ID %i retrieved Payment ID %i",
                  current_user.id, payment_id)
     return payment
 
 
 @router.delete("/payments/{payment_id}")
-async def delete_payment(payment_id: int,
-                         current_user: User = Depends(require_role(
-                          UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
+async def delete_payment(
+    payment_id: int,
+    current_user: User = Depends(get_current_user)
+):
     payment = PaymentModel.get_payment_by_payment_id(payment_id)
     if not payment:
         logger.info("Admin ID %i tried to delete nonexistent Payment ID %i",
                      current_user.id, payment_id)
         raise HTTPException(status_code=404, detail="Payment not found")
+    if not user_can_manage_lot(current_user, payment["parking_lot_id"], for_payments=True):
+        raise HTTPException(status_code=403, detail="Not enough permissions for this lot")
     delete = PaymentModel.delete_payment(payment_id)
     if not delete:
         logger.info("Admin ID %i tried to delete Payment ID %i, but failed",

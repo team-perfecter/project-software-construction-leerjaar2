@@ -275,7 +275,7 @@ def test_give_refund(client_with_token):
 
 def test_give_refund_not_found(client_with_token):
     client, headers = client_with_token("superadmin")
-    response = client.post(f"payments/2423235343/give_refund",
+    response = client.post(f"payments/{2423235343}/give_refund",
                            json={}, headers=headers)
     assert response.status_code == 404
 

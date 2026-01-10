@@ -14,8 +14,10 @@ def test_get_payment_by_id(client_with_token):
 
 
 def test_get_payment_by_id_no_auth(client_with_token):
+    client, headers = client_with_token("superadmin")
+    payment_id = get_last_payment_id(client_with_token)
     client, headers = client_with_token("user")
-    response = client.get("/payments/1", headers=headers)
+    response = client.get(f"/payments/{payment_id}", headers=headers)
     assert response.status_code == 403
 
 
