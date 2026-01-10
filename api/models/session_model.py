@@ -19,7 +19,7 @@ class SessionModel:
         """
         self.connection = get_connection()
 
-    def create_session(self, parking_lot_id: int, user_id: int, vehicle_id: int) -> Session | None:
+    def create_session(self, parking_lot_id: int, user_id: int, vehicle_id: int, reservation_id: int) -> Session | None:
         """
         Start a new parking session for a vehicle if it does not already have an active session.
 
@@ -31,6 +31,7 @@ class SessionModel:
         Returns:
             Session | None: The created Session object if successful, otherwise None.
         """
+
         cursor = self.connection.cursor()
 
         # Check if the vehicle already has an active session
@@ -42,15 +43,15 @@ class SessionModel:
             return None
 
         cursor.execute("""
-            INSERT INTO sessions (parking_lot_id, user_id, vehicle_id)
-            VALUES (%s, %s, %s)
+            INSERT INTO sessions (parking_lot_id, user_id, vehicle_id, reservation_id)
+            VALUES (%s, %s, %s, %s)
             RETURNING *;
-        """, (parking_lot_id, user_id, vehicle_id))
+        """, (parking_lot_id, user_id, vehicle_id, reservation_id))
 
         self.connection.commit()
         return self.map_to_session(cursor)[0]
 
-    def stop_session(self, session: Session):
+    def stop_session(self, session: Session, cost: float) -> Session:
         """
         Stop an active session and calculate its duration and cost.
 
@@ -61,24 +62,18 @@ class SessionModel:
             dict: The updated session with stopped time, duration, and cost.
         """
         stopped = datetime.now()
-        duration_minutes = int((stopped - session.started).total_seconds() / 60)
-        cost = round(duration_minutes * 0.05, 2) + 1
-
         cursor = self.connection.cursor()
         cursor.execute("""
             UPDATE sessions
             SET stopped = %s,
-                duration_minutes = %s,
                 cost = %s
             WHERE id = %s
             RETURNING *;
-        """, (stopped, duration_minutes, cost, session.id,))
+        """, (stopped, cost, session.id,))
 
         self.connection.commit()
-
-        row = cursor.fetchone()
-        columns = [desc[0] for desc in cursor.description]
-        return dict(zip(columns, row))
+        session_list = self.map_to_session(cursor)
+        return session_list[0] if session_list else None
 
     def get_all_sessions(self) -> list[Session]:
         """
@@ -137,7 +132,8 @@ class SessionModel:
         session_list = self.map_to_session(cursor)
         return session_list[0] if session_list else None
 
-    def get_vehicle_sessions(self, vehicle_id: int):
+
+    def get_vehicle_sessions(self, vehicle_id: int) -> Session | None:
         """
         Retrieve all active sessions for a specific vehicle.
 
@@ -151,7 +147,14 @@ class SessionModel:
         cursor.execute("""
             SELECT * FROM sessions WHERE vehicle_id = %s AND stopped IS NULL;
         """, (vehicle_id,))
+        session_list = self.map_to_session(cursor)
+        return session_list[0] if session_list else None
+
+    def get_session_by_reservation_id(self, reservation_id: int) -> Session | None:
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT * FROM sessions WHERE reservation_id = %s AND stopped IS NULL;", (reservation_id,))
         rows = cursor.fetchall()
+
         columns = [d[0] for d in cursor.description]
 
         result = [
@@ -160,6 +163,7 @@ class SessionModel:
             for row in rows
         ]
         return result
+
 
     def map_to_session(self, cursor) -> list[Session]:
         """

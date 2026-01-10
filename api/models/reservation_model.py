@@ -31,6 +31,7 @@ class ReservationModel:
         cursor.execute("SELECT * FROM reservations")
         return cursor.fetchall()
 
+
     def get_reservation_by_id(self, reservation_id: int) -> Reservation | None:
         """
         Retrieve a reservation by its ID.
@@ -71,7 +72,7 @@ class ReservationModel:
         self.connection.commit()
         return cursor.fetchone()[0]
 
-    def get_reservation_by_vehicle(self, vehicle_id: int) -> list[Reservation]:
+    def get_reservations_by_vehicle(self, vehicle_id: int) -> list[Reservation]:
         """
         Retrieve all reservations associated with a specific vehicle.
 
@@ -84,6 +85,7 @@ class ReservationModel:
         cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM reservations WHERE vehicle_id = %s", (vehicle_id,))
         return cursor.fetchall()
+
 
     def delete_reservation(self, reservation_id: int) -> bool:
         """

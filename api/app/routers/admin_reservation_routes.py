@@ -4,15 +4,17 @@ This file contains all endpoints related to admin reservations.
 
 import logging
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
 from api.auth_utils import require_role
 from api.models.reservation_model import ReservationModel
 from api.datatypes.reservation import ReservationCreate
 from api.datatypes.user import User, UserRole
 from api.models.user_model import UserModel
-
 from api.models.vehicle_model import VehicleModel
 from api.models.parking_lot_model import ParkingLotModel
 
+import logging
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["admin-reservations"])
 
@@ -42,6 +44,7 @@ async def admin_create_reservation(
     # Check of user bestaat.
     user = user_model.get_user_by_id(reservation.user_id)
     if not user:
+
         logging.info(
             "Failed to create reservation: User ID %i does not exist", 
             reservation.user_id
@@ -64,13 +67,15 @@ async def admin_create_reservation(
             "Failed to create reservation: Parking Lot ID %i does not exist", 
             reservation.parking_lot_id
             )
+
         raise HTTPException(404, "Parking lot not found")
 
     new_id = reservation_model.create_reservation(reservation)
 
-    logging.info("Created reservation ID %i for user ID %i", new_id, reservation.user_id)
+    logger.info("Created reservation ID %i for user ID %i", new_id, reservation.user_id)
 
-    return {"message": "Reservation created", "reservation_id": new_id}
+    return JSONResponse(content={"message": "Reservation created", "reservation_id": new_id}, status_code=201)
+
 
 
 @router.delete("/admin/reservations/{reservation_id}")
@@ -96,7 +101,7 @@ async def admin_delete_reservation(
     # Check of de reservatie bestaat
     reservation = reservation_model.get_reservation_by_id(reservation_id)
     if not reservation:
-        logging.info(
+        logger.info(
             "Admin ID %i tried deleting nonexistent Reservation ID %i",
             current_user.id, reservation_id
         )
@@ -105,15 +110,15 @@ async def admin_delete_reservation(
     # Verwijderen
     deleted = reservation_model.delete_reservation(reservation_id)
     if not deleted:
-        logging.error(
+        logger.error(
             "Reservation ID %i existed but failed to delete (Admin ID %i)",
             reservation_id, current_user.id
         )
         raise HTTPException(status_code=500, detail="Failed to delete reservation")
 
-    logging.info(
+    logger.info(
         "Admin ID %i successfully deleted Reservation ID %i",
         current_user.id, reservation_id
     )
 
-    return {"message": "Reservation deleted"}
+    return JSONResponse(content={"message": "Reservation deleted"}, status_code=200)

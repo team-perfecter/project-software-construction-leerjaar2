@@ -2,10 +2,13 @@
 This file contains all queries related to payments.
 """
 
+import logging
 import psycopg2
 from api.datatypes.payment import PaymentCreate, PaymentUpdate
 from api.models.connection import get_connection
+from api.session_calculator import generate_transaction_validation_hash
 
+logger = logging.getLogger(__name__)
 
 class PaymentModel:
     """
@@ -28,21 +31,21 @@ class PaymentModel:
             bool: True if the payment was successfully created, False otherwise.
         """
         cursor = cls.connection.cursor()
+        payment_hash = generate_transaction_validation_hash()
         try:
             cursor.execute("""
                 INSERT INTO payments
-                (user_id, transaction, amount, hash, method, issuer, bank)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                (user_id, reservation_id, session_id, transaction, amount, hash, method, issuer, bank)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id;
             """,
-                           (p.user_id, p.transaction, p.amount,
-                            p.hash, p.method, p.issuer, p.bank))
+                           (p.user_id, p.reservation_id, p.session_id, p.transaction, p.amount,
+                            payment_hash, p.method, p.issuer, p.bank))
             created = cursor.fetchone()
             cls.connection.commit()
-            print("Created:", created)
-            return created is not None
+            return created[0]
         except psycopg2.DatabaseError as e:
-            print("DB Error:", e)
+            logger.error(f"DB Error: {e}")
             cls.connection.rollback()
             return False
 
@@ -106,7 +109,7 @@ class PaymentModel:
         return [dict(zip(columns, row)) for row in rows]
 
     @classmethod
-    def update_payment(cls, payment_id: int, p: PaymentUpdate) -> bool:
+    def update_payment(cls, payment_id: int, p) -> bool:
         """
         Update an existing payment record.
 
@@ -118,16 +121,15 @@ class PaymentModel:
             bool: True if the update succeeded, False otherwise.
         """
         cursor = cls.connection.cursor()
-        cursor.execute("""
+
+        set_clauses = ", ".join(f"{key} = %s" for key in p.keys())
+
+        cursor.execute(f"""
             UPDATE payments
-            SET user_id = %s, transaction = %s, amount = %s,
-                hash = %s, method = %s, issuer = %s, bank = %s, completed = %s,
-                date = NOW(), refund_requested = %s
+            SET {set_clauses}
             WHERE id = %s
             RETURNING id;
-        """, (p.user_id, p.transaction, p.amount,
-              p.hash, p.method,
-              p.issuer, p.bank, p.completed, p.refund_requested, payment_id,))
+        """, tuple(p.get(field) for field in p.keys()) + (payment_id,))
         updated = cursor.fetchone()
         cls.connection.commit()
         return updated is not None
@@ -219,3 +221,14 @@ class PaymentModel:
         deleted = cursor.fetchone()
         cls.connection.commit()
         return deleted is not None
+
+
+    @classmethod
+    def get_payment_by_reservation_id(cls, reservation_id):
+        cursor = cls.connection.cursor()
+        cursor.execute("SELECT * FROM payments WHERE reservation_id = %s;", (reservation_id,))
+        row = cursor.fetchone()
+        if row:
+            columns = [desc[0] for desc in cursor.description]
+            return dict(zip(columns, row))
+        return None

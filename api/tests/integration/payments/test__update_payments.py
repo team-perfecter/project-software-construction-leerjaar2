@@ -23,8 +23,12 @@ def test_update_payment(client_with_token):
     client, headers = client_with_token("superadmin")
     fake_payment = {
         "user_id": 1,
+        "transaction": "transaction1",
         "amount": 200,
         "method": "updatedmethod",
+        "issuer": "issuer1",
+        "hash": "a",
+        "bank": "bank1",
         "completed": False,
         "refund_requested": False
     }
@@ -58,8 +62,11 @@ def test_update_payment_server_error(mock_create, client_with_token):
     client, headers = client_with_token("superadmin")
     fake_payment = {
         "user_id": 1,
+        "transaction": "transaction1",
         "amount": 200,
         "method": "updatedmethod",
+        "issuer": "issuer1",
+        "bank": "bank1",
         "completed": False,
         "refund_requested": False
     }
@@ -81,13 +88,9 @@ def test_update_payment_missing_field(client_with_token):
         AssertionError: If the response status code is not 422.
     """
     client, headers = client_with_token("superadmin")
-    fake_payment = {
-        "user_id": 1,
-        "amount": 200,
-        "method": "updatedmethod",
-        "completed": False,
-    }
-    response = client.put("/payments/1", json=fake_payment, headers=headers)
+    payment_id = get_last_payment_id(client_with_token)
+    fake_payment = {}
+    response = client.put(f"/payments/{payment_id}", json=fake_payment, headers=headers)
     assert response.status_code == 422
 
 
@@ -105,7 +108,6 @@ def test_update_payment_wrong_data_type(client_with_token):
     """
     client, headers = client_with_token("superadmin")
     fake_payment = {
-        "user_id": 1,
         "amount": 200,
         "method": "updatedmethod",
         "completed": False,

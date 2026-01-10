@@ -10,6 +10,9 @@ Content-Type: application/json
   "phone": "1234567890",
   "birth_year": "2002"
 }
+###
+DELETE http://127.0.0.1:8000/parking-lots/9999999/force
+Authorization: Bearer {{token}}
 
 ### Login
 # @name login
@@ -25,7 +28,7 @@ Content-Type: application/json
 @token = {{login.response.body.access_token}}
 
 ### GET USER DETAILS (7.1)
-GET http://127.0.0.1:8000/admin/users/1
+GET http://127.0.0.1:8000/profile
 Authorization: Bearer {{token}}
 
 ###
@@ -60,21 +63,30 @@ Authorization: Bearer {{token}}
 }
 
 ### CREATE RESERVATION FOR USER (7.3)
-POST http://127.0.0.1:8000/admin/reservations
+POST http://127.0.0.1:8000/reservations/create
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "user_id": 1,
   "vehicle_id": 1,
   "parking_lot_id": 1,
-  "start_time": "2025-01-01T10:00:00",
-  "end_time": "2025-01-01T12:00:00",
-  "status": "confirmed",
-  "cost": 20
+  "start_time": "2026-01-01T10:00:00",
+  "end_time": "2026-01-01T12:00:00"
 }
 
 ###
+POST http://127.0.0.1:8000/sessions/reservations/1/start
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{}
+
+###
+POST http://127.0.0.1:8000/sessions/reservations/1/stop
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{}
 
 ### DELETE RESERVATION (7.4)
 DELETE http://127.0.0.1:8000/admin/reservations/1
@@ -85,5 +97,18 @@ Authorization: Bearer {{token}}
 ### DELETE USER (1.6)
 DELETE http://127.0.0.1:8000/admin/users/2
 Authorization: Bearer {{token}}
-
+### Get current user payments
+GET http://127.0.0.1:8000/payments/me
+Authorization: Bearer {{token}}
 ###
+POST http://localhost:8000/parking-lots/1/sessions/start?vehicle_id=1
+Authorization: Bearer {{token}}
+### Get current sessions
+GET http://localhost:8000/sessions/active
+Authorization: Bearer {{token}}
+### Get current sessions of a vehicle
+GET http://localhost:8000/sessions/vehicle/1
+Authorization: Bearer {{token}}
+### Stop a session
+POST http://localhost:8000/parking-lots/1/sessions/stop?vehicle_id=1
+Authorization: Bearer {{token}}

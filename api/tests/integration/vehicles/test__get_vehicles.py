@@ -46,6 +46,7 @@ def test_get_one_vehicle(client_with_token):
     response = client.get(f"/vehicles/{vehicle_id}", headers=headers)
     assert response.status_code == 200
     vehicle_data = response.json()
+    print(vehicle_data)
     assert vehicle_data["id"] == vehicle_id
     assert vehicle_data["license_plate"] == "ABC123"
 

@@ -1,8 +1,8 @@
 """
 Main file of the API.
 """
-
 from fastapi import FastAPI
+import api.logging_config # Needs to be imported for logging to be configured.
 from api.app.routers import (parking_lots,
                              sessions,
                              payments,

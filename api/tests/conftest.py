@@ -187,7 +187,7 @@ def seed_parking_lots(client, headers, create_default):
     response = client.get("/parking-lots/", headers=headers)
     if response.status_code == 200:
         for lot in response.json():
-            client.delete(f"/parking-lots/{lot['id']}", headers=headers)
+            client.delete(f"/parking-lots/{lot['id']}/force", headers=headers)
 
     if create_default:
         lot = {
@@ -234,12 +234,13 @@ def seed_payments(client, headers, create_default):
         for i in range(5):
             payment = {
                 "user_id": user.id,
+                "reservation_id": None,
+                "session_id": None,
                 "transaction": f"transaction{i+1}",
                 "amount": 100 + i,
-                "hash": f"hash{i+1}",
                 "method": f"method{i+1}",
                 "issuer": f"issuer{i+1}",
-                "bank": f"bank{i+1}"
+                "bank": f"bank{i+1}",
             }
             client.post("/payments", json=payment, headers=headers)
 
@@ -342,6 +343,7 @@ def get_last_payment_id(client_with_token):
     client, headers = client_with_token("superadmin")
     response = client.get("/payments/me", headers=headers)
     data = response.json()
+    print(data)
     return data[-1]["id"]
 
 
