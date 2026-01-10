@@ -204,8 +204,10 @@ def setup_payments(request, client_with_token):
     # Seed 5 payments if not testing creation endpoints
     if "create" not in request.node.fspath.basename:
         for i in range(5):
+            lid = get_last_pid(client)
             payment = {
                 "user_id": user.id,
+                "parking_lot_id": f"{lid}",
                 "transaction": f"transaction{i+1}",
                 "amount": 100 + i,
                 "hash": f"hash{i+1}",

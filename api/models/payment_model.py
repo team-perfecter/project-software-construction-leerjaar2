@@ -120,7 +120,7 @@ class PaymentModel:
         cursor = cls.connection.cursor()
         cursor.execute("""
             UPDATE payments
-            SET refund_accepted = TRUE AND admin_id = %s
+            SET refund_accepted = TRUE, admin_id = %s
             WHERE id = %s
             RETURNING id;
         """, (user_id, id,))

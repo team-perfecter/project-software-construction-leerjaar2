@@ -183,7 +183,6 @@ def test_pay_payment_no_header(client):
 
 
 # payments/{user_id}/request_refund
-@pytest.mark.dependency(name="request_refund_created")
 @patch("api.models.payment_model.PaymentModel.mark_refund_request",
        return_value=False)
 def test_request_refund_server_error(mock_create, client_with_token):
@@ -195,7 +194,6 @@ def test_request_refund_server_error(mock_create, client_with_token):
     assert response.status_code == 500
 
 
-@pytest.mark.dependency(name="request_refund_created")
 def test_request_refund(client_with_token):
     payment_id = get_last_payment_id(client_with_token)
     client, headers = client_with_token("superadmin")
@@ -239,8 +237,51 @@ def test_request_refund_no_header(client):
     assert response.status_code == 401
 
 
+# POST payments/{id}/give_refund
+@patch("api.models.payment_model.PaymentModel.give_refund",
+       return_value=False)
+def test_give_refund_server_error(mock_create, client_with_token):
+    payment_id = get_last_payment_id(client_with_token)
+    client, headers = client_with_token("superadmin")
+    client.post(f"/payments/{payment_id}/pay", json={}, headers=headers)
+    response = client.post(f"payments/{payment_id}/give_refund",
+                           json={}, headers=headers)
+    assert response.status_code == 500
+
+
+def test_give_refund(client_with_token):
+    payment_id = get_last_payment_id(client_with_token)
+    client, headers = client_with_token("superadmin")
+    client.post(f"/payments/{payment_id}/pay", json={}, headers=headers)
+    response = client.post(f"payments/{payment_id}/give_refund",
+                           json={}, headers=headers)
+    assert response.status_code == 200
+
+    client, headers = client_with_token("superadmin")
+    response = client.get(f"/payments/{payment_id}", headers=headers)
+    assert response.status_code == 200
+
+    assert response.json()["refund_accepted"] is True
+    assert response.json()["admin_id"] is not None
+
+
+def test_give_refund(client_with_token):
+    payment_id = get_last_payment_id(client_with_token)
+    client, headers = client_with_token("superadmin")
+    response = client.post(f"payments/{payment_id}/give_refund",
+                           json={}, headers=headers)
+    assert response.status_code == 400
+
+
+def test_give_refund_not_found(client_with_token):
+    client, headers = client_with_token("superadmin")
+    response = client.post(f"payments/2423235343/give_refund",
+                           json={}, headers=headers)
+    assert response.status_code == 404
+
+
+
 # GET payments/refunds
-@pytest.mark.dependency(depends=["request_refund_created"])
 def test_get_refunds(client_with_token):
     client, headers = client_with_token("superadmin")
     payment_id = get_last_payment_id(client_with_token)
@@ -253,7 +294,6 @@ def test_get_refunds(client_with_token):
     assert response.status_code == 200
 
 
-@pytest.mark.dependency(depends=["request_refund_created"])
 def test_get_refunds_with_user(client_with_token):
     client, headers = client_with_token("superadmin")
     payment_id = get_last_payment_id(client_with_token)

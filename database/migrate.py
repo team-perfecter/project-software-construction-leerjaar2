@@ -116,7 +116,7 @@ cur.execute("""
 CREATE TABLE IF NOT EXISTS payments (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id),
-    parking_lot_id INTEGER REFERENCES parking_lots(id),
+    parking_lot_id INTEGER REFERENCES parking_lots(id) ON DELETE CASCADE ON UPDATE CASCADE,
     reservation_id INTEGER REFERENCES reservations(id),
     session_id INTEGER REFERENCES sessions(id),
     transaction VARCHAR,
@@ -127,7 +127,9 @@ CREATE TABLE IF NOT EXISTS payments (
     issuer VARCHAR,
     bank VARCHAR,
     date TIMESTAMP DEFAULT NOW(),
-    refund_requested BOOLEAN DEFAULT FALSE
+    refund_requested BOOLEAN DEFAULT FALSE,
+    refund_accepted BOOLEAN DEFAULT FALSE,
+    admin_id INTEGER REFERENCES users(id)
 );
 """)
 

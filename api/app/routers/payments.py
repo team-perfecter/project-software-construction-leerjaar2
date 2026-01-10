@@ -213,7 +213,7 @@ async def request_refund(payment_id: int,
 
 
 @router.post("/payments/{payment_id}/give_refund")
-async def request_refund(payment_id: int,
+async def give_refund(payment_id: int,
                          current_user: User = Depends(require_role(
                                UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
     payment = PaymentModel.get_payment_by_payment_id(payment_id)
