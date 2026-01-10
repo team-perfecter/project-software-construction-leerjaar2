@@ -28,9 +28,9 @@ def test_calculate_price_short_session_free():
 
 def test_calculate_price_hourly_tariff():
     parking_lot = MockParkingLot(tariff=2.0, daytariff=10.0)
-    now = datetime.now()
-    session = MockSession(started=now - timedelta(hours=1, minutes=10),
-                          stopped=now)
+    base_time = datetime(2023, 1, 1, 12, 0, 0)
+    session = MockSession(started=base_time - timedelta(hours=1, minutes=10),
+                          stopped=base_time)
     price = calculate_price(parking_lot, session, None)
     assert price == 4.0  # 2 hours * 2.0
 
