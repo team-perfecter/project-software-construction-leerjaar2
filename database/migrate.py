@@ -116,6 +116,7 @@ cur.execute("""
 CREATE TABLE IF NOT EXISTS payments (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id),
+    parking_lot_id INTEGER REFERENCES parking_lots(id),
     reservation_id INTEGER REFERENCES reservations(id),
     session_id INTEGER REFERENCES sessions(id),
     transaction VARCHAR,

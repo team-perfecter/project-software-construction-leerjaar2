@@ -81,7 +81,7 @@ async def get_payments_by_user(user_id: int,
 @router.get("/payments/user/{user_id}/open")
 async def get_open_payments_by_user(user_id: int,
                                     current_user: User = Depends(require_role(
-                                     UserRole.ADMIN, UserRole.SUPERADMIN))):
+                                     UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
     user = user_model.get_user_by_id(user_id)
     if not user:
         logger.warning("Admin ID %i tried searching for nonexistent User ID %i",
@@ -210,6 +210,38 @@ async def request_refund(payment_id: int,
         raise HTTPException(status_code=500,
                             detail="Request has failed")
     return JSONResponse(content={"message": "Refund reuested successfully"}, status_code=200)
+
+
+@router.post("/payments/{payment_id}/give_refund")
+async def request_refund(payment_id: int,
+                         current_user: User = Depends(require_role(
+                               UserRole.PAYMENTADMIN, UserRole.SUPERADMIN))):
+    payment = PaymentModel.get_payment_by_payment_id(payment_id)
+    if not payment:
+        logger.warning("User ID %i tried refunding payment %i, "
+                "but it was not found", current_user.id, payment_id)
+        raise HTTPException(status_code=404,
+                            detail="Payment not found")
+    if not payment["completed"]:
+        logger.info("User ID %i tried refundnig Payment ID %i, "
+             "but it has not yet been paid",
+             current_user.id, payment_id)
+        raise HTTPException(status_code=400,
+                            detail="Payment has not yet been paid")
+    if payment["refund_accepted"]:
+        logger.info("User ID %i tried to refund Payment ID %i, "
+             "but a refund has given",
+             current_user.id, payment_id)
+        raise HTTPException(status_code=400,
+                            detail="Refund has already been given")
+    update = PaymentModel.give_refund(current_user.id, payment_id)
+    if not update:
+        logger.info("User ID %i tried refunding Payment ID %i, "
+             "but something went wrong",
+             current_user.id, payment_id)
+        raise HTTPException(status_code=500,
+                            detail="Refund has failed")
+    return JSONResponse(content={"message": "Refund given successfully"}, status_code=200)
 
 
 @router.get("/payments/{payment_id}")

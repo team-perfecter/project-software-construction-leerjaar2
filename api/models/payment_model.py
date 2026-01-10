@@ -19,11 +19,11 @@ class PaymentModel:
         try:
             cursor.execute("""
                 INSERT INTO payments
-                (user_id, reservation_id, session_id, transaction, amount, hash, method, issuer, bank)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                (user_id, parking_lot_id, reservation_id, session_id, transaction, amount, hash, method, issuer, bank)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id;
             """,
-                           (p.user_id, p.reservation_id, p.session_id, p.transaction, p.amount,
+                           (p.user_id, p.parking_lot_id, p.reservation_id, p.session_id, p.transaction, p.amount,
                             payment_hash, p.method, p.issuer, p.bank))
             created = cursor.fetchone()
             cls.connection.commit()
@@ -111,6 +111,19 @@ class PaymentModel:
             WHERE id = %s
             RETURNING id;
         """, (id,))
+        updated = cursor.fetchone()
+        cls.connection.commit()
+        return updated is not None
+    
+    @classmethod
+    def give_refund(cls, user_id, id):
+        cursor = cls.connection.cursor()
+        cursor.execute("""
+            UPDATE payments
+            SET refund_accepted = TRUE AND admin_id = %s
+            WHERE id = %s
+            RETURNING id;
+        """, (user_id, id,))
         updated = cursor.fetchone()
         cls.connection.commit()
         return updated is not None

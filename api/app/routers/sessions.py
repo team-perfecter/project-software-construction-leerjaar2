@@ -137,6 +137,7 @@ async def stop_parking_session(
     payment_hash = generate_transaction_validation_hash()
     payment = PaymentCreate(
         user_id=current_user.id,
+        parking_lot_id=session.parking_lot_id,
         amount=cost,
         transaction=transaction,
         hash=payment_hash,
