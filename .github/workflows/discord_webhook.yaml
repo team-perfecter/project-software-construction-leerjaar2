@@ -1,4 +1,4 @@
-name: Build and Notify Discord
+name: Build and Notify
 
 on:
   push:
@@ -30,14 +30,14 @@ jobs:
       run: echo "Build step completed!"
 
     - name: Send Success Notification to Discord
-      if: success()
+      if: success() && startsWith(github.ref, 'refs/heads/')
       run: |
         curl -X POST -H "Content-Type: application/json" -d "{
           \"content\": \"CI Build Success: The build completed successfully for ${{ github.ref }}!\nSee details: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
         }" $DISCORD_WEBHOOK_URL
 
     - name: Send Failure Notification to Discord
-      if: failure()
+      if: failure() && startsWith(github.ref, 'refs/heads/')
       run: |
         curl -X POST -H "Content-Type: application/json" -d "{
           \"content\": \"CI Build Failed: Something went wrong during the build for ${{ github.ref }}.\nSee details and error logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
