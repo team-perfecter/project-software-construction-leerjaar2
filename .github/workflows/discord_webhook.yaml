@@ -2,7 +2,7 @@ name: Build and Notify Discord
 
 on:
   push:
-    branches: {}
+    branches: [ "**" ]
   pull_request:
     branches: [ main, dev ]
 
@@ -33,12 +33,12 @@ jobs:
       if: success()
       run: |
         curl -X POST -H "Content-Type: application/json" -d "{
-          \"content\": \"CI Build Success: The build completed successfully for ${{ github.ref }}!\"
+          \"content\": \"CI Build Success: The build completed successfully for ${{ github.ref }}!\nSee details: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
         }" $DISCORD_WEBHOOK_URL
 
     - name: Send Failure Notification to Discord
       if: failure()
       run: |
         curl -X POST -H "Content-Type: application/json" -d "{
-          \"content\": \"CI Build Failed: Something went wrong during the build for ${{ github.ref }}.\"
+          \"content\": \"CI Build Failed: Something went wrong during the build for ${{ github.ref }}.\nSee details and error logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
         }" $DISCORD_WEBHOOK_URL
