@@ -1,3 +1,13 @@
+### Start session without login
+POST http://127.0.0.1:8000/parking-lots/{lid}/sessions/start/no-login?=1
+Content-Type: application/json
+
+{
+  "username": "superadmin",
+  "password": "admin123"
+}
+
+
 ### Login
 # @name login
 POST http://127.0.0.1:8000/login

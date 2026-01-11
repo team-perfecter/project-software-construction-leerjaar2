@@ -116,7 +116,16 @@ async def start_parking_session(
 async def start_parking_session_no_login(
     lid: int
 ):
-    
+    parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
+    if not parking_lot:
+        logging.warning("Parking lot with id %i does not exist", lid)
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "Parking lot not found",
+                "message": f"Parking lot with ID {lid} does not exist",
+            },
+        )
     
 
 @router.post("/parking-lots/{lid}/sessions/stop")
