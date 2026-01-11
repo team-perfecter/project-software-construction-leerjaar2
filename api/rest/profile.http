@@ -12,7 +12,7 @@ Content-Type: application/json
 }
 
 ### Get user
-GET http://127.0.0.1:8000/get_user/1
+GET http://127.0.0.1:8000/get_user/2
 
 ### Login
 # @name login
@@ -34,6 +34,7 @@ Authorization: Bearer {{token}}
 ### Get current user
 GET http://localhost:8000/profile
 Authorization: Bearer {{token}}
+
 ### Create a parking lot
 POST http://localhost:8000/parking-lots
 Content-Type: application/json

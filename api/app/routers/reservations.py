@@ -1,115 +1,101 @@
-import logging
 from datetime import datetime
 from api.auth_utils import get_current_user
 from api.datatypes.user import User
-from fastapi import Depends, APIRouter, HTTPException, status
-from api.datatypes.reservation import Reservation
+from api.datatypes.payment import PaymentCreate
+from fastapi import Depends, APIRouter, HTTPException, status, Body
+from api.datatypes.reservation import Reservation, ReservationCreate
 from api.datatypes.vehicle import Vehicle
-from api.storage.parking_lot_storage import Parking_lot_storage
-from api.storage.reservation_storage import Reservation_storage
-from api.storage.vehicle_storage import Vehicle_storage
+from api.models.parking_lot_model import ParkingLotModel
+from api.models.reservation_model import Reservation_model
+from api.models.vehicle_model import Vehicle_model
+from api.models.session_model import SessionModel
+from api.models.payment_model import PaymentModel
+from api.session_calculator import generate_payment_hash, generate_transaction_validation_hash, calculate_price
+
+
+import logging
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     tags=["reservations"]
 )
 
-reservation_storage: Reservation_storage = Reservation_storage()
-parking_lot_storage: Parking_lot_storage = Parking_lot_storage()
-vehicle_storage: Vehicle_storage = Vehicle_storage()
+reservation_model: Reservation_model = Reservation_model()
+parking_lot_model: ParkingLotModel = ParkingLotModel()
+vehicle_model: Vehicle_model = Vehicle_model()
+session_model: SessionModel = SessionModel()
+payment_model: PaymentModel = PaymentModel()
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
-)
 
-@router.get("/reservations/{vehicle_id}")
+@router.get("/reservations/vehicle/{vehicle_id}")
 async def reservations(vehicle_id: int, current_user: User = Depends(get_current_user)):
-    vehicle: Vehicle | None = vehicle_storage.get_vehicle_by_id(vehicle_id)
-    user_id: int = current_user.id
+    vehicle = vehicle_model.get_one_vehicle(vehicle_id)
     if vehicle is None:
-        logging.warning("A user with the ID %i tried to retrieve a vehicle that doesnt exist: %i", user_id, vehicle_id)
+        logger.warning("Vehicle %i not found", vehicle_id)
         raise HTTPException(status_code=404, detail="Vehicle not found")
 
-    if vehicle.user_id != user_id:
-        logging.warning("A user with the ID %i tried to retrieve a vehicle that doesnt belong to the user: %i", user_id, vehicle.user_id)
+    if vehicle["user_id"] != current_user.id:
         raise HTTPException(status_code=403, detail="This vehicle does not belong to the logged in user")
 
-    reservation_list: list[Reservation] = reservation_storage.get_reservations_by_vehicle_id(vehicle_id)
-
+    reservation_list: list[Reservation] = reservation_model.get_reservations_by_vehicle(vehicle_id)
     return reservation_list
 
-
-@router.post("/create_reservation", status_code=status.HTTP_201_CREATED)
-async def create_reservation(vehicle_id: int, parking_lot_id: int, start_date: datetime, end_date: datetime, current_user: User = Depends(get_current_user)):
-
-    # check for missing fields
-    missing_fields: list[str] = []
-    if not vehicle_id:
-        missing_fields.append("vehicle")
-    if not parking_lot_id:
-        missing_fields.append("parking lot")
-    if not start_date:
-        missing_fields.append("start date")
-    if not end_date:
-        missing_fields.append("end date")
-    if len(missing_fields) > 0:
-        logging.warning("A user tried to create a new reservation, but did not fill in the following fields: %s", missing_fields)
-        raise HTTPException(status_code = 400, detail = {"missing_fields": missing_fields})
-    
-    # check if the vehicle and parking lot exist
-
-    parking_lot = parking_lot_storage.get_parking_lot_by_id(parking_lot_id)
+@router.post("/reservations/create")
+async def create_reservation(reservation: ReservationCreate, current_user: User = Depends(get_current_user)):
+    parking_lot = parking_lot_model.get_parking_lot_by_lid(reservation.parking_lot_id)
     if parking_lot == None:
-        logging.warning("A user with the id of %i tried to create a new reservation, but the requested parking lot does not exist: %i", current_user.id, parking_lot_id)
+        logger.warning("Parking lot %i does not exist", reservation.parking_lot_id)
         raise HTTPException(status_code = 404, detail = {"message": f"Parking lot does not exist"})
     
-    vehicle: Vehicle = vehicle_storage.get_one_vehicle(vehicle_id)
+    vehicle = vehicle_model.get_one_vehicle(reservation.vehicle_id)
     if vehicle == None:
-        logging.warning("A user with the id of %i tried to create a new reservation, but the requested vehicle does not exist: %i", current_user.id, vehicle_id)
+        logger.warning("Vehicle %i does not exist", reservation.vehicle_id)
         raise HTTPException(status_code = 404, detail = {"message": f"Vehicle does not exist"})
+    ### deze error handling werkt niet eens!!!
+    # conflicting_time: bool = False
+    # vehicle_reservations: list[Reservation] = reservation_model.get_reservation_by_vehicle(vehicle["id"])
+    # for reservation in vehicle_reservations:
+    #     if reservation["start_date"] < reservation["end_date"] and reservation["end_date"] > reservation["start_date"]:
+    #         conflicting_time = True
+    #         break
+    # if conflicting_time:
+    #     raise HTTPException(status_code = 401, detail = {"message": f"Requested date has an overlap with another reservation for this vehicle"})
 
+    # # check if start date is later than the current date
+    # if reservation.start_date < datetime.now():
+    #     raise HTTPException(status_code = 403, detail = {"message": f"invalid start date. The start date cannot be earlier than the current date. current date: {datetime.now()}, received date: {reservation.start_date}"})
 
-    # check if the vehicle belongs to the user
-    if vehicle.user_id != current_user.id:
-        logging.warning("A user with the id of %i tried to create a new reservation, but the requested vehicle with the id %i does not belong to this user", current_user.id, vehicle_id)
-        raise HTTPException(status_code = 401, detail = {"message": f"Vehicle does not belong to this user"})
+    # # check if the end date is later than the start date
+    # if reservation.start_date >= reservation.end_date:
+    #     raise HTTPException(status_code = 403, detail = {"message": f"invalid start date. The start date cannot be later than the end date start date: {reservation.start_date}, end date: {reservation.end_date}"})
 
-    # check if the parking lot has space left
-    if parking_lot.reserved <= 0:
-        logging.warning("A user with the id of %i tried to create a new reservation, but the requested parking lot with the id %i is full", current_user.id, parking_lot_id)
-        raise HTTPException(status_code = 401, detail = {"message": f"No more space in this parking lot"})
+    #create a new reservation
+    parking_lot = parking_lot_model.get_parking_lot_by_lid(reservation.parking_lot_id)
+    #errorhandling etc.
 
-    # check if the vehicle already has a reservation around that time
-    conflicting_time: bool = False
-    vehicle_reservations: list[Reservation] = Reservation_storage.get_reservation_by_vehicle(vehicle.id)
-    for reservation in vehicle_reservations:
-        if start_date < reservation.end_time and end_date > reservation.start_time:
-            conflicting_time = True
-            break
-    if conflicting_time:
-        logging.warning("A user with the id of %i and with a vehicle with the id %i tried to create a reservation, but there was a time overlap with another reservation", current_user.id, vehicle_id)
-        raise HTTPException(status_code = 401, detail = {"message": f"Requested date has an overlap with another reservation for this vehicle"})
+    cost = calculate_price(parking_lot, reservation)
 
-    # check if start date is later than the current date
-    if start_date <= datetime.now:
-        logging.warning("A user with the id of %i tried to create a new reservation, but the current date was later than the start date. current date: %s start date %s", current_user.id, datetime.now, start_date)
-        raise HTTPException(status_code = 403, detail = {"message": f"invalid start date. The start date cannot be earlier than the current date. current date: {datetime.now}, received date: {start_date}"})
+    reservation_id = reservation_model.create_reservation(reservation, current_user.id, cost)
+    #errorhandling etc.
 
-    # check if the end date is later than the start date
-    if start_date >= end_date:
-        logging.warning("A user with the id of %i tried to create a new reservation, but the start date was later than the end date. start date: %s end date %s", current_user.id, start_date, end_date)
-        raise HTTPException(status_code = 403, detail = {"message": f"invalid start date. The start date cannot be later than the end date start date: {start_date}, end date: {end_date}"})
+    transaction = generate_payment_hash(str(reservation_id), vehicle["license_plate"])
+    payment_hash = generate_transaction_validation_hash()
+    payment = PaymentCreate(
+        user_id=current_user.id,
+        amount=cost,
+        transaction=transaction,
+        hash=payment_hash,
+        reservation_id=reservation_id
+    )
+    payment_model.create_payment(payment)
+    #add error handling for payment 
 
-    # create a new reservation
-    reservation_storage.post_reservation(Reservation(None, vehicle_id, current_user.id, parking_lot_id, start_date, end_date, "status", datetime.now, parking_lot.tariff))
-    logging.info("A user with the id of %i has successfully created a new reservation with the vehicle id %i at parking lot %i", current_user.id, vehicle_id, parking_lot_id)
-    return JSONResponse(content={"message": "Reservation created successfully"}, status_code=201)
+    return {"message": "Reservation created successfully"}
 
-@router.delete("/reservations/{reservation_id}")
+@router.delete("/reservations/delete/{reservation_id}")
 async def delete_reservation(reservation_id: int, current_user: User = Depends(get_current_user)):
     # Controleer of de reservatie bestaat
-    reservation: Reservation | None = reservation_storage.get_reservation_by_id(reservation_id)
+    reservation: Reservation | None = reservation_model.get_reservation_by_id(reservation_id)
     if reservation is None:
         logging.warning("User with id %i tried to delete a reservation that does not exist: %i", current_user.id, reservation_id)
         raise HTTPException(status_code=404, detail={"message": "Reservation not found"})
@@ -120,10 +106,10 @@ async def delete_reservation(reservation_id: int, current_user: User = Depends(g
         raise HTTPException(status_code=403, detail={"message": "This reservation does not belong to the logged-in user"})
 
     # Verwijder de reservatie
-    success = reservation_storage.delete_reservation(reservation_id)
+    success = reservation_model.delete_reservation(reservation_id)
     if not success:
         logging.error("Failed to delete reservation with id %i for user %i", reservation_id, current_user.id)
         raise HTTPException(status_code=500, detail={"message": "Failed to delete reservation"})
 
     logging.info("User with id %i successfully deleted reservation with id %i", current_user.id, reservation_id)
-    return JSONResponse(content={"message": "Reservation deleted successfully"}, status_code=200)
+    raise HTTPException(detail={"message": "Reservation deleted successfully"}, status_code=200)

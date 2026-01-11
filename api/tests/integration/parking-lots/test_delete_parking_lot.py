@@ -1,0 +1,37 @@
+from api.tests.conftest import get_last_pid
+
+# Tests voor DELETE /parking-lots/{id}
+def test_delete_parking_lot_success(client_with_token):
+    """Test: DELETE /parking-lots/{id} - Succesvol verwijderen parking lot"""
+    superadmin_client, headers = client_with_token("superadmin")
+    parking_lot_id = get_last_pid(superadmin_client)
+    response = superadmin_client.delete(f"/parking-lots/{parking_lot_id}/force", headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, dict)
+
+def test_delete_parking_lot_not_found(client_with_token):
+    """Test: DELETE /parking-lots/{id} - Niet bestaande parking lot"""
+    superadmin_client, headers = client_with_token("superadmin")
+    response = superadmin_client.delete(f"/parking-lots/999999/force", headers=headers)
+    assert response.status_code == 404
+
+def test_delete_parking_lot_unauthorized(client):
+    """Test: DELETE /parking-lots/{id} - Zonder authenticatie"""
+    parking_lot_id = get_last_pid(client)
+    response = client.delete(f"/parking-lots/{parking_lot_id}/force")
+    assert response.status_code == 401
+
+def test_delete_parking_lot_forbidden(client_with_token):
+    """Test: DELETE /parking-lots/{id} - Normale user toegang geweigerd"""
+    user_client, headers = client_with_token("user")
+    parking_lot_id = get_last_pid(user_client)
+    response = user_client.delete(f"/parking-lots/{parking_lot_id}/force", headers=headers)
+    assert response.status_code == 403
+
+def test_delete_parking_lot_invalid_id(client_with_token):
+    """Test: DELETE /parking-lots/{id} - Ongeldige ID format"""
+    superadmin_client, headers = client_with_token("superadmin")
+    invalid_id = "abc"
+    response = superadmin_client.delete(f"/parking-lots/{invalid_id}/force", headers=headers)
+    assert response.status_code in [400, 404, 422]

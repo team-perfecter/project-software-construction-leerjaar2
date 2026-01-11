@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from api.datatypes.user import User, UserRole
-from fastapi import HTTPException, status, Depends
 from fastapi import HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 
@@ -22,14 +21,15 @@ def hash_password(password: str):
     return pwd_context.hash(password)
 
 
-def verify_password(plain_password: str, hashed_password: str):
+def verify_password(plain_password: str,
+                    hashed_password: str) -> bool:
     return hash_string(plain_password) == hashed_password
-    #return pwd_context.verify(plain_password, hashed_password)
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
-    expire = datetime.now() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire = datetime.now() + (expires_delta or
+                               timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -67,28 +67,33 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         return user
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
-    
+
 
 def require_role(*allowed_roles):
-    def wrapper(current_user = Depends(get_current_user)):
+    def wrapper(current_user=Depends(get_current_user)):
         if current_user.role not in allowed_roles:
             raise HTTPException(403, "Not enough permissions")
         return current_user
     return wrapper
 
-def user_can_manage_lot(user: User, lot_id: int) -> bool:
+
+def user_can_manage_lot(user: User, lid: int) -> bool:
     if user.role == UserRole.SUPERADMIN:
         return True
 
-    assigned_lots = UserModel.get_parking_lots_for_admin(user.id)
-    return lot_id in assigned_lots
+    if user.role == UserRole.ADMIN:
+        assigned_lots = user_model.get_parking_lots_for_admin(user.id)
+        return lid in assigned_lots
 
-def require_lot_access():
+    return False
+
+
+def require_lot_access():      
     def wrapper(
-        lot_id: int,
+        lid: int,
         current_user: User = Depends(get_current_user)
     ):
-        if not user_can_manage_lot(current_user, lot_id):
+        if not user_can_manage_lot(current_user, lid):
             raise HTTPException(403, "Not enough permissions for this lot")
         return current_user
     return wrapper

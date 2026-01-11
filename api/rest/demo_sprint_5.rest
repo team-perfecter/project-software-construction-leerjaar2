@@ -1,0 +1,219 @@
+### Login
+# @name login
+POST http://127.0.0.1:8000/login
+Content-Type: application/json
+
+{
+  "username": "superadmin",
+  "password": "admin123"
+}
+
+
+###
+@token = {{login.response.body.access_token}}
+
+
+###
+GET http://127.0.0.1:8000/payments/2
+Authorization: Bearer {{token}}
+### Logout
+POST http://127.0.0.1:8000/logout
+Authorization: Bearer {{token}}
+
+
+###---------------------------------------------------parking lot------------------------------------------------
+
+
+### Create a new parking lot (admin only)
+POST http://127.0.0.1:8000/parking-lots
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Central Parking",
+  "location": "Amsterdam",
+  "address": "Damrak 1, 1012 LG Amsterdam",
+  "capacity": 150,
+  "tariff": 3.5,
+  "daytariff": 25.0,
+  "lat": 52.3676,
+  "lng": 4.9041
+}
+
+
+### Create a vehicle                   oud
+POST http://127.0.0.1:8000/vehicles/create
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "user_id": 1,
+  "license_plate": "ABC123",
+  "make": "Toyota",
+  "model": "Corolla",
+  "color": "Blue",
+  "year": 2020
+}
+
+
+### Start a session
+POST http://localhost:8000/parking-lots/1/sessions/start?vehicle_id=1
+Authorization: Bearer {{token}}
+
+
+### Get parking lots by location
+GET http://127.0.0.1:8000/parking-lots/location/Amsterdam
+Authorization: Bearer {{token}}
+
+
+### Get all sessions for a parking lot (admin only)
+GET http://127.0.0.1:8000/parking-lots/1/sessions
+Authorization: Bearer {{token}}
+
+
+### Get all parking lots        oud
+GET http://127.0.0.1:8000/parking-lots/
+Authorization: Bearer {{token}}
+
+
+### Update parking lot (admin only)
+PUT http://127.0.0.1:8000/parking-lots/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "id": 1,
+  "name": "Updated Central Parking",
+  "location": "Amsterdam Center",
+  "address": "Damrak 10, 1012 LG Amsterdam",
+  "capacity": 200,
+  "reserved": 0,
+  "tariff": 4.0,
+  "daytariff": 30.0,
+  "lat": 52.3676,
+  "lng": 4.9041,
+  "status": "open"
+}
+
+
+### Update parking lot status (admin only)
+PUT http://127.0.0.1:8000/parking-lots/1/status?status=closed&closed_reason=Maintenance&closed_date=2024-01-01
+Authorization: Bearer {{token}}
+
+
+### Get all parking lots        oud
+GET http://127.0.0.1:8000/parking-lots/
+Authorization: Bearer {{token}}
+
+
+###---------------------------------------------------vehicle------------------------------------------------
+
+
+### Get current user's vehicles         oud 
+GET http://localhost:8000/vehicles
+Authorization: Bearer {{token}}
+
+
+###---------------------------------------------------session------------------------------------------------
+
+
+### Get current sessions
+GET http://localhost:8000/sessions/active
+Authorization: Bearer {{token}}
+
+
+### Stop a session
+POST http://localhost:8000/parking-lots/1/sessions/stop?vehicle_id=1
+Authorization: Bearer {{token}}
+
+
+###---------------------------------------------------payment------------------------------------------------
+
+
+### Get current user payments
+GET http://127.0.0.1:8000/payments/me/open
+Authorization: Bearer {{token}}
+
+
+###
+POST http://127.0.0.1:8000/payments/1/pay
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{}
+
+
+### Get current user payments
+GET http://127.0.0.1:8000/payments/me
+Authorization: Bearer {{token}}
+
+
+###
+POST http://127.0.0.1:8000/payments/1/request_refund
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{}
+
+
+###             oud
+GET http://127.0.0.1:8000/payments/refunds
+Authorization: Bearer {{token}}
+
+
+###
+GET http://127.0.0.1:8000/payments/refunds?user_id=1
+Authorization: Bearer {{token}}
+
+
+###
+PUT http://127.0.0.1:8000/payments/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "refund_requested": true
+}
+
+
+### Get current user payments
+GET http://127.0.0.1:8000/payments/me
+Authorization: Bearer {{token}}
+
+
+###
+DELETE http://127.0.0.1:8000/payments/1
+Authorization: Bearer {{token}}
+
+
+### Get current user payments
+GET http://127.0.0.1:8000/payments/me
+Authorization: Bearer {{token}}
+
+
+###---------------------------------------------------reservation------------------------------------------------
+
+
+### Create a reservation
+POST http://127.0.0.1:8000/reservations/create
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "vehicle_id": 1,
+  "parking_lot_id": 1,
+  "start_date": "2025-12-10T09:00:00",
+  "end_date": "2025-12-10T18:00:00"
+}
+
+
+### get reservations by car
+GET http://127.0.0.1:8000/reservations/vehicle/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+### Delete a reservation
+DELETE http://127.0.0.1:8000/reservations/delete/1
+Content-Type: application/json
+Authorization: Bearer {{token}}

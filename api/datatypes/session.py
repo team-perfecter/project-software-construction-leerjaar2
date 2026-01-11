@@ -3,19 +3,15 @@ from datetime import datetime
 from typing import Optional
 
 
-class Session(BaseModel):
-    id: int
-    parking_lot_id: int
-    payment_id: Optional[int] = None
-    user_id: int
-    vehicle_id: int
-    started: datetime
-    stopped: Optional[datetime] = None
-    duration_in_minutes: Optional[int] = None
-    cost: Optional[float] = None
-
 class SessionCreate(BaseModel):
     parking_lot_id: int
     user_id: int
     vehicle_id: int
-    start_time: datetime = datetime.now()
+    reservation_id: Optional[int] = None
+
+
+class Session(SessionCreate):
+    id: int
+    started: datetime
+    stopped: Optional[datetime] = None
+    cost: Optional[float] = None

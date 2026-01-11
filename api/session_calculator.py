@@ -1,17 +1,18 @@
 from datetime import datetime
-from storage_utils import load_payment_data
 from hashlib import md5
 import math
 import uuid
 
-def calculate_price(parkinglot, sid, data):
-    price = 0
-    start = datetime.strptime(data["started"], "%d-%m-%Y %H:%M:%S")
 
-    if data.get("stopped"):
-        end = datetime.strptime(data["stopped"], "%d-%m-%Y %H:%M:%S")
+def calculate_price(parking_lot, obj):
+    if hasattr(obj, "started"):
+        start = obj.started
+        end = obj.stopped or datetime.now()
+    elif hasattr(obj, "start_time"):
+        start = obj.start_time
+        end = obj.end_time or datetime.now()
     else:
-        end = datetime.now()
+        raise ValueError("Object must be a Session or Reservation with appropriate time fields.")
 
     diff = end - start
     hours = math.ceil(diff.total_seconds() / 3600)
@@ -19,30 +20,27 @@ def calculate_price(parkinglot, sid, data):
     if diff.total_seconds() < 180:
         price = 0
     elif end.date() > start.date():
-        price = float(parkinglot.get("daytariff", 999)) * (diff.days + 1)
+        price = float(parking_lot.daytariff) * (diff.days + 1)
     else:
-        price = float(parkinglot.get("tariff")) * hours
-
-        if price > float(parkinglot.get("daytariff", 999)):
-            price = float(parkinglot.get("daytariff", 999))
-
-    return (price, hours, diff.days + 1 if end.date() > start.date() else 0)
+        price = float(parking_lot.tariff) * hours
+        if price > float(parking_lot.daytariff):
+            price = float(parking_lot.daytariff)
+    return price
 
 
-
-def generate_payment_hash(sid, data):
-    return md5(str(sid + data["licenseplate"]).encode("utf-8")).hexdigest()
+def generate_payment_hash(sid, licenseplate):
+    return md5(str(sid + licenseplate).encode("utf-8")).hexdigest()
 
 
 def generate_transaction_validation_hash():
     return str(uuid.uuid4())
 
-def check_payment_amount(hash):
-    payments = load_payment_data()
-    total = 0
 
-    for payment in payments:
-        if payment["transaction"] == hash:
-            total += payment["amount"]
+# def check_payment_amount(hash):
+#     payments = load_payment_data()
+#     total = 0
 
-    return total
+#     for payment in payments:
+#         if payment["transaction"] == hash:
+#             total += payment["amount"]
+#     return total
