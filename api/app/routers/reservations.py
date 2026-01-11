@@ -94,6 +94,7 @@ async def create_reservation(reservation: ReservationCreate, current_user: User 
     payment_hash = generate_transaction_validation_hash()
     payment = PaymentCreate(
         user_id=current_user.id,
+        parking_lot_id=reservation.parking_lot_id,
         amount=cost,
         transaction=transaction,
         hash=payment_hash,

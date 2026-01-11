@@ -20,7 +20,7 @@ def test_create_parking_lot_with_superadmin(client_with_token):
 
 def test_create_parking_lot_with_admin(client_with_token):
     """An admin should not be able to create a new parking lot"""
-    admin_client, headers = client_with_token("admin")
+    admin_client, headers = client_with_token("lotadmin")
     fake_parking_lot = {
         "name": "test",
         "location": "here",

@@ -54,7 +54,7 @@ async def login(data: UserLogin):
 
 
 @router.get("/get_user/{user_id}")
-async def get_user(user_id: int, current_user: User = Depends(require_role(UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.PAYMENTADMIN))):
+async def get_user(user_id: int, current_user: User = Depends(require_role(UserRole.SUPERADMIN, UserRole.LOTADMIN, UserRole.PAYMENTADMIN))):
     logger.info("Admin %s is trying to access the information of user %s", current_user.id, user_id)
     user: User = user_model.get_user_by_id(user_id)
     if user is None:
@@ -64,7 +64,7 @@ async def get_user(user_id: int, current_user: User = Depends(require_role(UserR
 
 
 @router.get("/users")
-async def admin_get_all_users(current_user: User = Depends(require_role(UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.PAYMENTADMIN))):
+async def admin_get_all_users(current_user: User = Depends(require_role(UserRole.SUPERADMIN, UserRole.LOTADMIN, UserRole.PAYMENTADMIN))):
     logger.info("Admin %s tried to receive data of all users", current_user.id)
     users = user_model.get_all_users()
     return users
@@ -125,8 +125,8 @@ async def create_user(user: UserCreate, current_user: User = Depends(require_rol
     username_check = user_model.get_user_by_username(user.username)
     if username_check is not None:
         logger.info(
-            "A superadmin tried to create a profile, but the name was already created: %s", user.name)
-        raise HTTPException(status_code=409, detail="Name already taken")
+            "A superadmin tried to create a profile, but the username was already created: %s", user.username)
+        raise HTTPException(status_code=409, detail="Username already taken")
     hashed_password = hash_string(user.password)
     user.password = hashed_password
     user_model.create_user_with_role(user)
