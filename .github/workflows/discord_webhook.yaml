@@ -2,7 +2,7 @@ name: Build and Notify Discord
 
 on:
   push:
-    branches: [ "**" ]
+    branches: ["**"]
   pull_request:
     branches: [ main, dev ]
 
