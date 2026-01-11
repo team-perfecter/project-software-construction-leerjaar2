@@ -86,6 +86,23 @@ CREATE TABLE IF NOT EXISTS parking_lots (
 """)
 
 cur.execute("""
+CREATE TABLE IF NOT EXISTS discount_codes (
+    code VARCHAR PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    discount_type VARCHAR,
+    discount_value FLOAT,
+    use_amount INTEGER,
+    used_count INTEGER DEFAULT 0,
+    minimum_price FLOAT,
+    start_applicable_time TIME,
+    end_applicable_time TIME,
+    start_date TIMESTAMP,
+    end_date TIMESTAMP,
+    active BOOLEAN DEFAULT TRUE
+);
+""")
+
+cur.execute("""
 CREATE TABLE IF NOT EXISTS reservations (
     id SERIAL PRIMARY KEY,
     vehicle_id INTEGER REFERENCES vehicles(id),
@@ -95,6 +112,7 @@ CREATE TABLE IF NOT EXISTS reservations (
     end_time TIMESTAMP,
     status VARCHAR DEFAULT 'Payment Pending',
     created_at TIMESTAMP DEFAULT NOW(),
+    discount_code VARCHAR REFERENCES discount_codes(code) ON DELETE SET NULL,
     cost INTEGER
 );
 """)
@@ -106,8 +124,8 @@ CREATE TABLE IF NOT EXISTS sessions (
     user_id INTEGER REFERENCES users(id),
     vehicle_id INTEGER REFERENCES vehicles(id),
     reservation_id INTEGER REFERENCES reservations(id),
-    started TIMESTAMP DEFAULT NOW(),
-    stopped TIMESTAMP,
+    start_time TIMESTAMP DEFAULT NOW(),
+    end_time TIMESTAMP,
     cost FLOAT
 );
 """)
@@ -132,9 +150,17 @@ CREATE TABLE IF NOT EXISTS payments (
 
 cur.execute("""
 CREATE TABLE IF NOT EXISTS parking_lot_admins (
-    admin_user_id INTEGER REFERENCES users(id),
+    admin_user_id INTEGER REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     parking_lot_id INTEGER REFERENCES parking_lots(id),
     PRIMARY KEY (admin_user_id, parking_lot_id)
+);
+""")
+
+cur.execute("""
+CREATE TABLE IF NOT EXISTS discount_code_locations (
+    discount_code VARCHAR REFERENCES discount_codes(code) ON DELETE CASCADE ON UPDATE CASCADE,
+    location VARCHAR,
+    PRIMARY KEY (discount_code, location)
 );
 """)
 
