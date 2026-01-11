@@ -45,8 +45,7 @@ async def create_payment(
         raise HTTPException(status_code=500, detail="Failed to create payment")
     logger.info("Admin ID %i created new payment for user_id %i",
                 current_user.id, p.user_id)
-    return JSONResponse(content={"message": "Payment created successfully"},
-                        status_code=201)
+    return {"message": "Payment created successfully"}
 
 
 @router.get("/payments/me")
