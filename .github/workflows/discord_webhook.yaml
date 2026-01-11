@@ -3,6 +3,7 @@ on:
   pull_request:
     branches:
       - main
+      - dev
 
 jobs:
   build:
@@ -36,7 +37,7 @@ jobs:
         if [[ "${{ github.event_name }}" == "pull_request" ]]; then
           echo "PR_TITLE=${{ github.event.pull_request.title }}" >> $GITHUB_ENV
         else
-          echo "PR_TITLE=Push to branch '${{ github.ref_name }}'" >> $GITHUB_ENV
+          echo "PR_TITLE=Push to branch '${{ github.ref }}'" >> $GITHUB_ENV
         fi
     
     - name: Send Success Notification to Discord (Building)
