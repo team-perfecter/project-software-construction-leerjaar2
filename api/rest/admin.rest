@@ -106,7 +106,8 @@ Authorization: Bearer {{token}}
   "vehicle_id": 1,
   "parking_lot_id": 1,
   "start_time": "2026-01-01T10:00:00",
-  "end_time": "2026-01-01T12:00:00"
+  "end_time": "2026-01-01T12:00:00",
+  "discount_code": "test5"
 }
 
 ###
@@ -146,4 +147,38 @@ GET http://localhost:8000/sessions/vehicle/1
 Authorization: Bearer {{token}}
 ### Stop a session
 POST http://localhost:8000/parking-lots/1/sessions/stop?vehicle_id=1
+Authorization: Bearer {{token}}
+###
+POST http://localhost:8000/discount-codes
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "code": "test5544",
+  "user_id": 1,
+  "discount_type": "percentage",
+  "discount_value": 1.555,
+  "use_amount": 5,
+  "minimum_price": 10,
+  "locations": ["Rotterdam", "Schiedam"]
+}
+
+###
+GET http://localhost:8000/discount-codes
+Authorization: Bearer {{token}}
+###
+
+GET http://localhost:8000/discount-codes/active
+Authorization: Bearer {{token}}
+###
+GET http://localhost:8000/discount-codes/test5544
+Authorization: Bearer {{token}}
+###
+POST http://localhost:8000/discount-codes/test5544/deactivate
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{}
+###
+DELETE http://localhost:8000/discount-codes/bla
 Authorization: Bearer {{token}}

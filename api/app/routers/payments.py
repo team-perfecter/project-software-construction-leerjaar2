@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException, Depends
-from fastapi.responses import JSONResponse
 from api.datatypes.user import User, UserRole
 from api.datatypes.payment import PaymentCreate, PaymentUpdate
 from api.models.payment_model import PaymentModel
@@ -144,14 +143,13 @@ async def pay_payment(payment_id: int,
                             detail="Payment has already been paid")
     update = PaymentModel.mark_payment_completed(payment_id)
     if not update:
-        logger.error("Payment ID %i payment failed by User ID %i",
+        logging.info("Payment ID %s payment failed by User ID %s",
                      payment_id, current_user.id)
         raise HTTPException(status_code=500,
                             detail="Payment has failed")
     logger.info("Payment ID %i has succesfully been paid by User ID %i",
                 payment_id, current_user.id)
-    return JSONResponse(content={"message": "Payment completed successfully"},
-                        status_code=200)
+    return {"message": "Payment completed successfully"}
 
 
 @router.put("/payments/{payment_id}")
@@ -174,12 +172,11 @@ async def update_payment(
     update_fields = p.dict(exclude_unset=True)
     update = PaymentModel.update_payment(payment_id, update_fields)
     if not update:
-        logger.error("Admin ID %i failed updating Payment ID %i",
+        logging.info("Admin ID %s failed updating Payment ID %s",
                      current_user.id, payment_id)
         raise HTTPException(status_code=500,
                             detail="Payment has failed")
-    return JSONResponse(content={"message": "Payment updated successfully"},
-                        status_code=200)
+    return {"message": "Payment updated successfully"}
 
 
 @router.get("/payments/refunds")
@@ -241,8 +238,7 @@ async def request_refund(payment_id: int,
                     current_user.id, payment_id)
         raise HTTPException(status_code=500,
                             detail="Request has failed")
-    return JSONResponse(content={"message": "Refund reuested successfully"},
-                        status_code=200)
+    return {"message": "Refund requested successfully"}
 
 
 @router.post("/payments/{payment_id}/give_refund")
@@ -279,8 +275,7 @@ async def give_refund(
                     current_user.id, payment_id)
         raise HTTPException(status_code=500,
                             detail="Refund has failed")
-    return JSONResponse(content={"message": "Refund given successfully"},
-                        status_code=200)
+    return {"message": "Refund given successfully"}
 
 
 @router.get("/payments/{payment_id}")
@@ -324,5 +319,4 @@ async def delete_payment(
         raise HTTPException(status_code=500, detail="Deletion has failed")
     logger.info("Admin ID %i deleted Payment ID %i",
                 current_user.id, payment_id)
-    return JSONResponse(content={"message": "Payment deleted successfully"},
-                        status_code=200)
+    return {"message": "Payment deleted successfully"}
