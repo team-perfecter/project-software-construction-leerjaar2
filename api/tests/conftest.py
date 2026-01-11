@@ -1,35 +1,76 @@
+"""
+This file sets up the data required for running each test. 
+It also contains fixtures that provide clients to communicate with the API.
+"""
+
+from json import JSONDecodeError
 import pytest
 from fastapi.testclient import TestClient
 from api.main import app
 from api.auth_utils import create_access_token
 from api.models.user_model import UserModel
-from datetime import datetime, timedelta
 
-
-pytest_plugins = "pytest_benchmark"
+PYTEST_PLUGINS = "pytest_benchmark"
 
 
 def pytest_configure(config):
+    """
+    Configure pytest benchmark plugin to use a minimum of 20 rounds for benchmarking tests.
+    """
     config.option.benchmark_min_rounds = 20
 
+def run_fixture_on_test(filters, request) -> bool:
+    """
+    A filter for the setup fixtures.
+    only continues fixtures if the filename passes the filter.
+    this improves performance for the tests.
+    
+    filters: The names of the files the fixture should run in
+    """
+    can_continue = False
+    for f in filters:
+        if f in request.node.fspath.basename.lower():
+            can_continue = True
+            break
+    return can_continue
 
-@pytest.fixture
-def client():
-    """Provides a FastAPI TestClient instance."""
+@pytest.fixture(scope="session", name="client")
+def test_client():
+    """
+    Provides a FastAPI TestClient instance for making HTTP requests without authentication.
+    
+    Returns:
+        TestClient: FastAPI test client instance.
+    """
     return TestClient(app)
 
 
-@pytest.fixture
-def client_with_token(client):
+@pytest.fixture(scope="session", name="client_with_token")
+def test_client_with_token(client):
     """
-    Returns a TestClient and headers with JWT token for a given role.
-
+    Provides a TestClient instance along 
+    with headers containing a JWT token for a specified user role.
+    
     Usage:
         client, headers = client_with_token("superadmin")
         client, headers = client_with_token("paymentadmin")
+    
+    Args:
+        client (TestClient): The un-authenticated FastAPI test client.
+    
+    Returns:
+        function: A helper function that accepts a username and returns (client, headers).
     """
-
     def _client_with_role(username: str):
+        """
+        Generate headers with JWT token for the given username.
+        
+        Args:
+            username (str): The username for which the token is generated.
+        
+        Returns:
+            Tuple[TestClient, dict]: Test client and headers with Authorization token.
+        """
         token = create_access_token({"sub": username})
         headers = {"Authorization": f"Bearer {token}"}
         return client, headers
@@ -37,271 +78,101 @@ def client_with_token(client):
     return _client_with_role
 
 
-@pytest.fixture(autouse=True)
-def cleanup_database_order(request, client_with_token):
+@pytest.fixture(scope="session", autouse=True)
+def seed_all_data(client_with_token):
     """
-    Ensures database cleanup happens AFTER test in correct order.
-    Order: reservations -> vehicles -> parking_lots -> users
+    Seed all required data once per test session before any tests run.
+    Calls other seeding functions for vehicles, users, parking lots, payments, etc.
     """
-    # Geen cleanup VOOR test
-    yield  # Test runs here
 
-    # Cleanup NA test in reverse order of dependencies
     client, headers = client_with_token("superadmin")
 
-    try:
-        # 1. Delete ALL reservations first
-        reservations_response = client.get("/admin/reservations", headers=headers)
-        if reservations_response.status_code == 200:
-            reservations = reservations_response.json()
-            if isinstance(reservations, list):
-                for reservation in reservations:
-                    if isinstance(reservation, dict) and "id" in reservation:
-                        client.delete(
-                            f"/admin/reservations/{reservation['id']}", headers=headers
-                        )
+    seed_vehicles(client, headers, True)
 
-        # 2. Then delete vehicles
-        vehicles_response = client.get("/vehicles", headers=headers)
-        if vehicles_response.status_code == 200:
-            vehicles = vehicles_response.json()
-            if isinstance(vehicles, list):
-                for vehicle in vehicles:
-                    if isinstance(vehicle, dict) and "id" in vehicle:
-                        client.delete(
-                            f"/vehicles/delete/{vehicle['id']}", headers=headers
-                        )
+    seed_users(client, headers, True)
 
-        # 3. Then delete parking lots
-        parking_response = client.get("/parking-lots/", headers=headers)
-        if parking_response.status_code == 200:
-            parking_lots = parking_response.json()
-            if isinstance(parking_lots, list):
-                for lot in parking_lots:
-                    if isinstance(lot, dict) and "id" in lot:
-                        client.delete(f"/parking-lots/{lot['id']}", headers=headers)
+    seed_parking_lots(client, headers, True)
 
-    except Exception as e:
-        print(f"Cleanup error: {e}")
+    seed_payments(client, headers, True)
 
 
-@pytest.fixture(autouse=True)
-def setup_parking_lots(request, client_with_token):
+def seed_vehicles(client, headers, create_default):
     """
-    Clears the database of parking lots BEFORE test.
-    If the create endpoints are not being tested, this also adds 2 parking lots to the database
+    Seeds data for payments.
     """
-    client, headers = client_with_token("superadmin")
-
-    # Delete all reservations FIRST (to avoid foreign key constraint)
+    # Get all vehicles
+    response = client.get("/vehicles", headers=headers)
     try:
-        reservations_response = client.get("/admin/reservations", headers=headers)
-        if reservations_response.status_code == 200:
-            reservations = reservations_response.json()
-            if isinstance(reservations, list):
-                for reservation in reservations:
-                    if isinstance(reservation, dict) and "id" in reservation:
-                        client.delete(
-                            f"/admin/reservations/{reservation['id']}", headers=headers
-                        )
-    except Exception:
-        pass
+        data = response.json()
+    except JSONDecodeError:
+        data = []
 
-    # Now delete parking lots
-    response = client.get("/parking-lots/", headers=headers)
-    if response.status_code == 200:
-        for lot in response.json():
-            client.delete(f"/parking-lots/{lot['id']}", headers=headers)
+    # Ensure vehicles_list is a list
+    if isinstance(data, dict):
+        vehicles_list = []
+    elif isinstance(data, list):
+        vehicles_list = data
+    else:
+        vehicles_list = []
 
-    # Add default parking lots if NOT testing creation
-    if "create" not in request.node.fspath.basename:
-        lot = {
-            "name": "Bedrijventerrein Almere Parkeergarage",
-            "location": "Industrial Zone",
-            "address": "Schanssingel 337, 2421 BS Almere",
-            "capacity": 100,
-            "tariff": 0.5,
-            "daytariff": 0.5,
-            "lat": 0,
-            "lng": 0,
+    # Delete all existing vehicles
+    for vehicle in vehicles_list:
+        if isinstance(vehicle, dict) and "id" in vehicle:
+            client.delete(f"/vehicles/delete/{vehicle['id']}", headers=headers)
+
+    # Seed a default vehicle if not testing creation
+    #if "create" not in request.node.fspath.basename:
+    if create_default:
+        vehicle = {
+            "user_id": 1,
+            "license_plate": "ABC123",
+            "make": "Toyota",
+            "model": "Corolla",
+            "color": "Blue",
+            "year": 2020,
         }
+        client.post("/vehicles/create", json=vehicle, headers=headers)
 
-        lot2 = {
-            "name": "Vlaardingen Evenementenhal Parkeerterrein",
-            "location": "Event Center",
-            "address": "Westlindepark 756, 8920 AB Vlaardingen",
-            "capacity": 50,
-            "tariff": 0.5,
-            "daytariff": 0.5,
-            "lat": 0,
-            "lng": 0,
-        }
-
-        client.post("/parking-lots", json=lot, headers=headers)
-        client.post("/parking-lots", json=lot2, headers=headers)
-
-
-@pytest.fixture(autouse=True)
-def setup_vehicles(request, client_with_token):
-    """Always creates 2 vehicles before each test"""
-    client, headers = client_with_token("superadmin")
-    client_user, headers_user = client_with_token("user")
-
-    # Clean up first
-    try:
-        vehicles_response = client.get("/vehicles", headers=headers)
-        if vehicles_response.status_code == 200:
-            vehicles = vehicles_response.json()
-            if isinstance(vehicles, list):
-                for veh in vehicles:
-                    if isinstance(veh, dict) and "id" in veh:
-                        client.delete(
-                            f"/vehicles/delete/{veh['id']}", headers=headers
-                        )
-    except Exception as e:
-        print(f"Cleanup vehicles error: {e}")
-        pass
-
-    # Always create default vehicles
-    vehicle1 = {
-        "license_plate": "TEST-001",
-        "make": "Toyota",
-        "model": "Corolla",
-        "color": "Blue",
-        "year": 2020
-    }
-    
-    vehicle2 = {
-        "license_plate": "TEST-002",
-        "make": "Honda",
-        "model": "Civic",
-        "color": "Red",
-        "year": 2021
-    }
-    
-    response1 = client.post("/vehicles/create", json=vehicle1, headers=headers)
-    print(f"[DEBUG] Vehicle 1 creation: {response1.status_code}")
-    if response1.status_code != 201:
-        print(f"[DEBUG] Vehicle 1 error: {response1.text}")
-    
-    response2 = client_user.post("/vehicles/create", json=vehicle2, headers=headers_user)
-    print(f"[DEBUG] Vehicle 2 creation: {response2.status_code}")
-    if response2.status_code != 201:
-        print(f"[DEBUG] Vehicle 2 error: {response2.text}")
-    
-    check_response = client.get("/vehicles", headers=headers)
-    print(f"[DEBUG] After creation, vehicles status: {check_response.status_code}")
-    if check_response.status_code == 200:
-        print(f"[DEBUG] Vehicles count: {len(check_response.json())}")
-
-
-@pytest.fixture(autouse=True)
-def setup_reservations(request, client_with_token):
+def seed_users(client, headers, create_default):
     """
-    Clears the database of reservations before each test.
-    If the test is not testing reservation creation, it also adds a default reservation.
+    Seeds data for payments.
     """
-    client, headers = client_with_token("superadmin")
-
-    # Delete existing reservations
-    response = client.get("/admin/reservations", headers=headers)
-    if response.status_code == 200:
-        try:
-            reservations = response.json()
-            if isinstance(reservations, list):
-                for reservation in reservations:
-                    if isinstance(reservation, dict) and "id" in reservation:
-                        client.delete(
-                            f"/admin/reservations/{reservation['id']}", headers=headers
-                        )
-        except Exception:
-            pass
-
-    # Add default reservation if not testing creation
-    if "create" not in request.node.fspath.basename:
-        vehicle_response = client.get("/vehicles", headers=headers)
-        parking_response = client.get("/parking-lots/", headers=headers)
-
-        if (
-            vehicle_response.status_code == 200
-            and vehicle_response.json()
-            and parking_response.status_code == 200
-            and parking_response.json()
-        ):
-            vehicles = vehicle_response.json()
-            parking_lots = parking_response.json()
-
-            # Check if we have data
-            if len(vehicles) > 0 and len(parking_lots) > 0:
-                vehicle_id = vehicles[0]["id"]
-                parking_lot_id = parking_lots[0]["id"]
-                user_id = 1  # superadmin id
-
-                reservation = {
-                    "user_id": user_id,
-                    "parking_lot_id": parking_lot_id,
-                    "vehicle_id": vehicle_id,
-                    "start_date": (datetime.now() + timedelta(days=3)).isoformat(),
-                    "end_date": (datetime.now() + timedelta(days=4)).isoformat(),
-                }
-
-                client.post("/admin/reservations", json=reservation, headers=headers)
-
-
-def get_last_pid(client):
-    """
-    Returns the id of the last parking lot.
-    """
-    response = client.get("/parking-lots/")
-    data = response.json()
-    return data[-1]["id"]
-
-
-@pytest.fixture(autouse=True)
-def setup_users(request, client_with_token):
-    """
-    Clears the database of users.
-    If the create endpoints are not being tested, this also adds 2 users to the database
-    """
-
-    client, headers = client_with_token("superadmin")
     response = client.get("/users/", headers=headers)
 
-    if "create" not in request.node.fspath.basename:
+    if create_default:
+        # Delete users with id > 4
         for user in response.json():
-            if user["id"] > 4:
+            if user['id'] > 4:
                 client.delete(f"/users/{user['id']}", headers=headers)
 
+        # Seed default users
         user2 = {
             "username": "admin",
             "password": "admin123",
             "email": "bla@bla.com",
             "name": "admin",
-            "role": "admin",
+            "role": "admin"
         }
-
         user3 = {
             "username": "paymentadmin",
             "password": "admin123",
             "email": "bla@bla.com",
             "name": "paymentadmin",
-            "role": "paymentadmin",
+            "role": "paymentadmin"
         }
-
         user4 = {
             "username": "user",
             "password": "admin123",
             "email": "bla@bla.com",
             "name": "user",
-            "role": "user",
+            "role": "user"
         }
-
         user5 = {
             "username": "extrauser",
             "password": "admin123",
             "email": "bla@bla.com",
             "name": "extrauser",
-            "role": "user",
+            "role": "user"
         }
 
         client.post("/create_user", json=user2, headers=headers)
@@ -309,20 +180,16 @@ def setup_users(request, client_with_token):
         client.post("/create_user", json=user4, headers=headers)
         client.post("/create_user", json=user5, headers=headers)
 
-
-def get_last_reservation_id(client_with_token):
+def seed_parking_lots(client, headers, create_default):
     """
-    Returns the ID of the last reservation.
-    Useful to make sure the reservation you test exists.
+    Seeds data for payments.
     """
-    client, headers = client_with_token("superadmin")
-    response = client.get("/admin/reservations", headers=headers)
-
+    response = client.get("/parking-lots/", headers=headers)
     if response.status_code == 200:
         for lot in response.json():
-            client.delete(f"/parking-lots/{lot['id']}/force", headers=headers)
+            client.delete(f"/parking-lots/{lot['id']}", headers=headers)
 
-    if "create" not in request.node.fspath.basename:
+    if create_default:
         lot = {
             "name": "Bedrijventerrein Almere Parkeergarage",
             "location": "Industrial Zone",
@@ -333,7 +200,6 @@ def get_last_reservation_id(client_with_token):
             "lat": 0,
             "lng": 0
         }
-
         lot2 = {
             "name": "Vlaardingen Evenementenhal Parkeerterrein",
             "location": "Event Center",
@@ -344,43 +210,27 @@ def get_last_reservation_id(client_with_token):
             "lat": 0,
             "lng": 0
         }
-
         client.post("/parking-lots", json=lot, headers=headers)
         client.post("/parking-lots", json=lot2, headers=headers)
 
-
-def get_last_pid(client):
+def seed_payments(client, headers, create_default):
     """
-    Returns the id of the last parking lot.
-    """
-    response = client.get("/parking-lots/")
-    data = response.json()
-    return data[-1]["id"]
-
-
-@pytest.fixture(autouse=True)
-def setup_payments(request, client_with_token):
-    """
-    Clears all payments for superadmin.
-    If the create endpoints are not being tested, adds 5 payments to the DB.
+    Seeds data for payments.
     """
     user_model = UserModel()
 
-    client, headers = client_with_token("superadmin")
-
-    # Get superadmin
+    # Ensure superadmin exists
     user = user_model.get_user_by_username("superadmin")
     if not user:
-        raise Exception("Superadmin must exist in the DB for benchmarks")
-
-    # Delete all existing payments for superadmin
+        raise RuntimeError("Superadmin must exist in the DB")
+    # Delete all payments for superadmin
     response = client.get("/payments/me", headers=headers)
     if response.status_code == 200:
         for payment in response.json():
             client.delete(f"/payments/{payment['id']}", headers=headers)
 
-    # Seed 5 payments if not testing creation endpoints
-    if "create" not in request.node.fspath.basename:
+    # Seed 5 payments if not testing creation
+    if create_default:
         for i in range(5):
             payment = {
                 "user_id": user.id,
@@ -389,15 +239,105 @@ def setup_payments(request, client_with_token):
                 "hash": f"hash{i+1}",
                 "method": f"method{i+1}",
                 "issuer": f"issuer{i+1}",
-                "bank": f"bank{i+1}",
+                "bank": f"bank{i+1}"
             }
             client.post("/payments", json=payment, headers=headers)
+
+@pytest.fixture(autouse=True)
+def setup_vehicles(request, client_with_token):
+    """
+    Fixture to clear all vehicles before each test and optionally seed a default vehicle.
+    
+    If the test filename contains "create", no vehicle is seeded. 
+    Otherwise, one default vehicle is added.
+    
+    Args:
+        request: pytest request object.
+        client_with_token: Fixture that returns a client with JWT headers.
+    """
+    if not run_fixture_on_test(["vehicles"], request):
+        return
+    client, headers = client_with_token("superadmin")
+    create_default = "create" not in request.node.fspath.basename
+    seed_vehicles(client, headers, create_default)
+
+
+
+@pytest.fixture(autouse=True)
+def setup_users(request, client_with_token):
+    """
+    Fixture to clear all users above the system default users.
+    Seeds 4 default users if the test is not a creation test.
+    
+    Args:
+        request: pytest request object.
+        client_with_token: Fixture that returns a client with JWT headers.
+    """
+    if not run_fixture_on_test(["user"], request):
+        return
+    client, headers = client_with_token("superadmin")
+    create_default = "create" not in request.node.fspath.basename
+    seed_users(client, headers, create_default)
+
+
+@pytest.fixture(autouse=True)
+def setup_parking_lots(request, client_with_token):
+    """
+    Fixture to clear all parking lots before each test.
+    Adds two default parking lots unless testing creation endpoints.
+    
+    Args:
+        request: pytest request object.
+        client_with_token: Fixture that returns a client with JWT headers.
+    """
+    if not run_fixture_on_test(["parking_lot"], request):
+        return
+    client, headers = client_with_token("superadmin")
+    create_default = "create" not in request.node.fspath.basename
+    seed_parking_lots(client, headers, create_default)
+
+
+@pytest.fixture(autouse=True)
+def setup_payments(request, client_with_token):
+    """
+    Fixture to clear all payments for superadmin,
+    and seed 5 payments if not testing creation endpoints.
+    
+    Args:
+        request: pytest request object.
+        client_with_token: Fixture that returns a client with JWT headers.
+    """
+    if not run_fixture_on_test(["payments"], request):
+        return
+    client, headers = client_with_token("superadmin")
+    create_default = "create" not in request.node.fspath.basename
+    seed_payments(client, headers, create_default)
+
+
+def get_last_pid(client):
+    """
+    Returns the ID of the last parking lot in the database.
+
+    Args:
+        client (TestClient): FastAPI test client.
+
+    Returns:
+        int: ID of the last parking lot.
+    """
+    response = client.get("/parking-lots/")
+    data = response.json()
+    return data[-1]["id"]
 
 
 def get_last_payment_id(client_with_token):
     """
     Returns the ID of the last payment for superadmin.
-    Useful to make sure the payment you test exists.
+    
+    Args:
+        client_with_token: Fixture that returns a client with JWT headers.
+    
+    Returns:
+        int: ID of the last payment.
     """
     client, headers = client_with_token("superadmin")
     response = client.get("/payments/me", headers=headers)
@@ -407,7 +347,13 @@ def get_last_payment_id(client_with_token):
 
 def get_last_uid(client_with_token):
     """
-    Returns the id of the last user.
+    Returns the ID of the last user in the database.
+    
+    Args:
+        client_with_token: Fixture that returns a client with JWT headers.
+    
+    Returns:
+        int: ID of the last user.
     """
     client, headers = client_with_token("superadmin")
     response = client.get("/users/", headers=headers)
@@ -418,7 +364,12 @@ def get_last_uid(client_with_token):
 def get_last_vid(client_with_token):
     """
     Returns the ID of the last vehicle in the database.
-    Creates a vehicle if none exists.
+    
+    Args:
+        client_with_token: Fixture that returns a client with JWT headers.
+    
+    Returns:
+        int: ID of the last vehicle.
     """
     client, headers = client_with_token("superadmin")
     response = client.get("/vehicles", headers=headers)
