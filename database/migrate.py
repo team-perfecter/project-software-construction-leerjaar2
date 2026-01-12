@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS users (
 cur.execute("""
 CREATE TABLE IF NOT EXISTS vehicles (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     license_plate VARCHAR,
     make VARCHAR,
     model VARCHAR,
@@ -88,9 +88,9 @@ CREATE TABLE IF NOT EXISTS parking_lots (
 cur.execute("""
 CREATE TABLE IF NOT EXISTS reservations (
     id SERIAL PRIMARY KEY,
-    vehicle_id INTEGER REFERENCES vehicles(id),
-    user_id INTEGER REFERENCES users(id),
-    parking_lot_id INTEGER REFERENCES parking_lots(id),
+    vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    parking_lot_id INTEGER REFERENCES parking_lots(id) ON DELETE CASCADE,
     start_time TIMESTAMP,
     end_time TIMESTAMP,
     status VARCHAR DEFAULT 'Payment Pending',
@@ -102,10 +102,10 @@ CREATE TABLE IF NOT EXISTS reservations (
 cur.execute("""
 CREATE TABLE IF NOT EXISTS sessions (
     id SERIAL PRIMARY KEY,
-    parking_lot_id INTEGER REFERENCES parking_lots(id),
-    user_id INTEGER REFERENCES users(id),
-    vehicle_id INTEGER REFERENCES vehicles(id),
-    reservation_id INTEGER REFERENCES reservations(id),
+    parking_lot_id INTEGER REFERENCES parking_lots(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE CASCADE,
+    reservation_id INTEGER REFERENCES reservations(id) ON DELETE CASCADE,
     started TIMESTAMP DEFAULT NOW(),
     stopped TIMESTAMP,
     cost FLOAT
@@ -115,9 +115,9 @@ CREATE TABLE IF NOT EXISTS sessions (
 cur.execute("""
 CREATE TABLE IF NOT EXISTS payments (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
-    reservation_id INTEGER REFERENCES reservations(id),
-    session_id INTEGER REFERENCES sessions(id),
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    reservation_id INTEGER REFERENCES reservations(id) ON DELETE CASCADE,
+    session_id INTEGER REFERENCES sessions(id) ON DELETE CASCADE,
     transaction VARCHAR,
     amount FLOAT,
     completed BOOLEAN DEFAULT FALSE,

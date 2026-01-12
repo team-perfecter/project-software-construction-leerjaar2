@@ -87,14 +87,11 @@ def seed_all_data(client_with_token):
 
     client, headers = client_with_token("superadmin")
 
-    seed_vehicles(client, headers, True)
-
-    seed_users(client, headers, True)
-
-    seed_parking_lots(client, headers, True)
-
+    # Important: Clean up in reverse order of dependencies
     seed_payments(client, headers, True)
-
+    seed_vehicles(client, headers, True)  # Clean vehicles before users
+    seed_users(client, headers, True)     # Now safe to clean users
+    seed_parking_lots(client, headers, True)
 
 def seed_vehicles(client, headers, create_default):
     """
