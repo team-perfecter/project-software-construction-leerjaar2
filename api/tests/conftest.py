@@ -77,6 +77,15 @@ def setup_vehicles(request, client_with_token):
         }
         client.post("/vehicles/create", json=vehicle, headers=headers)
 
+def get_last_vid(client_with_token):
+    """
+    Returns the ID of the last vehicle in the database.
+    Creates a vehicle if none exists.
+    """
+    client, headers = client_with_token("superadmin")
+    response = client.get("/vehicles", headers=headers)
+    data = response.json()
+    return data[-1]["id"]
 
 @pytest.fixture(autouse=True)
 def setup_users(request, client_with_token):
@@ -95,11 +104,11 @@ def setup_users(request, client_with_token):
                 client.delete(f"/users/{user['id']}", headers=headers)
 
         user2 = {
-            "username": "admin",
+            "username": "lotadmin",
             "password": "admin123",
             "email": "bla@bla.com",
-            "name": "admin",
-            "role": "admin"
+            "name": "lotadmin",
+            "role": "lotadmin"
         }    
     
         user3 = {
@@ -130,6 +139,15 @@ def setup_users(request, client_with_token):
         client.post("/create_user", json=user3, headers=headers)
         client.post("/create_user", json=user4, headers=headers)
         client.post("/create_user", json=user5, headers=headers)
+
+def get_last_uid(client_with_token):
+    """
+    Returns the id of the last user.
+    """
+    client, headers = client_with_token("superadmin")
+    response = client.get("/users/", headers=headers)
+    data = response.json()
+    return data[-1]["id"]
 
 @pytest.fixture(autouse=True)
 def setup_parking_lots(request, client_with_token):
@@ -204,8 +222,10 @@ def setup_payments(request, client_with_token):
     # Seed 5 payments if not testing creation endpoints
     if "create" not in request.node.fspath.basename:
         for i in range(5):
+            lid = get_last_pid(client)
             payment = {
                 "user_id": user.id,
+                "parking_lot_id": f"{lid}",
                 "transaction": f"transaction{i+1}",
                 "amount": 100 + i,
                 "hash": f"hash{i+1}",
@@ -227,21 +247,49 @@ def get_last_payment_id(client_with_token):
     return data[-1]["id"]
 
 
-def get_last_uid(client_with_token):
-    """
-    Returns the id of the last user.
-    """
-    client, headers = client_with_token("superadmin")
-    response = client.get("/users/", headers=headers)
-    data = response.json()
-    return data[-1]["id"]
+@pytest.fixture(autouse=True)
+def setup_discount_codes(request, client_with_token):
+    user_model = UserModel()
 
-def get_last_vid(client_with_token):
-    """
-    Returns the ID of the last vehicle in the database.
-    Creates a vehicle if none exists.
-    """
     client, headers = client_with_token("superadmin")
-    response = client.get("/vehicles", headers=headers)
+
+    user = user_model.get_user_by_username("superadmin")
+    if not user:
+        raise Exception("Superadmin must exist in the DB for benchmarks")
+    
+    response = client.get("/discount-codes", headers=headers)
+    if response.status_code == 200:
+        codes = response.json().get("discount_code", [])
+        for discount_code in codes:
+            client.delete(f"/discount-codes/{discount_code['code']}", headers=headers)
+
+    code1 = {
+        "code": "test1",
+        "discount_type": "percentage",
+        "discount_value": 5,
+    }
+    code2 = {
+        "code": "test2",
+        "user_id": 1,
+        "discount_type": "fixed",
+        "discount_value": 5,
+        "use_amount": 5,
+        "minimum_price": 5,
+        "start_applicable_time": "00:01:00",
+        "end_applicable_time": "23:59:00",
+        "start_date": "2025-01-01",
+        "end_date": "2027-01-01",
+        "locations": ["Rotterdam", "Schiedam"]
+    }
+    client.post("/discount-codes", json=code1, headers=headers)
+    client.post("/discount-codes", json=code2, headers=headers)
+
+
+def get_last_discount_code(client_with_token):
+    client, headers = client_with_token("superadmin")
+    response = client.get("/discount-codes", headers=headers)
     data = response.json()
-    return data[-1]["id"]
+    codes = data.get("discount_code", [])
+    if codes:
+        return codes[-1]["code"]
+    return None 

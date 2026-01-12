@@ -84,7 +84,7 @@ def test_require_role_blocks_wrong_role():
         birth_year=None
     )
 
-    rolecheck = require_role(UserRole.ADMIN)
+    rolecheck = require_role(UserRole.LOTADMIN)
     with pytest.raises(HTTPException) as exc_info:
         rolecheck(user)
     assert exc_info.value.status_code == 403
@@ -117,7 +117,7 @@ def test_admin_can_manage_assigned_lot(mock_get_lots):
         password="admin",
         email="admin@admin.com",
         name="admin",
-        role=UserRole.ADMIN,
+        role=UserRole.LOTADMIN,
         created_at=datetime.now(),
         is_new_password=False,
         phone=None,

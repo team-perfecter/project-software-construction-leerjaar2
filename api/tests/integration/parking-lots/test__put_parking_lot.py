@@ -57,7 +57,7 @@ def test_update_parking_lot_unauthorized(client, valid_parking_lot_data):
 
 def test_update_parking_lot_forbidden(client_with_token, valid_parking_lot_data):
     """Test: PUT /parking-lots/{id} - Normale user toegang geweigerd"""
-    admin_client, headers = client_with_token("admin")
+    admin_client, headers = client_with_token("lotadmin")
     parking_lot_id = get_last_pid(admin_client)
     response = admin_client.put(f"/parking-lots/{parking_lot_id}", headers=headers, json=valid_parking_lot_data)
     assert response.status_code == 403

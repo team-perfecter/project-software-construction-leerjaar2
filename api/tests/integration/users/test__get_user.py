@@ -6,7 +6,7 @@ from api.tests.conftest import get_last_uid
 client = TestClient(app)
 
 def test_get_all_users_as_admin(client_with_token):
-    client, headers = client_with_token("admin")
+    client, headers = client_with_token("lotadmin")
     response = client.get("/users", headers=headers)
     assert response.status_code == 200
 
