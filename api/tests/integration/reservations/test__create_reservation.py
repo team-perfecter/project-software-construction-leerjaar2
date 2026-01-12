@@ -9,22 +9,20 @@ def test_create_reservation_success(client_with_token):
     vehicle_id = get_last_vid(client_with_token)
     parking_lot_id = get_last_pid(client)
 
-    # The API expects datetime objects, not strings
     start_time = datetime.now() + timedelta(hours=1)
     end_time = datetime.now() + timedelta(hours=3)
 
     reservation_data = {
         "vehicle_id": vehicle_id,
         "parking_lot_id": parking_lot_id,
-        "start_date": start_time.isoformat(),  # Use isoformat() with full datetime
-        "end_date": end_time.isoformat(),
+        "start_time": start_time.isoformat(),
+        "end_time": end_time.isoformat(),
     }
 
     response = client.post(
         "/reservations/create", json=reservation_data, headers=headers
     )
 
-    # The endpoint returns 200 with a message, not 201
     assert response.status_code == 200
     data = response.json()
     assert "message" in data
@@ -42,8 +40,8 @@ def test_create_reservation_parking_lot_not_found(client_with_token):
     reservation_data = {
         "vehicle_id": vehicle_id,
         "parking_lot_id": 99999,
-        "start_date": start_time.isoformat(),
-        "end_date": end_time.isoformat(),
+        "start_time": start_time.isoformat(),
+        "end_time": end_time.isoformat(),
     }
 
     response = client.post(
@@ -67,8 +65,8 @@ def test_create_reservation_vehicle_not_found(client_with_token):
     reservation_data = {
         "vehicle_id": 99999,
         "parking_lot_id": parking_lot_id,
-        "start_date": start_time.isoformat(),
-        "end_date": end_time.isoformat(),
+        "start_time": start_time.isoformat(),
+        "end_time": end_time.isoformat(),
     }
 
     response = client.post(
@@ -89,8 +87,8 @@ def test_create_reservation_no_authentication(client):
     reservation_data = {
         "vehicle_id": 1,
         "parking_lot_id": 1,
-        "start_date": start_time.isoformat(),
-        "end_date": end_time.isoformat(),
+        "start_time": start_time.isoformat(),
+        "end_time": end_time.isoformat(),
     }
 
     response = client.post("/reservations/create", json=reservation_data)
@@ -104,7 +102,7 @@ def test_create_reservation_missing_fields(client_with_token):
 
     reservation_data = {
         "vehicle_id": 1,
-        # Missing parking_lot_id, start_date, end_date
+        # Missing parking_lot_id, start_time, end_time
     }
 
     response = client.post(
@@ -123,8 +121,8 @@ def test_create_reservation_invalid_date_format(client_with_token):
     reservation_data = {
         "vehicle_id": vehicle_id,
         "parking_lot_id": parking_lot_id,
-        "start_date": "invalid-date",
-        "end_date": "invalid-date",
+        "start_time": "invalid-date",
+        "end_time": "invalid-date",
     }
 
     response = client.post(
