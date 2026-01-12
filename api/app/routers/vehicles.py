@@ -36,7 +36,7 @@ async def vehicles(user: User = Depends(get_current_user)):
 
 # Get one vehicle of an user. (Admin and up only)
 @router.get("/vehicles/{vehicle_id}")
-async def vehicles(
+async def specific_vehicle(
     vehicle_id: int,
     user: User = require_role(UserRole.LOTADMIN, UserRole.SUPERADMIN),
 ):

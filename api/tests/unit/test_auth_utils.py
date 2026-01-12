@@ -24,7 +24,7 @@ def test_hash_password_returns_hash():
 
 def test_verify_password_correct():
     password = "password"
-    hashed_password = hash_string(password)
+    hashed_password = hash_string(password, True)
     assert verify_password(password, hashed_password) is True
 
 
@@ -61,7 +61,7 @@ def test_require_role_allows_correct_role():
         name="superadmin",
         role=UserRole.SUPERADMIN,
         created_at=datetime.now(),
-        is_new_password=False,
+        old_hash=False,
         phone=None,
         birth_year=None
     )
@@ -79,7 +79,7 @@ def test_require_role_blocks_wrong_role():
         name="user",
         role=UserRole.USER,
         created_at=datetime.now(),
-        is_new_password=False,
+        old_hash=False,
         phone=None,
         birth_year=None
     )
@@ -99,7 +99,7 @@ def test_superadmin_can_manage_any_lot():
         name="superadmin",
         role=UserRole.SUPERADMIN,
         created_at=datetime.now(),
-        is_new_password=False,
+        old_hash=False,
         phone=None,
         birth_year=None
     )
@@ -119,7 +119,7 @@ def test_admin_can_manage_assigned_lot(mock_get_lots):
         name="admin",
         role=UserRole.LOTADMIN,
         created_at=datetime.now(),
-        is_new_password=False,
+        old_hash=False,
         phone=None,
         birth_year=None
     )
@@ -140,7 +140,7 @@ def test_user_cannot_manage_any_lot():
         name="user",
         role=UserRole.USER,
         created_at=datetime.now(),
-        is_new_password=False,
+        old_hash=False,
         phone=None,
         birth_year=None
     )
@@ -160,7 +160,7 @@ def _make_user(username: str) -> User:
         name=username,
         role=UserRole.USER,
         created_at=datetime.now(),
-        is_new_password=False,
+        old_hash=False,
         phone=None,
         birth_year=None,
     )
