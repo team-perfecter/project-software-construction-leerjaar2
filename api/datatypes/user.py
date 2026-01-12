@@ -22,7 +22,7 @@ class User(Register):
     id: int
     created_at: datetime
     role: UserRole
-    is_new_password: bool
+    old_hash: bool
 
 class UserCreate(BaseModel):
     username: str

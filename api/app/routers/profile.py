@@ -43,7 +43,7 @@ async def login(data: UserLogin):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     # updates password to use argon 2 when md5 is still used
-    # if not user.is_new_password:
+    # if not user.old_hash:
     #     hashed_password = hash_string(data.password, True)
     #     user_model.update_password(user.id, hashed_password)
 
