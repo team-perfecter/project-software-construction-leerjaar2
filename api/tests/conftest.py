@@ -98,7 +98,7 @@ def seed_all_data(client_with_token):
 
 def seed_vehicles(client, headers, create_default):
     """
-    Seeds data for payments.
+    Seeds data for vehicles.
     """
     # Get all vehicles
     response = client.get("/vehicles", headers=headers)
@@ -135,7 +135,7 @@ def seed_vehicles(client, headers, create_default):
 
 def seed_users(client, headers, create_default):
     """
-    Seeds data for payments.
+    Seeds data for users.
     """
     response = client.get("/users/", headers=headers)
 
@@ -182,7 +182,7 @@ def seed_users(client, headers, create_default):
 
 def seed_parking_lots(client, headers, create_default):
     """
-    Seeds data for payments.
+    Seeds data for parking lots.
     """
     response = client.get("/parking-lots/", headers=headers)
     if response.status_code == 200:
