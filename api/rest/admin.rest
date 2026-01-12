@@ -20,7 +20,7 @@ POST http://127.0.0.1:8000/login
 Content-Type: application/json
 
 {
-  "username": "superadmin",
+  "username": "admin",
   "password": "admin123"
 }
 
@@ -30,6 +30,38 @@ Content-Type: application/json
 ### GET USER DETAILS (7.1)
 GET http://127.0.0.1:8000/profile
 Authorization: Bearer {{token}}
+### Assign parking lot to admin (superadmin only)
+POST http://127.0.0.1:8000/admin/2/parking-lots/1/assign
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{}
+
+###
+POST http://127.0.0.1:8000/payments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "user_id": 1,
+  "parking_lot_id": 1,
+  "amount": 3.0
+}
+
+### Register an admin
+POST http://127.0.0.1:8000/create_user
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "username": "paymentadmin",
+  "password": "admin",
+  "name": "hallo",
+  "email": "test@example.com",
+  "phone": "1234567890",
+  "birth_year": "2002",
+  "role": "paymentadmin"
+}
 
 ###
 # Create a vehicle for an user
@@ -61,6 +93,9 @@ Authorization: Bearer {{token}}
   "lat": 52.3676,
   "lng": 4.9041
 }
+### 
+GET http://127.0.0.1:8000/users
+Authorization: Bearer {{token}}
 
 ### CREATE RESERVATION FOR USER (7.3)
 POST http://127.0.0.1:8000/reservations/create
@@ -71,7 +106,8 @@ Authorization: Bearer {{token}}
   "vehicle_id": 1,
   "parking_lot_id": 1,
   "start_time": "2026-01-01T10:00:00",
-  "end_time": "2026-01-01T12:00:00"
+  "end_time": "2026-01-01T12:00:00",
+  "discount_code": "test5"
 }
 
 ###
@@ -98,7 +134,7 @@ Authorization: Bearer {{token}}
 DELETE http://127.0.0.1:8000/admin/users/2
 Authorization: Bearer {{token}}
 ### Get current user payments
-GET http://127.0.0.1:8000/payments/me
+GET http://127.0.0.1:8000/payments/
 Authorization: Bearer {{token}}
 ###
 POST http://localhost:8000/parking-lots/1/sessions/start?vehicle_id=1
@@ -111,4 +147,38 @@ GET http://localhost:8000/sessions/vehicle/1
 Authorization: Bearer {{token}}
 ### Stop a session
 POST http://localhost:8000/parking-lots/1/sessions/stop?vehicle_id=1
+Authorization: Bearer {{token}}
+###
+POST http://localhost:8000/discount-codes
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "code": "test5544",
+  "user_id": 1,
+  "discount_type": "percentage",
+  "discount_value": 1.555,
+  "use_amount": 5,
+  "minimum_price": 10,
+  "locations": ["Rotterdam", "Schiedam"]
+}
+
+###
+GET http://localhost:8000/discount-codes
+Authorization: Bearer {{token}}
+###
+
+GET http://localhost:8000/discount-codes/active
+Authorization: Bearer {{token}}
+###
+GET http://localhost:8000/discount-codes/test5544
+Authorization: Bearer {{token}}
+###
+POST http://localhost:8000/discount-codes/test5544/deactivate
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{}
+###
+DELETE http://localhost:8000/discount-codes/bla
 Authorization: Bearer {{token}}

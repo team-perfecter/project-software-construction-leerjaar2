@@ -86,6 +86,23 @@ CREATE TABLE IF NOT EXISTS parking_lots (
 """)
 
 cur.execute("""
+CREATE TABLE IF NOT EXISTS discount_codes (
+    code VARCHAR PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    discount_type VARCHAR,
+    discount_value FLOAT,
+    use_amount INTEGER,
+    used_count INTEGER DEFAULT 0,
+    minimum_price FLOAT,
+    start_applicable_time TIME,
+    end_applicable_time TIME,
+    start_date TIMESTAMP,
+    end_date TIMESTAMP,
+    active BOOLEAN DEFAULT TRUE
+);
+""")
+
+cur.execute("""
 CREATE TABLE IF NOT EXISTS reservations (
     id SERIAL PRIMARY KEY,
     vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE CASCADE,
@@ -95,6 +112,7 @@ CREATE TABLE IF NOT EXISTS reservations (
     end_time TIMESTAMP,
     status VARCHAR DEFAULT 'Payment Pending',
     created_at TIMESTAMP DEFAULT NOW(),
+    discount_code VARCHAR REFERENCES discount_codes(code) ON DELETE SET NULL,
     cost INTEGER
 );
 """)
@@ -106,8 +124,8 @@ CREATE TABLE IF NOT EXISTS sessions (
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE CASCADE,
     reservation_id INTEGER REFERENCES reservations(id) ON DELETE CASCADE,
-    started TIMESTAMP DEFAULT NOW(),
-    stopped TIMESTAMP,
+    start_time TIMESTAMP DEFAULT NOW(),
+    end_time TIMESTAMP,
     cost FLOAT
 );
 """)
@@ -116,6 +134,7 @@ cur.execute("""
 CREATE TABLE IF NOT EXISTS payments (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    parking_lot_id INTEGER REFERENCES parking_lots(id) ON DELETE CASCADE ON UPDATE CASCADE,
     reservation_id INTEGER REFERENCES reservations(id) ON DELETE CASCADE,
     session_id INTEGER REFERENCES sessions(id) ON DELETE CASCADE,
     transaction VARCHAR,
@@ -126,15 +145,25 @@ CREATE TABLE IF NOT EXISTS payments (
     issuer VARCHAR,
     bank VARCHAR,
     date TIMESTAMP DEFAULT NOW(),
-    refund_requested BOOLEAN DEFAULT FALSE
+    refund_requested BOOLEAN DEFAULT FALSE,
+    refund_accepted BOOLEAN DEFAULT FALSE,
+    admin_id INTEGER REFERENCES users(id)
 );
 """)
 
 cur.execute("""
 CREATE TABLE IF NOT EXISTS parking_lot_admins (
-    admin_user_id INTEGER REFERENCES users(id),
+    admin_user_id INTEGER REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     parking_lot_id INTEGER REFERENCES parking_lots(id),
     PRIMARY KEY (admin_user_id, parking_lot_id)
+);
+""")
+
+cur.execute("""
+CREATE TABLE IF NOT EXISTS discount_code_locations (
+    discount_code VARCHAR REFERENCES discount_codes(code) ON DELETE CASCADE ON UPDATE CASCADE,
+    location VARCHAR,
+    PRIMARY KEY (discount_code, location)
 );
 """)
 
@@ -160,13 +189,13 @@ if not exists:
 
         cur.execute("""
             INSERT INTO users (username, password, name, email, role)
-            VALUES ('admin', %s, 'Admin', 'admin@admin.com', 'admin');
+            VALUES ('lotadmin', %s, 'LotAdmin', 'admin@admin.com', 'lotadmin');
         """, (hashed_pw,))
 
         conn.commit()
         cur.execute("""
             INSERT INTO users (username, password, name, email, role)
-            VALUES ('paymentadmin', %s, 'testuser',
+            VALUES ('paymentadmin', %s, 'paymentadmin',
                     'payment@admin.com', 'paymentadmin');
         """, (hashed_pw,))
 
