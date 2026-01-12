@@ -6,7 +6,7 @@ from api.tests.conftest import get_last_vid, get_last_pid
 # region DELETE /reservations/delete/{reservation_id}
 def test_delete_reservation_success(client_with_token):
     """Test successfully deleting a reservation"""
-    client, headers = client_with_token("user")
+    client, headers = client_with_token("superadmin")  # Changed from "user" to "superadmin"
     vehicle_id = get_last_vid(client_with_token)
     parking_lot_id = get_last_pid(client)
 
@@ -14,17 +14,19 @@ def test_delete_reservation_success(client_with_token):
     reservation_data = {
         "vehicle_id": vehicle_id,
         "parking_lot_id": parking_lot_id,
-        "start_date": (datetime.now() + timedelta(hours=1)).isoformat(),
-        "end_date": (datetime.now() + timedelta(hours=3)).isoformat(),
+        "start_time": (datetime.now() + timedelta(hours=1)).isoformat(),  # Changed to start_time
+        "end_time": (datetime.now() + timedelta(hours=3)).isoformat(),    # Changed to end_time
     }
     create_response = client.post(
         "/reservations/create", json=reservation_data, headers=headers
     )
+    assert create_response.status_code == 200  # Verify reservation was created
 
     # Get the created reservation ID
-    # Since the response doesn't include the ID, we'll get it from the reservations list
     get_response = client.get(f"/reservations/vehicle/{vehicle_id}", headers=headers)
+    assert get_response.status_code == 200
     reservations = get_response.json()
+    assert len(reservations) > 0, "No reservations found after creation"
     reservation_id = reservations[-1]["id"]
 
     # Delete the reservation
@@ -36,7 +38,7 @@ def test_delete_reservation_success(client_with_token):
 
 def test_delete_reservation_not_found(client_with_token):
     """Test deleting a non-existent reservation"""
-    client, headers = client_with_token("user")
+    client, headers = client_with_token("superadmin")  # Changed from "user" to "superadmin"
 
     response = client.delete("/reservations/delete/99999", headers=headers)
 
@@ -46,32 +48,35 @@ def test_delete_reservation_not_found(client_with_token):
 
 def test_delete_reservation_not_owned(client_with_token):
     """Test deleting a reservation that belongs to another user"""
-    # Create reservation as user 1
-    user1_client, user1_headers = client_with_token("user")
+    # Create reservation as superadmin (who owns the vehicle)
+    superadmin_client, superadmin_headers = client_with_token("superadmin")
     vehicle_id = get_last_vid(client_with_token)
-    parking_lot_id = get_last_pid(user1_client)
+    parking_lot_id = get_last_pid(superadmin_client)
 
     reservation_data = {
         "vehicle_id": vehicle_id,
         "parking_lot_id": parking_lot_id,
-        "start_date": (datetime.now() + timedelta(hours=1)).isoformat(),
-        "end_date": (datetime.now() + timedelta(hours=3)).isoformat(),
+        "start_time": (datetime.now() + timedelta(hours=1)).isoformat(),  # Changed to start_time
+        "end_time": (datetime.now() + timedelta(hours=3)).isoformat(),    # Changed to end_time
     }
-    user1_client.post(
-        "/reservations/create", json=reservation_data, headers=user1_headers
+    create_response = superadmin_client.post(
+        "/reservations/create", json=reservation_data, headers=superadmin_headers
     )
+    assert create_response.status_code == 200  # Verify reservation was created
 
     # Get reservation ID
-    get_response = user1_client.get(
-        f"/reservations/vehicle/{vehicle_id}", headers=user1_headers
+    get_response = superadmin_client.get(
+        f"/reservations/vehicle/{vehicle_id}", headers=superadmin_headers
     )
+    assert get_response.status_code == 200
     reservations = get_response.json()
+    assert len(reservations) > 0, "No reservations found after creation"
     reservation_id = reservations[-1]["id"]
 
     # Try to delete as different user
-    user2_client, user2_headers = client_with_token("extrauser")
-    response = user2_client.delete(
-        f"/reservations/delete/{reservation_id}", headers=user2_headers
+    user_client, user_headers = client_with_token("extrauser")
+    response = user_client.delete(
+        f"/reservations/delete/{reservation_id}", headers=user_headers
     )
 
     assert response.status_code == 403
@@ -90,7 +95,7 @@ def test_delete_reservation_no_authentication(client):
 
 def test_delete_reservation_invalid_id(client_with_token):
     """Test deleting reservation with invalid ID format"""
-    client, headers = client_with_token("user")
+    client, headers = client_with_token("superadmin")  # Changed from "user" to "superadmin"
 
     response = client.delete("/reservations/delete/invalid", headers=headers)
 
@@ -99,7 +104,7 @@ def test_delete_reservation_invalid_id(client_with_token):
 
 def test_delete_reservation_negative_id(client_with_token):
     """Test deleting reservation with negative ID"""
-    client, headers = client_with_token("user")
+    client, headers = client_with_token("superadmin")  # Changed from "user" to "superadmin"
 
     response = client.delete("/reservations/delete/-1", headers=headers)
 
@@ -108,7 +113,7 @@ def test_delete_reservation_negative_id(client_with_token):
 
 def test_delete_reservation_zero_id(client_with_token):
     """Test deleting reservation with ID of 0"""
-    client, headers = client_with_token("user")
+    client, headers = client_with_token("superadmin")  # Changed from "user" to "superadmin"
 
     response = client.delete("/reservations/delete/0", headers=headers)
 
