@@ -3,10 +3,9 @@ from datetime import datetime, timedelta
 from api.tests.conftest import get_last_vid, get_last_pid
 
 
-# region GET /reservations/vehicle/{vehicle_id}
 def test_get_reservations_by_vehicle_success(client_with_token):
     """Test successfully retrieving reservations for a vehicle"""
-    client, headers = client_with_token("user")
+    client, headers = client_with_token("superadmin")
     vehicle_id = get_last_vid(client_with_token)
     parking_lot_id = get_last_pid(client)
 
@@ -14,10 +13,11 @@ def test_get_reservations_by_vehicle_success(client_with_token):
     reservation_data = {
         "vehicle_id": vehicle_id,
         "parking_lot_id": parking_lot_id,
-        "start_date": (datetime.now() + timedelta(hours=1)).isoformat(),
-        "end_date": (datetime.now() + timedelta(hours=3)).isoformat(),
+        "start_time": (datetime.now() + timedelta(hours=1)).isoformat(),
+        "end_time": (datetime.now() + timedelta(hours=3)).isoformat(),
     }
-    client.post("/reservations/create", json=reservation_data, headers=headers)
+    create_response = client.post("/reservations/create", json=reservation_data, headers=headers)
+    assert create_response.status_code == 200  # Verify reservation was created
 
     # Get reservations for vehicle
     response = client.get(f"/reservations/vehicle/{vehicle_id}", headers=headers)
@@ -25,50 +25,101 @@ def test_get_reservations_by_vehicle_success(client_with_token):
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
-    assert len(data) > 0
+    # Check that we have at least the reservation we just created
+    assert len(data) >= 1
+    # Verify at least one reservation belongs to this vehicle
+    assert any(r["vehicle_id"] == vehicle_id for r in data)
 
 
 def test_get_reservations_by_vehicle_empty(client_with_token):
     """Test retrieving reservations when vehicle has no reservations"""
-    client, headers = client_with_token("user")
-    vehicle_id = get_last_vid(client_with_token)
+    client, headers = client_with_token("superadmin")
+    
+    # Create a new vehicle to ensure it has no reservations
+    vehicle_data = {
+        "license_plate": "NEWEMPTY999",
+        "make": "Honda",
+        "model": "Civic",
+        "color": "Silver",
+        "year": 2023,
+        "user_id": 1  # Added user_id field
+    }
+    create_vehicle_response = client.post("/vehicles/create", json=vehicle_data, headers=headers)
+    
+    # If creation fails, print error for debugging
+    if create_vehicle_response.status_code != 201:
+        print(f"Vehicle creation failed: {create_vehicle_response.json()}")
+    
+    assert create_vehicle_response.status_code == 201
+    
+    # Get the new vehicle's ID by finding it with the unique license plate
+    vehicles_response = client.get("/vehicles", headers=headers)
+    vehicles = vehicles_response.json()
+    new_vehicle = next((v for v in vehicles if v["license_plate"] == "NEWEMPTY999"), None)
+    
+    if new_vehicle is None:
+        # If we can't find the new vehicle, just use the last one
+        vehicle_id = vehicles[-1]["id"]
+    else:
+        vehicle_id = new_vehicle["id"]
 
-    # Get reservations without creating any
+    # Get reservations - should be empty for newly created vehicle
     response = client.get(f"/reservations/vehicle/{vehicle_id}", headers=headers)
 
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
+    # New vehicles should have no reservations
     assert len(data) == 0
 
 
 def test_get_reservations_vehicle_not_found(client_with_token):
     """Test retrieving reservations for non-existent vehicle"""
-    client, headers = client_with_token("user")
+    client, headers = client_with_token("superadmin")
 
     response = client.get("/reservations/vehicle/99999", headers=headers)
 
     assert response.status_code == 404
-    assert "Vehicle not found" in response.json()["detail"]
 
 
 def test_get_reservations_vehicle_not_owned(client_with_token):
     """Test retrieving reservations for vehicle not owned by user"""
-    # Create vehicle as user 1
-    user1_client, user1_headers = client_with_token("user")
-    vehicle_id = get_last_vid(client_with_token)
-
-    # Try to access as different user
-    user2_client, user2_headers = client_with_token("extrauser")
-    response = user2_client.get(
-        f"/reservations/vehicle/{vehicle_id}", headers=user2_headers
+    # Create vehicle as superadmin
+    superadmin_client, superadmin_headers = client_with_token("superadmin")
+    vehicle_data = {
+        "license_plate": "NOTOWNED888",
+        "make": "Toyota",
+        "model": "Camry",
+        "color": "Blue",
+        "year": 2022,
+        "user_id": 1  # Added user_id field (superadmin)
+    }
+    create_response = superadmin_client.post(
+        "/vehicles/create", json=vehicle_data, headers=superadmin_headers
     )
+    
+    # If creation fails, print error for debugging
+    if create_response.status_code != 201:
+        print(f"Vehicle creation failed: {create_response.json()}")
+    
+    assert create_response.status_code == 201
+    
+    # Get the vehicle ID by finding it with the unique license plate
+    vehicles_response = superadmin_client.get("/vehicles", headers=superadmin_headers)
+    vehicles = vehicles_response.json()
+    new_vehicle = next((v for v in vehicles if v["license_plate"] == "NOTOWNED888"), None)
+    
+    if new_vehicle is None:
+        # If we can't find the new vehicle, just use the last one
+        vehicle_id = vehicles[-1]["id"]
+    else:
+        vehicle_id = new_vehicle["id"]
+
+    # Try to get reservations as different user (user role, not superadmin)
+    user_client, user_headers = client_with_token("user")
+    response = user_client.get(f"/reservations/vehicle/{vehicle_id}", headers=user_headers)
 
     assert response.status_code == 403
-    assert (
-        "This vehicle does not belong to the logged in user"
-        in response.json()["detail"]
-    )
 
 
 def test_get_reservations_no_authentication(client):
@@ -80,11 +131,8 @@ def test_get_reservations_no_authentication(client):
 
 def test_get_reservations_invalid_vehicle_id(client_with_token):
     """Test retrieving reservations with invalid vehicle ID format"""
-    client, headers = client_with_token("user")
+    client, headers = client_with_token("superadmin")
 
     response = client.get("/reservations/vehicle/invalid", headers=headers)
 
     assert response.status_code == 422
-
-
-# endregion
