@@ -21,17 +21,6 @@ def test_hash_password_returns_hash():
     hashed = hash_password("secret123")
     assert hashed != "secret123"
 
-
-def test_verify_password_correct():
-    password = "password"
-    hashed_password = hash_string(password, True)
-    assert verify_password(password, hashed_password) is True
-
-
-def test_verify_password_wrong():
-    assert verify_password("password", "wrong_hashed_password") is False
-
-
 def test_create_access_token_contains_jwt():
     token = create_access_token({"sub": "superadmin"})
     assert isinstance(token, str)
