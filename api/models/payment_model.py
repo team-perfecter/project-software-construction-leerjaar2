@@ -5,7 +5,7 @@ from api.session_calculator import generate_transaction_validation_hash
 
 class PaymentModel:
     connection = psycopg2.connect(
-        host="db",
+        host="localhost",
         port=5432,
         database="database",
         user="user",

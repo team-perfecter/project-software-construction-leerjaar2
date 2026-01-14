@@ -5,7 +5,7 @@ from api.datatypes.discount_code import DiscountCodeCreate
 class DiscountCodeModel:
     def __init__(self):
         self.connection = psycopg2.connect(
-            host="db",
+            host="localhost",
             port=5432,
             database="database",
             user="user",

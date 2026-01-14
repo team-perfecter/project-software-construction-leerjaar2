@@ -8,7 +8,7 @@ from api.datatypes.reservation import ReservationCreate, Reservation
 class Reservation_model:
     def __init__(self):
         self.connection = psycopg2.connect(
-            host="db",
+            host="localhost",
             port=5432,
             database="database",
             user="user",

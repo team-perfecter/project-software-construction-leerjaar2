@@ -6,7 +6,7 @@ from api.datatypes.session import Session
 class SessionModel:
     def __init__(self):
         self.connection = psycopg2.connect(
-            host="db",
+            host="localhost",
             port=5432,
             database="database",
             user="user",
