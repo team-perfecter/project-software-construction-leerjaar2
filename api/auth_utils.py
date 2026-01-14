@@ -89,14 +89,3 @@ def user_can_manage_lot(user: User, lid: int, for_payments: bool) -> bool:
         return lid in assigned_lots
 
     return False
-
-
-def require_lot_access(for_payments: bool = False):      
-    def wrapper(
-        lid: int,
-        current_user: User = Depends(get_current_user)
-    ):
-        if not user_can_manage_lot(current_user, lid, for_payments):
-            raise HTTPException(403, "Not enough permissions for this lot")
-        return current_user
-    return wrapper
