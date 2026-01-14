@@ -93,7 +93,7 @@ async def start_parking_session(
     # create new session
 
     # Save session
-    session = session_model.create_session(lid, current_user.id, vehicle_id, None)
+    session = session_model.create_session(lid, current_user.id, vehicle_id, vehicle["license_plate"], None)
     if session is None:
         logger.warning("Vehcile %i already has a session", vehicle_id)
         return JSONResponse(content={"message": "This vehicle already has a session"}, status_code=209)
@@ -148,6 +148,19 @@ async def stop_parking_session(
         content= {"message": "Session stopped successfully"}, 
         status_code=201
         )
+
+@router.post("/parking-lots/{lid}/sessions/start/signed-out/{license_plate}")
+async def start_session_licenseplate(lid: int, license_plate: str):
+    parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
+    if not parking_lot:
+        raise HTTPException(status_code=404,detail={"error": "Parking lot not found", "message": f"Parking lot {lid} does not exist",})
+    sessions = session_model.get_session_by_license_plate(license_plate)
+    if sessions:
+        raise HTTPException(status_code=404,detail={"error": "Parking lot not found", "message": f"Parking lot {lid} does not exist",})
+    session_model.create_session(lid, None, None, license_plate, None)
+
+    return JSONResponse(content={"message": "Session is created"}, status_code=201)
+
 
 @router.get("/sessions/active")
 async def get_active_sessions():
