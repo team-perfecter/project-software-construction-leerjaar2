@@ -1,7 +1,7 @@
 from starlette.responses import JSONResponse
 from api.datatypes.user import User, UserCreate, UserLogin, UserUpdate, UserRole, Register
 from api.models.user_model import UserModel
-from api.utilities.Hasher import hash_string
+from api.utilities.hasher import hash_string
 from fastapi import Depends, APIRouter, HTTPException
 from api.auth_utils import verify_password, create_access_token, get_current_user, revoke_token, oauth2_scheme, require_role
 from argon2 import PasswordHasher, exceptions

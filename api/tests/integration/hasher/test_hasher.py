@@ -4,7 +4,7 @@ from api.datatypes.user import User, UserRole
 from api.main import app
 from api.models.user_model import UserModel
 from api.tests.conftest import get_last_uid
-from api.utilities.Hasher import hash_string
+from api.utilities.hasher import hash_string
 
 client = TestClient(app)
 
