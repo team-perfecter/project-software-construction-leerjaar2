@@ -145,7 +145,7 @@ def get_last_vid(client_with_token):
     Creates a vehicle if none exists.
     """
     client, headers = client_with_token("superadmin")
-    response = client.get("/vehicles", headers=headers)  # ✅ FIXED: Changed from "/discount-codes" to "/vehicles"
+    response = client.get("/vehicles", headers=headers)
     data = response.json()
     
     # Handle case where no vehicles exist or API returns 404
@@ -460,7 +460,7 @@ def get_last_vid(client_with_token):
     Creates a vehicle if none exists.
     """
     client, headers = client_with_token("superadmin")
-    response = client.get("/vehicles", headers=headers)  # ✅ FIXED: Changed from "/discount-codes" to "/vehicles"
+    response = client.get("/vehicles", headers=headers)
     data = response.json()
     
     # Handle case where no vehicles exist or API returns 404

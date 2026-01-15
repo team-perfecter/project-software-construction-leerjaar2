@@ -53,23 +53,23 @@ async def create_reservation(reservation: ReservationCreate, current_user: User 
     if vehicle == None:
         logger.warning("Vehicle %s does not exist", reservation.vehicle_id)
         raise HTTPException(status_code = 404, detail = {"message": f"Vehicle does not exist"})
-    ### deze error handling werkt niet eens!!!
-    # conflicting_time: bool = False
-    # vehicle_reservations: list[Reservation] = reservation_model.get_reservation_by_vehicle(vehicle["id"])
-    # for reservation in vehicle_reservations:
-    #     if reservation["start_date"] < reservation["end_date"] and reservation["end_date"] > reservation["start_date"]:
-    #         conflicting_time = True
-    #         break
-    # if conflicting_time:
-    #     raise HTTPException(status_code = 401, detail = {"message": f"Requested date has an overlap with another reservation for this vehicle"})
 
-    # # check if start date is later than the current date
-    # if reservation.start_date < datetime.now():
-    #     raise HTTPException(status_code = 403, detail = {"message": f"invalid start date. The start date cannot be earlier than the current date. current date: {datetime.now()}, received date: {reservation.start_date}"})
+    conflicting_time: bool = False
+    vehicle_reservations: list[Reservation] = reservation_model.get_reservation_by_vehicle(vehicle["id"])
+    for reservation in vehicle_reservations:
+        if reservation["start_time"] < reservation["end_time"] and reservation["end_time"] > reservation["start_time"]:
+            conflicting_time = True
+            break
+    if conflicting_time:
+        raise HTTPException(status_code = 409, detail = {"message": f"Requested time has an overlap with another reservation for this vehicle"})
 
-    # # check if the end date is later than the start date
-    # if reservation.start_date >= reservation.end_date:
-    #     raise HTTPException(status_code = 403, detail = {"message": f"invalid start date. The start date cannot be later than the end date start date: {reservation.start_date}, end date: {reservation.end_date}"})
+    # check if start time is later than the current time
+    if reservation.start_time < datetime.now():
+        raise HTTPException(status_code = 400, detail = {"message": f"invalid start time. The start time cannot be earlier than the current time. current time: {datetime.now()}, received time: {reservation.start_time}"})
+
+    # check if the end time is later than the start time
+    if reservation.start_time >= reservation.end_time:
+        raise HTTPException(status_code = 400, detail = {"message": f"invalid start time. The start time cannot be later than the end time. start time: {reservation.start_time}, end time: {reservation.end_time}"})
 
     #create a new reservation
     parking_lot = parking_lot_model.get_parking_lot_by_lid(reservation.parking_lot_id)

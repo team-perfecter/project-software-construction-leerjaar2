@@ -134,7 +134,7 @@
 #         headers=headers,
 #     )
 
-#     assert response.status_code == 201
+#     assert response.status_code == 200
 #     assert "Session stopped successfully" in response.json()["message"]
 
 
@@ -162,8 +162,8 @@
 #     reservation_data = {
 #         "vehicle_id": vehicle_id,
 #         "parking_lot_id": 1,
-#         "start_date": (datetime.now() + timedelta(hours=1)).isoformat(),
-#         "end_date": (datetime.now() + timedelta(hours=3)).isoformat(),
+#         "start_time": (datetime.now() + timedelta(hours=1)).isoformat(),
+#         "end_time": (datetime.now() + timedelta(hours=3)).isoformat(),
 #     }
 #     reservation_response = client.post(
 #         "/reservations/create", json=reservation_data, headers=headers
@@ -207,8 +207,8 @@
 #     reservation_data = {
 #         "vehicle_id": vehicle_id,
 #         "parking_lot_id": 1,
-#         "start_date": (datetime.now() + timedelta(hours=1)).isoformat(),
-#         "end_date": (datetime.now() + timedelta(hours=3)).isoformat(),
+#         "start_time": (datetime.now() + timedelta(hours=1)).isoformat(),
+#         "end_time": (datetime.now() + timedelta(hours=3)).isoformat(),
 #     }
 #     reservation_response = client.post(
 #         "/reservations/create", json=reservation_data, headers=headers
@@ -243,8 +243,8 @@
 #     reservation_data = {
 #         "vehicle_id": vehicle_id,
 #         "parking_lot_id": 1,
-#         "start_date": (datetime.now() + timedelta(hours=1)).isoformat(),
-#         "end_date": (datetime.now() + timedelta(hours=3)).isoformat(),
+#         "start_time": (datetime.now() + timedelta(hours=1)).isoformat(),
+#         "end_time": (datetime.now() + timedelta(hours=3)).isoformat(),
 #     }
 #     reservation_response = superadmin_client.post(
 #         "/reservations/create", json=reservation_data, headers=superadmin_headers
@@ -270,8 +270,8 @@
 #     reservation_data = {
 #         "vehicle_id": vehicle_id,
 #         "parking_lot_id": 1,
-#         "start_date": (datetime.now() + timedelta(hours=1)).isoformat(),
-#         "end_date": (datetime.now() + timedelta(hours=3)).isoformat(),
+#         "start_time": (datetime.now() + timedelta(hours=1)).isoformat(),
+#         "end_time": (datetime.now() + timedelta(hours=3)).isoformat(),
 #     }
 #     reservation_response = client.post(
 #         "/reservations/create", json=reservation_data, headers=headers
@@ -303,8 +303,8 @@
 #     reservation_data = {
 #         "vehicle_id": vehicle_id,
 #         "parking_lot_id": 1,
-#         "start_date": (datetime.now() - timedelta(hours=2)).isoformat(),
-#         "end_date": (datetime.now() + timedelta(hours=2)).isoformat(),
+#         "start_time": (datetime.now() - timedelta(hours=2)).isoformat(),
+#         "end_time": (datetime.now() + timedelta(hours=2)).isoformat(),
 #     }
 #     reservation_response = client.post(
 #         "/reservations/create", json=reservation_data, headers=headers
@@ -341,8 +341,8 @@
 #     reservation_data = {
 #         "vehicle_id": vehicle_id,
 #         "parking_lot_id": 1,
-#         "start_date": (datetime.now() - timedelta(hours=2)).isoformat(),
-#         "end_date": (datetime.now() + timedelta(hours=2)).isoformat(),
+#         "start_time": (datetime.now() - timedelta(hours=2)).isoformat(),
+#         "end_time": (datetime.now() + timedelta(hours=2)).isoformat(),
 #     }
 #     reservation_response = client.post(
 #         "/reservations/create", json=reservation_data, headers=headers
