@@ -2,7 +2,7 @@ name: Run Tests, Create Reports, Send Webhook
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: ["*"]
   pull_request:
     branches: [ main, dev, workflow/tests ]
 
