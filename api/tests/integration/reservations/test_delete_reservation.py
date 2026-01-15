@@ -121,3 +121,4 @@ def test_delete_reservation_zero_id(client_with_token):
 
 
 # endregion
+#region admin tests

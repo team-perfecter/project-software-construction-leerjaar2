@@ -54,37 +54,39 @@ async def create_reservation(reservation: ReservationCreate, current_user: User 
         logger.warning("Vehicle %s does not exist", reservation.vehicle_id)
         raise HTTPException(status_code = 404, detail = {"message": f"Vehicle does not exist"})
 
+    # check if start time is later than the current time
+    if reservation.start_time < datetime.now():
+        raise HTTPException(status_code = 400, detail = {"message": f"invalid start time. The start time cannot be earlier than the current time. current time: {datetime.now()}, received time: {reservation.start_time}"})
+
+    # check if the start time is later than the end time
+    if reservation.start_time >= reservation.end_time:
+        raise HTTPException(status_code = 400, detail = {"message": f"invalid start time. The start time cannot be later than the end time. start time: {reservation.start_time}, end time: {reservation.end_time}"})
+
+    # Check for conflicting reservations
     conflicting_time: bool = False
-    vehicle_reservations: list[Reservation] = reservation_model.get_reservation_by_vehicle(vehicle["id"])
-    for reservation in vehicle_reservations:
-        if reservation["start_time"] < reservation["end_time"] and reservation["end_time"] > reservation["start_time"]:
+    vehicle_reservations: list[Reservation] = reservation_model.get_reservations_by_vehicle(vehicle["id"])
+    for existing_reservation in vehicle_reservations:
+        # Check if the new reservation overlaps with an existing one
+        if reservation.start_time < existing_reservation["end_time"] and reservation.end_time > existing_reservation["start_time"]:
             conflicting_time = True
             break
     if conflicting_time:
         raise HTTPException(status_code = 409, detail = {"message": f"Requested time has an overlap with another reservation for this vehicle"})
 
-    # check if start time is later than the current time
-    if reservation.start_time < datetime.now():
-        raise HTTPException(status_code = 400, detail = {"message": f"invalid start time. The start time cannot be earlier than the current time. current time: {datetime.now()}, received time: {reservation.start_time}"})
-
-    # check if the end time is later than the start time
-    if reservation.start_time >= reservation.end_time:
-        raise HTTPException(status_code = 400, detail = {"message": f"invalid start time. The start time cannot be later than the end time. start time: {reservation.start_time}, end time: {reservation.end_time}"})
-
     #create a new reservation
     parking_lot = parking_lot_model.get_parking_lot_by_lid(reservation.parking_lot_id)
     #errorhandling etc.
 
-    discount_code = discount_code_model.get_discount_code_by_code(reservation.discount_code)
-    if not discount_code:
-        logger.error("User ID %s tried to use discount code %s, "
-                     "but it was not found",
-                     current_user.id, reservation.discount_code)
-        raise HTTPException(status_code=404,
-                            detail="No discount code was found.")
-    use_discount_code_validation(discount_code, reservation, current_user, parking_lot)
-    cost = calculate_price(parking_lot, reservation, discount_code)
-    
+    # Only validate discount code if one was provided
+    if reservation.discount_code is not None:
+        discount_code = discount_code_model.get_discount_code_by_code(reservation.discount_code)
+        if discount_code is None:
+            logger.error("User ID %s tried to use discount code %s, but it was not found", current_user.id, reservation.discount_code)
+            raise HTTPException(status_code=404, detail={"message": "Discount code not found"})
+        use_discount_code_validation(discount_code, reservation, current_user, parking_lot)
+        cost = calculate_price(parking_lot, reservation, discount_code)
+    else:
+        cost = calculate_price(parking_lot, reservation, None)
     
     reservation_id = reservation_model.create_reservation(reservation, current_user.id, cost)
     #errorhandling etc.

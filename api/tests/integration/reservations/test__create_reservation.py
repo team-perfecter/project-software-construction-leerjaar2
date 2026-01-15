@@ -130,3 +130,128 @@ def test_create_reservation_invalid_date_format(client_with_token):
     )
 
     assert response.status_code == 422
+
+
+def test_create_reservation_start_time_in_past(client_with_token):
+    """Test creating reservation with start time earlier than current time"""
+    client, headers = client_with_token("superadmin")
+    vehicle_id = get_last_vid(client_with_token)
+    parking_lot_id = get_last_pid(client)
+
+    start_time = datetime.now() - timedelta(hours=1)  # 1 hour in the past
+    end_time = datetime.now() + timedelta(hours=1)
+
+    reservation_data = {
+        "vehicle_id": vehicle_id,
+        "parking_lot_id": parking_lot_id,
+        "start_time": start_time.isoformat(),
+        "end_time": end_time.isoformat(),
+    }
+
+    response = client.post(
+        "/reservations/create", json=reservation_data, headers=headers
+    )
+
+    assert response.status_code == 400
+    data = response.json()
+    assert "detail" in data
+    assert "start time" in str(data["detail"]).lower()
+    assert "earlier than the current time" in str(data["detail"]).lower()
+
+
+def test_create_reservation_start_time_after_end_time(client_with_token):
+    """Test creating reservation where start time is later than end time"""
+    client, headers = client_with_token("superadmin")
+    vehicle_id = get_last_vid(client_with_token)
+    parking_lot_id = get_last_pid(client)
+
+    start_time = datetime.now() + timedelta(hours=5)  # Start after end
+    end_time = datetime.now() + timedelta(hours=2)
+
+    reservation_data = {
+        "vehicle_id": vehicle_id,
+        "parking_lot_id": parking_lot_id,
+        "start_time": start_time.isoformat(),
+        "end_time": end_time.isoformat(),
+    }
+
+    response = client.post(
+        "/reservations/create", json=reservation_data, headers=headers
+    )
+
+    assert response.status_code == 400
+    data = response.json()
+    assert "detail" in data
+    assert "start time" in str(data["detail"]).lower()
+    assert "later than the end time" in str(data["detail"]).lower()
+
+
+def test_create_reservation_start_time_equals_end_time(client_with_token):
+    """Test creating reservation where start time equals end time"""
+    client, headers = client_with_token("superadmin")
+    vehicle_id = get_last_vid(client_with_token)
+    parking_lot_id = get_last_pid(client)
+
+    same_time = datetime.now() + timedelta(hours=2)
+
+    reservation_data = {
+        "vehicle_id": vehicle_id,
+        "parking_lot_id": parking_lot_id,
+        "start_time": same_time.isoformat(),
+        "end_time": same_time.isoformat(),
+    }
+
+    response = client.post(
+        "/reservations/create", json=reservation_data, headers=headers
+    )
+
+    assert response.status_code == 400
+    data = response.json()
+    assert "detail" in data
+    assert "start time" in str(data["detail"]).lower()
+
+
+def test_create_reservation_vehicle_already_reserved(client_with_token):
+    """Test creating reservation when vehicle already has overlapping reservation (409)"""
+    client, headers = client_with_token("superadmin")
+    vehicle_id = get_last_vid(client_with_token)
+    parking_lot_id = get_last_pid(client)
+
+    # Create first reservation
+    start_time1 = datetime.now() + timedelta(hours=10)
+    end_time1 = datetime.now() + timedelta(hours=12)
+
+    reservation_data1 = {
+        "vehicle_id": vehicle_id,
+        "parking_lot_id": parking_lot_id,
+        "start_time": start_time1.isoformat(),
+        "end_time": end_time1.isoformat(),
+    }
+
+    response1 = client.post(
+        "/reservations/create", json=reservation_data1, headers=headers
+    )
+    assert response1.status_code == 200
+
+    # Try to create overlapping reservation for same vehicle
+    start_time2 = datetime.now() + timedelta(hours=11)  # Overlaps with first
+    end_time2 = datetime.now() + timedelta(hours=13)
+
+    reservation_data2 = {
+        "vehicle_id": vehicle_id,
+        "parking_lot_id": parking_lot_id,
+        "start_time": start_time2.isoformat(),
+        "end_time": end_time2.isoformat(),
+    }
+
+    response2 = client.post(
+        "/reservations/create", json=reservation_data2, headers=headers
+    )
+
+    assert response2.status_code == 409
+    data = response2.json()
+    assert "detail" in data
+    assert "overlap" in str(data["detail"]).lower()
+
+
+# region admin tests
