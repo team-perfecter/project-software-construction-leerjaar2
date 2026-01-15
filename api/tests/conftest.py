@@ -14,6 +14,31 @@ from api.models.user_model import UserModel
 PYTEST_PLUGINS = "pytest_benchmark"
 user_model: UserModel = UserModel()
 
+@pytest.fixture(scope="session", name="client")
+def test_client():
+    """
+    Provides a FastAPI TestClient instance for making HTTP requests without authentication.
+    
+    Returns:
+        TestClient: FastAPI test client instance.
+    """
+    return TestClient(app)
+
+
+@pytest.fixture(scope="session", name="client_with_token")
+def test_client_with_token(client):
+    def _client_with_role(username: str):
+        """
+        Returns:
+            Tuple[TestClient, dict]: Test client and headers with Authorization token.
+        """
+        token = create_access_token({"sub": username})
+        headers = {"Authorization": f"Bearer {token}"}
+        return client, headers
+
+    return _client_with_role
+
+
 def pytest_configure(config):
     """
     Configure pytest benchmark plugin to use a minimum of 20 rounds for benchmarking tests.
@@ -34,49 +59,6 @@ def run_fixture_on_test(filters, request) -> bool:
             can_continue = True
             break
     return can_continue
-
-@pytest.fixture(scope="session", name="client")
-def test_client():
-    """
-    Provides a FastAPI TestClient instance for making HTTP requests without authentication.
-    
-    Returns:
-        TestClient: FastAPI test client instance.
-    """
-    return TestClient(app)
-
-
-@pytest.fixture(scope="session", name="client_with_token")
-def test_client_with_token(client):
-    """
-    Provides a TestClient instance along 
-    with headers containing a JWT token for a specified user role.
-    
-    Usage:
-        client, headers = client_with_token("superadmin")
-        client, headers = client_with_token("paymentadmin")
-    
-    Args:
-        client (TestClient): The un-authenticated FastAPI test client.
-    
-    Returns:
-        function: A helper function that accepts a username and returns (client, headers).
-    """
-    def _client_with_role(username: str):
-        """
-        Generate headers with JWT token for the given username.
-        
-        Args:
-            username (str): The username for which the token is generated.
-        
-        Returns:
-            Tuple[TestClient, dict]: Test client and headers with Authorization token.
-        """
-        token = create_access_token({"sub": username})
-        headers = {"Authorization": f"Bearer {token}"}
-        return client, headers
-
-    return _client_with_role
 
 
 @pytest.fixture(scope="session", autouse=True)
