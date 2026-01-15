@@ -26,6 +26,8 @@ jobs:
         done
 
     - name: Run all tests with combined coverage
+      env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
       run: |
         docker compose run --rm -v ${PWD}:/app parking-api \
           pytest /app/api/tests/ \

@@ -4,13 +4,13 @@ from passlib.context import CryptContext
 from api.datatypes.user import User, UserRole
 from fastapi import HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
-
 from api.models.user_model import UserModel
 from api.utilities.hasher import hash_string
+import os
 
 user_model: UserModel = UserModel()
 
-SECRET_KEY = "super_secret_key"  # ⚠️ Gebruik een env var in productie
+SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
