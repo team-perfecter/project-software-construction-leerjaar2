@@ -41,6 +41,7 @@ async def login(data: UserLogin):
     if user.old_hash:
         hash = hash_string(data.password, False)
         if not verify_password(hash, user.password):
+            logger.info("Login failed, incorrect password for user: %s", data.username)
             raise HTTPException(status_code=401, detail="Invalid credentials")
         new_password = hash_string(data.password, True)
         user_model.update_user(user.id, {"password": new_password, "old_hash": False})

@@ -6,7 +6,6 @@ from fastapi import HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 
 from api.models.user_model import UserModel
-from api.utilities.Hasher import hash_string
 
 user_model: UserModel = UserModel()
 

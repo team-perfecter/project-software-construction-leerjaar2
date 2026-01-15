@@ -1,15 +1,11 @@
 import time
 import psycopg2
 import sys
-from argon2 import PasswordHasher
-# A function that hashes a string.
-# use this instead of hashing inside a function somewhere else,
-# so the hashing method can be changed when needed.
+import hashlib
 
 
 def hash_string(string: str) -> str:
-    argon2_hasher = PasswordHasher()
-    return argon2_hasher.hash(string)
+    return hashlib.md5(string.encode()).hexdigest()
 
 
 
@@ -181,7 +177,7 @@ if not exists:
         cur.execute("""
             INSERT INTO users (username, password, name, email, role, old_hash)
             VALUES ('superadmin', %s, 'Super Admin',
-                    'super@admin.com', 'superadmin', False);
+                    'super@admin.com', 'superadmin', True);
         """, (hashed_pw,))
 
         print("Default superadmin created.")
@@ -189,20 +185,20 @@ if not exists:
 
         cur.execute("""
             INSERT INTO users (username, password, name, email, role, old_hash)
-            VALUES ('lotadmin', %s, 'LotAdmin', 'admin@admin.com', 'lotadmin', False);
+            VALUES ('lotadmin', %s, 'LotAdmin', 'admin@admin.com', 'lotadmin', True);
         """, (hashed_pw,))
 
         conn.commit()
         cur.execute("""
             INSERT INTO users (username, password, name, email, role, old_hash)
             VALUES ('paymentadmin', %s, 'paymentadmin',
-                    'payment@admin.com', 'paymentadmin', False);
+                    'payment@admin.com', 'paymentadmin', True);
         """, (hashed_pw,))
 
         conn.commit()
         cur.execute("""
             INSERT INTO users (username, password, name, email, role, old_hash)
-            VALUES ('user', %s, 'testuser', 'test@user.com', 'user', False);
+            VALUES ('user', %s, 'testuser', 'test@user.com', 'user', True);
         """, (hashed_pw,))
 
         conn.commit()
