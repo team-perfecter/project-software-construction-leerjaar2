@@ -18,7 +18,7 @@ class Vehicle_model:
         cursor = self.connection.cursor(cursor_factory=RealDictCursor)
         cursor.execute("SELECT * FROM vehicles WHERE user_id = %s", (user_id,))
         return cursor.fetchall()
-    
+     
     #return all vehicles of user.
     def get_all_user_vehicles(self, user_id):
         cursor = self.connection.cursor(cursor_factory=RealDictCursor)

@@ -137,7 +137,7 @@ class PaymentModel:
         query = """
             SELECT *
             FROM payments
-            WHERE refund_requested = TRUE
+            WHERE refund_requested = TRUE AND refund_accepted = FALSE
         """
         user_ids = []
 
