@@ -11,7 +11,7 @@ from api.auth_utils import (
     get_current_user,
     JWTError,
 )
-from api.utilities.Hasher import hash_string
+from api.utilities.hasher import hash_string
 from api.datatypes.user import User, UserRole
 from fastapi import HTTPException
 from unittest.mock import patch
