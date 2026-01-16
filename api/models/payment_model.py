@@ -1,5 +1,5 @@
 import psycopg2
-from api.datatypes.payment import PaymentCreate, PaymentUpdate
+from api.datatypes.payment import PaymentCreate
 from api.session_calculator import generate_transaction_validation_hash
 
 
@@ -19,11 +19,13 @@ class PaymentModel:
         try:
             cursor.execute("""
                 INSERT INTO payments
-                (user_id, reservation_id, session_id, transaction, amount, hash, method, issuer, bank)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                (user_id, parking_lot_id, reservation_id, session_id,
+                transaction, amount, hash, method, issuer, bank)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id;
             """,
-                           (p.user_id, p.reservation_id, p.session_id, p.transaction, p.amount,
+                           (p.user_id, p.parking_lot_id, p.reservation_id,
+                            p.session_id, p.transaction, p.amount,
                             payment_hash, p.method, p.issuer, p.bank))
             created = cursor.fetchone()
             cls.connection.commit()
@@ -116,13 +118,26 @@ class PaymentModel:
         return updated is not None
 
     @classmethod
+    def give_refund(cls, user_id, id):
+        cursor = cls.connection.cursor()
+        cursor.execute("""
+            UPDATE payments
+            SET refund_accepted = TRUE, admin_id = %s
+            WHERE id = %s
+            RETURNING id;
+        """, (user_id, id,))
+        updated = cursor.fetchone()
+        cls.connection.commit()
+        return updated is not None
+
+    @classmethod
     def get_refund_requests(cls, user_id: int | None = None):
         cursor = cls.connection.cursor()
 
         query = """
             SELECT *
             FROM payments
-            WHERE refund_requested = TRUE
+            WHERE refund_requested = TRUE AND refund_accepted = FALSE
         """
         user_ids = []
 
@@ -144,12 +159,12 @@ class PaymentModel:
         deleted = cursor.fetchone()
         cls.connection.commit()
         return deleted is not None
-    
 
     @classmethod
     def get_payment_by_reservation_id(cls, reservation_id):
         cursor = cls.connection.cursor()
-        cursor.execute("SELECT * FROM payments WHERE reservation_id = %s;", (reservation_id,))
+        cursor.execute("SELECT * FROM payments WHERE reservation_id = %s;",
+                       (reservation_id,))
         row = cursor.fetchone()
         if row:
             columns = [desc[0] for desc in cursor.description]

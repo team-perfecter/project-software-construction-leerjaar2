@@ -35,15 +35,15 @@ class SessionModel:
 
     # Sessie stoppen (wanneer voertuig vertrekt)
     def stop_session(self, session: Session, cost: float) -> Session:
-        stopped = datetime.now()
+        end_time = datetime.now()
         cursor = self.connection.cursor()
         cursor.execute("""
             UPDATE sessions
-            SET stopped = %s,
+            SET end_time = %s,
                 cost = %s
             WHERE id = %s
             RETURNING *;
-        """, (stopped, cost, session.id,))
+        """, (end_time, cost, session.id,))
 
         self.connection.commit()
         session_list = self.map_to_session(cursor)
@@ -58,7 +58,7 @@ class SessionModel:
     # Alleen actieve sessies ophalen
     def get_active_sessions(self) -> list[Session]:
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM sessions WHERE stopped IS NULL;")
+        cursor.execute("SELECT * FROM sessions WHERE end_time IS NULL;")
         rows = cursor.fetchall()
         columns = [desc[0] for desc in cursor.description]
         result = [dict(zip(columns, row)) for row in rows]
@@ -87,7 +87,7 @@ class SessionModel:
     
     def get_session_by_reservation_id(self, reservation_id: int) -> Session | None:
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM sessions WHERE reservation_id = %s AND stopped IS NULL;", (reservation_id,))
+        cursor.execute("SELECT * FROM sessions WHERE reservation_id = %s AND end_time IS NULL;", (reservation_id,))
         rows = cursor.fetchall()
         if not rows:
             return None

@@ -1,16 +1,16 @@
 import time
 import psycopg2
 import sys
-import hashlib
+from argon2 import PasswordHasher
 # A function that hashes a string.
 # use this instead of hashing inside a function somewhere else,
 # so the hashing method can be changed when needed.
 
 
 def hash_string(string: str) -> str:
-    # argon2_hasher = PasswordHasher()
-    # return argon2_hasher.hash(string)
-    return hashlib.md5(string.encode()).hexdigest()
+    argon2_hasher = PasswordHasher()
+    return argon2_hasher.hash(string)
+
 
 
 # Get database name from command line argument or default to "database"
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT NOW(),
     birth_year INTEGER,
     active BOOLEAN DEFAULT TRUE,
-    is_new_password BOOLEAN DEFAULT FALSE
+    old_hash BOOLEAN DEFAULT FALSE
 );
 """)
 
@@ -86,6 +86,23 @@ CREATE TABLE IF NOT EXISTS parking_lots (
 """)
 
 cur.execute("""
+CREATE TABLE IF NOT EXISTS discount_codes (
+    code VARCHAR PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    discount_type VARCHAR,
+    discount_value FLOAT,
+    use_amount INTEGER,
+    used_count INTEGER DEFAULT 0,
+    minimum_price FLOAT,
+    start_applicable_time TIME,
+    end_applicable_time TIME,
+    start_date TIMESTAMP,
+    end_date TIMESTAMP,
+    active BOOLEAN DEFAULT TRUE
+);
+""")
+
+cur.execute("""
 CREATE TABLE IF NOT EXISTS reservations (
     id SERIAL PRIMARY KEY,
     vehicle_id INTEGER REFERENCES vehicles(id),
@@ -95,6 +112,7 @@ CREATE TABLE IF NOT EXISTS reservations (
     end_time TIMESTAMP,
     status VARCHAR DEFAULT 'Payment Pending',
     created_at TIMESTAMP DEFAULT NOW(),
+    discount_code VARCHAR REFERENCES discount_codes(code) ON DELETE SET NULL,
     cost INTEGER
 );
 """)
@@ -106,8 +124,8 @@ CREATE TABLE IF NOT EXISTS sessions (
     user_id INTEGER REFERENCES users(id),
     license_plate VARCHAR,
     reservation_id INTEGER REFERENCES reservations(id),
-    started TIMESTAMP DEFAULT NOW(),
-    stopped TIMESTAMP,
+    start_time TIMESTAMP DEFAULT NOW(),
+    end_time TIMESTAMP,
     cost FLOAT
 );
 """)
@@ -116,6 +134,7 @@ cur.execute("""
 CREATE TABLE IF NOT EXISTS payments (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id),
+    parking_lot_id INTEGER REFERENCES parking_lots(id) ON DELETE CASCADE ON UPDATE CASCADE,
     reservation_id INTEGER REFERENCES reservations(id),
     session_id INTEGER REFERENCES sessions(id),
     transaction VARCHAR,
@@ -126,15 +145,25 @@ CREATE TABLE IF NOT EXISTS payments (
     issuer VARCHAR,
     bank VARCHAR,
     date TIMESTAMP DEFAULT NOW(),
-    refund_requested BOOLEAN DEFAULT FALSE
+    refund_requested BOOLEAN DEFAULT FALSE,
+    refund_accepted BOOLEAN DEFAULT FALSE,
+    admin_id INTEGER REFERENCES users(id)
 );
 """)
 
 cur.execute("""
 CREATE TABLE IF NOT EXISTS parking_lot_admins (
-    admin_user_id INTEGER REFERENCES users(id),
+    admin_user_id INTEGER REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     parking_lot_id INTEGER REFERENCES parking_lots(id),
     PRIMARY KEY (admin_user_id, parking_lot_id)
+);
+""")
+
+cur.execute("""
+CREATE TABLE IF NOT EXISTS discount_code_locations (
+    discount_code VARCHAR REFERENCES discount_codes(code) ON DELETE CASCADE ON UPDATE CASCADE,
+    location VARCHAR,
+    PRIMARY KEY (discount_code, location)
 );
 """)
 
@@ -150,30 +179,30 @@ if not exists:
         hashed_pw = hash_string("admin123")
 
         cur.execute("""
-            INSERT INTO users (username, password, name, email, role)
+            INSERT INTO users (username, password, name, email, role, old_hash)
             VALUES ('superadmin', %s, 'Super Admin',
-                    'super@admin.com', 'superadmin');
+                    'super@admin.com', 'superadmin', False);
         """, (hashed_pw,))
 
         print("Default superadmin created.")
         conn.commit()
 
         cur.execute("""
-            INSERT INTO users (username, password, name, email, role)
-            VALUES ('admin', %s, 'Admin', 'admin@admin.com', 'admin');
+            INSERT INTO users (username, password, name, email, role, old_hash)
+            VALUES ('lotadmin', %s, 'LotAdmin', 'admin@admin.com', 'lotadmin', False);
         """, (hashed_pw,))
 
         conn.commit()
         cur.execute("""
-            INSERT INTO users (username, password, name, email, role)
-            VALUES ('paymentadmin', %s, 'testuser',
-                    'payment@admin.com', 'paymentadmin');
+            INSERT INTO users (username, password, name, email, role, old_hash)
+            VALUES ('paymentadmin', %s, 'paymentadmin',
+                    'payment@admin.com', 'paymentadmin', False);
         """, (hashed_pw,))
 
         conn.commit()
         cur.execute("""
-            INSERT INTO users (username, password, name, email, role)
-            VALUES ('user', %s, 'testuser', 'test@user.com', 'user');
+            INSERT INTO users (username, password, name, email, role, old_hash)
+            VALUES ('user', %s, 'testuser', 'test@user.com', 'user', False);
         """, (hashed_pw,))
 
         conn.commit()

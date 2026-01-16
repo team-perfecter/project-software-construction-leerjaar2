@@ -99,7 +99,7 @@ async def stop_parking_session(
         )
 
     parking_lot = parking_lot_model.get_parking_lot_by_lid(session.parking_lot_id)
-    cost = calculate_price(parking_lot, session)
+    cost = calculate_price(parking_lot, session, None)
 
     session = session_model.stop_session(session, cost)
 
@@ -129,10 +129,10 @@ async def get_active_sessions():
 
 @router.get("/sessions/vehicle/{vehicle_id}")
 async def get_sessions_vehicle(vehicle_id: int, user: User = Depends(get_current_user)):
-    logger.info("User %i tried to retrieve the session of vehicle %i", user.id, vehicle_id)
+    logger.info("User %s tried to retrieve the session of vehicle %s", user.id, vehicle_id)
     vehicle = vehicle_model.get_one_vehicle(vehicle_id)
     if not vehicle or vehicle["user_id"] != user.id:
-        logger.warning("Vehicle %i could not be found", vehicle_id)
+        logger.warning("Vehicle %s could not be found", vehicle_id)
         raise HTTPException(status_code=404, detail={"error": "Vehicle not found", "message": f"Vehicle with ID {vehicle_id} does not exist"})
     sessions = session_model.get_vehicle_sessions(vehicle_id)
     print(sessions)

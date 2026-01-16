@@ -20,6 +20,8 @@ class Payment(PaymentCreate):
     hash: str
     completed: bool
     refund_requested: bool
+    refund_accepted: bool
+    admin_id: int
 
 
 class PaymentUpdate(BaseModel):

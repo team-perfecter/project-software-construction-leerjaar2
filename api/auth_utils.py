@@ -4,13 +4,13 @@ from passlib.context import CryptContext
 from api.datatypes.user import User, UserRole
 from fastapi import HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
-
 from api.models.user_model import UserModel
-from api.utilities.Hasher import hash_string
+from api.utilities.hasher import hash_string
+import os
 
 user_model: UserModel = UserModel()
 
-SECRET_KEY = "super_secret_key"  # ⚠️ Gebruik een env var in productie
+SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -23,7 +23,7 @@ def hash_password(password: str):
 
 def verify_password(plain_password: str,
                     hashed_password: str) -> bool:
-    return hash_string(plain_password) == hashed_password
+    return plain_password == hashed_password
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
@@ -82,23 +82,26 @@ def require_role(*allowed_roles):
     return wrapper
 
 
-def user_can_manage_lot(user: User, lid: int) -> bool:
+def user_can_manage_lot(user: User, lid: int, for_payments: bool) -> bool:
     if user.role == UserRole.SUPERADMIN:
         return True
+    
+    if user.role == UserRole.PAYMENTADMIN and for_payments:
+        return True
 
-    if user.role == UserRole.ADMIN:
+    if user.role == UserRole.LOTADMIN:
         assigned_lots = user_model.get_parking_lots_for_admin(user.id)
         return lid in assigned_lots
 
     return False
 
 
-def require_lot_access():      
+def require_lot_access(for_payments: bool = False):      
     def wrapper(
         lid: int,
         current_user: User = Depends(get_current_user)
     ):
-        if not user_can_manage_lot(current_user, lid):
+        if not user_can_manage_lot(current_user, lid, for_payments):
             raise HTTPException(403, "Not enough permissions for this lot")
         return current_user
     return wrapper

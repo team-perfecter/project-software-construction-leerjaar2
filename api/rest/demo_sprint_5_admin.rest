@@ -17,7 +17,7 @@ Content-Type: application/json
 
 
 ### Register an admin
-POST http://127.0.0.1:8000/create_admin
+POST http://127.0.0.1:8000/create_user
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
