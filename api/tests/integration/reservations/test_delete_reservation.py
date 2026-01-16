@@ -56,13 +56,13 @@ def test_delete_reservation_not_owned(client_with_token):
     reservation_data = {
         "vehicle_id": vehicle_id,
         "parking_lot_id": parking_lot_id,
-        "start_time": (datetime.now() + timedelta(hours=1)).isoformat(),  # Changed to start_time
-        "end_time": (datetime.now() + timedelta(hours=3)).isoformat(),    # Changed to end_time
+        "start_time": (datetime.now() + timedelta(hours=1)).isoformat(),
+        "end_time": (datetime.now() + timedelta(hours=3)).isoformat(),
     }
     create_response = superadmin_client.post(
         "/reservations/create", json=reservation_data, headers=superadmin_headers
     )
-    assert create_response.status_code == 200  # Verify reservation was created
+    assert create_response.status_code == 200
 
     # Get reservation ID
     get_response = superadmin_client.get(
@@ -73,8 +73,8 @@ def test_delete_reservation_not_owned(client_with_token):
     assert len(reservations) > 0, "No reservations found after creation"
     reservation_id = reservations[-1]["id"]
 
-    # Try to delete as different user
-    user_client, user_headers = client_with_token("extrauser")
+    # Try to delete as different user - use "user" instead of "extrauser"
+    user_client, user_headers = client_with_token("user")
     response = user_client.delete(
         f"/reservations/delete/{reservation_id}", headers=user_headers
     )
@@ -121,4 +121,123 @@ def test_delete_reservation_zero_id(client_with_token):
 
 
 # endregion
-#region admin tests
+# # region DELETE /admin/reservations/{reservation_id}
+# def test_admin_delete_reservation_success(client_with_token):
+#     """Test admin successfully deleting a reservation"""
+#     client, headers = client_with_token("superadmin")
+#     vehicle_id = get_last_vid(client_with_token)
+#     parking_lot_id = get_last_pid(client)
+
+#     # Create a reservation first
+#     start_time = datetime.now() + timedelta(hours=200)
+#     end_time = datetime.now() + timedelta(hours=202)
+
+#     reservation_data = {
+#         "vehicle_id": vehicle_id,
+#         "parking_lot_id": parking_lot_id,
+#         "start_time": start_time.isoformat(),
+#         "end_time": end_time.isoformat(),
+#         "user_id": 1,
+#     }
+
+#     create_response = client.post(
+#         "/admin/reservations", json=reservation_data, headers=headers
+#     )
+#     assert create_response.status_code == 201
+#     reservation_id = create_response.json()["reservation_id"]
+
+#     # Delete the reservation
+#     response = client.delete(
+#         f"/admin/reservations/{reservation_id}", headers=headers
+#     )
+
+#     assert response.status_code == 200
+#     assert "deleted" in response.json()["message"].lower()
+
+
+# def test_admin_delete_reservation_not_found(client_with_token):
+#     """Test admin deleting non-existent reservation"""
+#     client, headers = client_with_token("superadmin")
+
+#     response = client.delete("/admin/reservations/99999", headers=headers)
+
+#     assert response.status_code == 404
+
+
+# def test_admin_delete_reservation_as_regular_user(client_with_token):
+#     """Test that regular user cannot use admin delete endpoint"""
+#     client, headers = client_with_token("user")
+
+#     response = client.delete("/admin/reservations/1", headers=headers)
+
+#     assert response.status_code == 403
+
+
+# def test_admin_delete_reservation_no_authentication(client):
+#     """Test deleting reservation without authentication"""
+#     response = client.delete("/admin/reservations/1")
+
+#     assert response.status_code == 401
+
+
+# def test_admin_delete_reservation_invalid_id(client_with_token):
+#     """Test admin deleting reservation with invalid ID format"""
+#     client, headers = client_with_token("superadmin")
+
+#     response = client.delete("/admin/reservations/invalid", headers=headers)
+
+#     assert response.status_code == 422
+
+
+# def test_admin_delete_reservation_negative_id(client_with_token):
+#     """Test admin deleting reservation with negative ID"""
+#     client, headers = client_with_token("superadmin")
+
+#     response = client.delete("/admin/reservations/-1", headers=headers)
+
+#     assert response.status_code == 404
+
+
+# def test_admin_delete_reservation_zero_id(client_with_token):
+#     """Test admin deleting reservation with ID of 0"""
+#     client, headers = client_with_token("superadmin")
+
+#     response = client.delete("/admin/reservations/0", headers=headers)
+
+#     assert response.status_code == 404
+
+
+# def test_admin_delete_reservation_as_lotadmin(client_with_token):
+#     """Test lotadmin deleting a reservation"""
+#     superadmin_client, superadmin_headers = client_with_token("superadmin")
+#     vehicle_id = get_last_vid(client_with_token)
+#     parking_lot_id = get_last_pid(superadmin_client)
+
+#     # Create reservation as superadmin
+#     start_time = datetime.now() + timedelta(hours=300)
+#     end_time = datetime.now() + timedelta(hours=302)
+
+#     reservation_data = {
+#         "vehicle_id": vehicle_id,
+#         "parking_lot_id": parking_lot_id,
+#         "start_time": start_time.isoformat(),
+#         "end_time": end_time.isoformat(),
+#         "user_id": 1,
+#     }
+
+#     create_response = superadmin_client.post(
+#         "/admin/reservations", json=reservation_data, headers=superadmin_headers
+#     )
+#     assert create_response.status_code == 201
+#     reservation_id = create_response.json()["reservation_id"]
+
+#     # Delete as lotadmin
+#     lotadmin_client, lotadmin_headers = client_with_token("lotadmin")
+#     response = lotadmin_client.delete(
+#         f"/admin/reservations/{reservation_id}", headers=lotadmin_headers
+#     )
+
+#     assert response.status_code == 200
+
+
+# # endregion

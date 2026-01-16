@@ -254,4 +254,192 @@ def test_create_reservation_vehicle_already_reserved(client_with_token):
     assert "overlap" in str(data["detail"]).lower()
 
 
-# region admin tests
+# # region POST /admin/reservations
+# def test_admin_create_reservation_success(client_with_token):
+#     """Test admin successfully creating a reservation"""
+#     client, headers = client_with_token("superadmin")
+#     vehicle_id = get_last_vid(client_with_token)
+#     parking_lot_id = get_last_pid(client)
+
+#     start_time = datetime.now() + timedelta(hours=100)
+#     end_time = datetime.now() + timedelta(hours=102)
+
+#     reservation_data = {
+#         "vehicle_id": vehicle_id,
+#         "parking_lot_id": parking_lot_id,
+#         "start_time": start_time.isoformat(),
+#         "end_time": end_time.isoformat(),
+#         "user_id": 1,
+#     }
+
+#     response = client.post(
+#         "/admin/reservations", json=reservation_data, headers=headers
+#     )
+
+#     assert response.status_code == 201
+#     data = response.json()
+#     assert "message" in data
+#     assert "reservation_id" in data
+
+
+# def test_admin_create_reservation_as_lotadmin(client_with_token):
+#     """Test lotadmin creating a reservation"""
+#     client, headers = client_with_token("lotadmin")
+#     vehicle_id = get_last_vid(client_with_token)
+#     parking_lot_id = get_last_pid(client)
+
+#     start_time = datetime.now() + timedelta(hours=110)
+#     end_time = datetime.now() + timedelta(hours=112)
+
+#     reservation_data = {
+#         "vehicle_id": vehicle_id,
+#         "parking_lot_id": parking_lot_id,
+#         "start_time": start_time.isoformat(),
+#         "end_time": end_time.isoformat(),
+#         "user_id": 1,
+#     }
+
+#     response = client.post(
+#         "/admin/reservations", json=reservation_data, headers=headers
+#     )
+
+#     assert response.status_code == 201
+
+
+# def test_admin_create_reservation_as_regular_user(client_with_token):
+#     """Test that regular user cannot use admin endpoint"""
+#     client, headers = client_with_token("user")
+
+#     start_time = datetime.now() + timedelta(hours=1)
+#     end_time = datetime.now() + timedelta(hours=3)
+
+#     reservation_data = {
+#         "vehicle_id": 1,
+#         "parking_lot_id": 1,
+#         "start_time": start_time.isoformat(),
+#         "end_time": end_time.isoformat(),
+#         "user_id": 1,
+#     }
+
+#     response = client.post(
+#         "/admin/reservations", json=reservation_data, headers=headers
+#     )
+
+#     assert response.status_code == 403
+
+
+# def test_admin_create_reservation_no_authentication(client):
+#     """Test creating reservation without authentication"""
+#     start_time = datetime.now() + timedelta(hours=1)
+#     end_time = datetime.now() + timedelta(hours=3)
+
+#     reservation_data = {
+#         "vehicle_id": 1,
+#         "parking_lot_id": 1,
+#         "start_time": start_time.isoformat(),
+#         "end_time": end_time.isoformat(),
+#         "user_id": 1,
+#     }
+
+#     response = client.post("/admin/reservations", json=reservation_data)
+
+#     assert response.status_code == 401
+
+
+# def test_admin_create_reservation_user_not_found(client_with_token):
+#     """Test admin creating reservation for non-existent user"""
+#     client, headers = client_with_token("superadmin")
+#     vehicle_id = get_last_vid(client_with_token)
+#     parking_lot_id = get_last_pid(client)
+
+#     start_time = datetime.now() + timedelta(hours=1)
+#     end_time = datetime.now() + timedelta(hours=3)
+
+#     reservation_data = {
+#         "vehicle_id": vehicle_id,
+#         "parking_lot_id": parking_lot_id,
+#         "start_time": start_time.isoformat(),
+#         "end_time": end_time.isoformat(),
+#         "user_id": 99999,
+#     }
+
+#     response = client.post(
+#         "/admin/reservations", json=reservation_data, headers=headers
+#     )
+
+#     assert response.status_code == 404
+#     assert "user" in response.json()["detail"].lower()
+
+
+# def test_admin_create_reservation_vehicle_not_found(client_with_token):
+#     """Test admin creating reservation with non-existent vehicle"""
+#     client, headers = client_with_token("superadmin")
+#     parking_lot_id = get_last_pid(client)
+
+#     start_time = datetime.now() + timedelta(hours=1)
+#     end_time = datetime.now() + timedelta(hours=3)
+
+#     reservation_data = {
+#         "vehicle_id": 99999,
+#         "parking_lot_id": parking_lot_id,
+#         "start_time": start_time.isoformat(),
+#         "end_time": end_time.isoformat(),
+#         "user_id": 1,
+#     }
+
+#     response = client.post(
+#         "/admin/reservations", json=reservation_data, headers=headers
+#     )
+
+#     assert response.status_code == 404
+#     assert "vehicle" in response.json()["detail"].lower()
+
+
+# def test_admin_create_reservation_parking_lot_not_found(client_with_token):
+#     """Test admin creating reservation with non-existent parking lot"""
+#     client, headers = client_with_token("superadmin")
+#     vehicle_id = get_last_vid(client_with_token)
+
+#     start_time = datetime.now() + timedelta(hours=1)
+#     end_time = datetime.now() + timedelta(hours=3)
+
+#     reservation_data = {
+#         "vehicle_id": vehicle_id,
+#         "parking_lot_id": 99999,
+#         "start_time": start_time.isoformat(),
+#         "end_time": end_time.isoformat(),
+#         "user_id": 1,
+#     }
+
+#     response = client.post(
+#         "/admin/reservations", json=reservation_data, headers=headers
+#     )
+
+#     assert response.status_code == 404
+#     assert "parking lot" in response.json()["detail"].lower()
+
+
+# def test_admin_create_reservation_missing_user_id(client_with_token):
+#     """Test admin creating reservation without user_id"""
+#     client, headers = client_with_token("superadmin")
+#     vehicle_id = get_last_vid(client_with_token)
+#     parking_lot_id = get_last_pid(client)
+
+#     start_time = datetime.now() + timedelta(hours=1)
+#     end_time = datetime.now() + timedelta(hours=3)
+
+#     reservation_data = {
+#         "vehicle_id": vehicle_id,
+#         "parking_lot_id": parking_lot_id,
+#         "start_time": start_time.isoformat(),
+#         "end_time": end_time.isoformat(),
+#     }
+
+#     response = client.post(
+#         "/admin/reservations", json=reservation_data, headers=headers
+#     )
+
+#     assert response.status_code == 422
+
+
+# # endregion
