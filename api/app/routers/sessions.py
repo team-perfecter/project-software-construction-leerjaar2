@@ -81,11 +81,9 @@ async def start_parking_session(
         "license_plate": license_plate,
     }, status_code=201)
 
-@router.post("/sessions/parking-lots/{lid}/stop/{license_plate}")
+@router.post("/sessions/parking-lots/{lid}/stop/{license_plate}", status_code=status.HTTP_201_CREATED)
 async def stop_parking_session(
-    lid: int,
-    license_plate: str,
-    current_user: User = Depends(get_current_user_optional)
+    lid: int, license_plate: str, current_user: User | None = Depends(get_current_user_optional),
 ):
     user_id = current_user.id if current_user else None
     session = session_model.get_vehicle_session(license_plate)
@@ -107,17 +105,19 @@ async def stop_parking_session(
     payment_hash = generate_transaction_validation_hash()
     payment = PaymentCreate(
         user_id=user_id,
+        parking_lot_id=lid,
         amount=cost,
         transaction=transaction,
         hash=payment_hash,
         session_id=session.id
     )
     payment_model.create_payment(payment)
+
     logger.info("Session of vehicle %i successfully stopped", license_plate)
     return JSONResponse(
-        content= {"message": "Session stopped successfully"}, 
+        content= {"message": f"Session stopped successfully"},
         status_code=201
-        )
+    )
 
 @router.get("/sessions/active")
 async def get_active_sessions():

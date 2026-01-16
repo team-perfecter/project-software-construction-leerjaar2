@@ -18,7 +18,7 @@ class SessionModel:
         cursor = self.connection.cursor()
         # Controleer of dit voertuig al actief is
         cursor.execute("""
-            SELECT * FROM sessions WHERE license_plate = %s AND stopped IS NULL;
+            SELECT * FROM sessions WHERE license_plate = %s AND end_time IS NULL;
         """, (license_plate,))
         if cursor.fetchone():
             print("Vehicle already has an active session.")
@@ -80,7 +80,7 @@ class SessionModel:
     def get_vehicle_session(self, license_plate: str) -> Session | None:
         cursor = self.connection.cursor()
         cursor.execute("""
-            SELECT * FROM sessions WHERE license_plate = %s AND stopped IS NULL;
+            SELECT * FROM sessions WHERE license_plate = %s AND end_time IS NULL;
         """, (license_plate,))
         session_list = self.map_to_session(cursor)
         return session_list[0] if session_list else None

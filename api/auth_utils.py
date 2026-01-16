@@ -68,7 +68,12 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-def get_current_user_optional(token: str = Depends(oauth2_scheme),):
+def get_current_user_optional(
+    token: str | None = Depends(oauth2_scheme),
+):
+    if not token:
+        return None
+
     try:
         return get_current_user(token)
     except HTTPException:
