@@ -90,6 +90,7 @@ async def logout(token: str = Depends(oauth2_scheme), user: User = Depends(get_c
     if user:
         revoke_token(token)
         logger.info("User %s has logged out", user.id)
+        return "Logged out"
     else:
         return JSONResponse(status_code=401, content={"message": "User not logged in"})
 

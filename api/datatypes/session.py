@@ -5,8 +5,9 @@ from typing import Optional
 
 class SessionCreate(BaseModel):
     parking_lot_id: int
-    user_id: int
-    vehicle_id: int
+    user_id: Optional[int] = None
+    vehicle_id: Optional[int] = None
+    license_plate: str = None
     reservation_id: Optional[int] = None
 
 

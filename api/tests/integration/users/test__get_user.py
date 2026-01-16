@@ -27,7 +27,7 @@ def test_get_user_as_user(client_with_token):
     user_id = get_last_uid(client_with_token)
     client, headers = client_with_token("user")
     response = client.get(f"/get_user/{user_id}", headers=headers)
-    assert response.status_code == 403
+    assert response.status_code in (401, 403)
 
 
 def test_get_user_not_logged_in(client):

@@ -1,7 +1,7 @@
 import psycopg2
 from datetime import datetime
 from api.datatypes.session import Session
-
+import psycopg2.extras
 
 class SessionModel:
     def __init__(self):
@@ -14,22 +14,21 @@ class SessionModel:
         )
 
     # Nieuwe sessie starten
-    def create_session(self, parking_lot_id: int, user_id: int, vehicle_id: int, reservation_id: int) -> Session | None:
+    def create_session(self, parking_lot_id: int, user_id: int, license_plate: str, reservation_id: int) -> Session | None:
         cursor = self.connection.cursor()
-
         # Controleer of dit voertuig al actief is
         cursor.execute("""
-            SELECT * FROM sessions WHERE vehicle_id = %s AND end_time IS NULL;
-        """, (vehicle_id,))
+            SELECT * FROM sessions WHERE license_plate = %s AND end_time IS NULL;
+        """, (license_plate,))
         if cursor.fetchone():
             print("Vehicle already has an active session.")
             return None
 
         cursor.execute("""
-            INSERT INTO sessions (parking_lot_id, user_id, vehicle_id, reservation_id)
+            INSERT INTO sessions (parking_lot_id, user_id, license_plate, reservation_id)
             VALUES (%s, %s, %s, %s)
             RETURNING *;
-        """, (parking_lot_id, user_id, vehicle_id, reservation_id))
+        """, (parking_lot_id, user_id, license_plate, reservation_id))
 
         self.connection.commit()
         return self.map_to_session(cursor)[0]
@@ -78,11 +77,11 @@ class SessionModel:
         session_list = self.map_to_session(cursor)
         return session_list[0] if len(session_list) > 0 else None
 
-    def get_vehicle_session(self, vehicle_id: int) -> Session | None:
+    def get_vehicle_session(self, license_plate: str) -> Session | None:
         cursor = self.connection.cursor()
         cursor.execute("""
-            SELECT * FROM sessions WHERE vehicle_id = %s AND end_time IS NULL;
-        """, (vehicle_id,))
+            SELECT * FROM sessions WHERE license_plate = %s AND end_time IS NULL;
+        """, (license_plate,))
         session_list = self.map_to_session(cursor)
         return session_list[0] if session_list else None
     
@@ -108,3 +107,8 @@ class SessionModel:
             except Exception as e:
                 print("Failed to map row to Session:", row_dict, e)
         return sessions
+
+    def get_session_by_license_plate(self, license_plate):
+        cursor = self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("SELECT * FROM sessions WHERE license_plate = %s AND stopped IS NULL;", (license_plate,))
+        return cursor.fetchone()
