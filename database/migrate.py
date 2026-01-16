@@ -104,7 +104,6 @@ CREATE TABLE IF NOT EXISTS sessions (
     id SERIAL PRIMARY KEY,
     parking_lot_id INTEGER REFERENCES parking_lots(id),
     user_id INTEGER REFERENCES users(id),
-    vehicle_id INTEGER REFERENCES vehicles(id),
     license_plate VARCHAR,
     reservation_id INTEGER REFERENCES reservations(id),
     started TIMESTAMP DEFAULT NOW(),

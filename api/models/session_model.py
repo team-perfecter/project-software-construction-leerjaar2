@@ -14,22 +14,21 @@ class SessionModel:
         )
 
     # Nieuwe sessie starten
-    def create_session(self, parking_lot_id: int, user_id: int, vehicle_id: int, license_plate: str, reservation_id: int) -> Session | None:
+    def create_session(self, parking_lot_id: int, user_id: int, license_plate: str, reservation_id: int) -> Session | None:
         cursor = self.connection.cursor()
-
         # Controleer of dit voertuig al actief is
         cursor.execute("""
-            SELECT * FROM sessions WHERE vehicle_id = %s AND stopped IS NULL;
-        """, (vehicle_id,))
+            SELECT * FROM sessions WHERE license_plate = %s AND stopped IS NULL;
+        """, (license_plate,))
         if cursor.fetchone():
             print("Vehicle already has an active session.")
             return None
 
         cursor.execute("""
-            INSERT INTO sessions (parking_lot_id, user_id, vehicle_id, license_plate, reservation_id)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO sessions (parking_lot_id, user_id, license_plate, reservation_id)
+            VALUES (%s, %s, %s, %s)
             RETURNING *;
-        """, (parking_lot_id, user_id, vehicle_id, license_plate, reservation_id))
+        """, (parking_lot_id, user_id, license_plate, reservation_id))
 
         self.connection.commit()
         return self.map_to_session(cursor)[0]
@@ -78,11 +77,11 @@ class SessionModel:
         session_list = self.map_to_session(cursor)
         return session_list[0] if len(session_list) > 0 else None
 
-    def get_vehicle_session(self, vehicle_id: int) -> Session | None:
+    def get_vehicle_session(self, license_plate: str) -> Session | None:
         cursor = self.connection.cursor()
         cursor.execute("""
-            SELECT * FROM sessions WHERE vehicle_id = %s AND stopped IS NULL;
-        """, (vehicle_id,))
+            SELECT * FROM sessions WHERE license_plate = %s AND stopped IS NULL;
+        """, (license_plate,))
         session_list = self.map_to_session(cursor)
         return session_list[0] if session_list else None
     

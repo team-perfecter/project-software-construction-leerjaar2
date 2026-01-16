@@ -4,7 +4,7 @@ from typing import Optional
 
 
 class PaymentCreate(BaseModel):
-    user_id: int
+    user_id: Optional[int] = None
     transaction: Optional[str] = None
     amount: float
     method: Optional[str] = None
