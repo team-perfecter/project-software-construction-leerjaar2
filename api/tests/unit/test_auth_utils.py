@@ -2,16 +2,15 @@ import pytest
 from datetime import timedelta, datetime
 from api.auth_utils import (
     hash_password,
-    verify_password,
     create_access_token,
     revoke_token,
     is_token_revoked,
     require_role,
     require_lot_access,
     get_current_user,
+    get_current_user_optional,
     JWTError,
 )
-from api.utilities.hasher import hash_string
 from api.datatypes.user import User, UserRole
 from fastapi import HTTPException
 from unittest.mock import patch
@@ -194,3 +193,15 @@ def test_get_current_user_user_not_found(mock_get_user, mock_jwt_decode,
     with pytest.raises(HTTPException) as exc:
         get_current_user("unknown-user-token")
     assert exc.value.status_code == 401
+
+
+def test_get_current_user_optional_handles_http_exception(monkeypatch):
+    def mock_get_current_user(token):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    import api.auth_utils as auth_utils
+    monkeypatch.setattr(auth_utils, "get_current_user", mock_get_current_user)
+
+    # Call get_current_user_optional with an invalid token
+    result = get_current_user_optional(token="invalidtoken")
+    assert result is None
