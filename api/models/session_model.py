@@ -85,7 +85,19 @@ class SessionModel:
         """, (vehicle_id,))
         session_list = self.map_to_session(cursor)
         return session_list[0] if session_list else None
-    
+
+    def get_sessions_by_vehicle(self, vehicle_id: int) -> list[Session]:
+        """
+        Get all sessions (active and completed) for a specific vehicle.
+        @param: vehicle_id
+        @return: list of Session objects
+        """
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            SELECT * FROM sessions WHERE vehicle_id = %s ORDER BY start_time DESC;
+        """, (vehicle_id,))
+        return self.map_to_session(cursor)
+
     def get_session_by_reservation_id(self, reservation_id: int) -> Session | None:
         cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM sessions WHERE reservation_id = %s AND end_time IS NULL;", (reservation_id,))

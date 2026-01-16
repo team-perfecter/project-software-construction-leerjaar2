@@ -11,9 +11,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from starlette.responses import JSONResponse
 from api.models.vehicle_model import Vehicle_model
 from api.models.reservation_model import Reservation_model
-from api.session_calculator import generate_payment_hash, generate_transaction_validation_hash, calculate_price
+from api.session_calculator import (
+    generate_payment_hash,
+    generate_transaction_validation_hash,
+    calculate_price,
+)
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["sessions"])
@@ -74,7 +79,7 @@ async def start_parking_session(
             )
 
     # active session check voor vehicle
-    existing_sessions =  False #session_storage.get_all_sessions_by_id(lid, vehicle_id)
+    existing_sessions = False  # session_storage.get_all_sessions_by_id(lid, vehicle_id)
 
     if existing_sessions:
         logger.warning(
@@ -96,35 +101,39 @@ async def start_parking_session(
     session = session_model.create_session(lid, current_user.id, vehicle_id, None)
     if session is None:
         logger.warning("Vehcile %s already has a session", vehicle_id)
-        return JSONResponse(content={"message": "This vehicle already has a session"}, status_code=209)
-    
+        return JSONResponse(
+            content={"message": "This vehicle already has a session"}, status_code=209
+        )
+
     logger.info(
         "Successfully started session for user %s at parking lot %s with vehicle %s",
         current_user.id,
         lid,
         vehicle_id,
     )
-    return JSONResponse(content= {
-        "message": "Session started successfully",
-        "parking_lot_id": lid,
-        "vehicle_id": vehicle_id,
-        "license_plate": vehicle["license_plate"],
-    }, status_code=201)
+    return JSONResponse(
+        content={
+            "message": "Session started successfully",
+            "parking_lot_id": lid,
+            "vehicle_id": vehicle_id,
+            "license_plate": vehicle["license_plate"],
+        },
+        status_code=201,
+    )
+
 
 @router.post("/parking-lots/{lid}/sessions/stop")
 async def stop_parking_session(
-    lid: int,
-    vehicle_id: int,
-    current_user: User = Depends(get_current_user)
+    lid: int, vehicle_id: int, current_user: User = Depends(get_current_user)
 ):
     session = session_model.get_vehicle_session(vehicle_id)
     if not session:
         return "This vehicle has no active sessions"
-    
+
     if getattr(session, "reservation_id", None) is not None:
         raise HTTPException(
             status_code=403,
-            detail="Cannot stop a session that was started from a reservation via this endpoint."
+            detail="Cannot stop a session that was started from a reservation via this endpoint.",
         )
 
     parking_lot = parking_lot_model.get_parking_lot_by_lid(session.parking_lot_id)
@@ -141,14 +150,18 @@ async def stop_parking_session(
         amount=cost,
         transaction=transaction,
         hash=payment_hash,
-        session_id=session.id
+        session_id=session.id,
     )
     payment_model.create_payment(payment)
     logger.info("Session of vehicle %s successfully stopped", vehicle_id)
     return JSONResponse(
-        content= {"message": "Session stopped successfully"}, 
-        status_code=201
-        )
+        content={
+            "message": "Session stopped successfully",
+            "cost": float(cost) if cost is not None else 0.0,
+        },
+        status_code=200,
+    )
+
 
 @router.get("/sessions/active")
 async def get_active_sessions():
@@ -158,41 +171,66 @@ async def get_active_sessions():
     sessions = session_model.get_active_sessions()
     return {"active_sessions": sessions}
 
+
 @router.get("/sessions/vehicle/{vehicle_id}")
-async def get_sessions_vehicle(vehicle_id: int, user: User = Depends(get_current_user)):
-    logger.info("User %s tried to retrieve the session of vehicle %s", user.id, vehicle_id)
-    vehicle = vehicle_model.get_one_vehicle(vehicle_id)
-    if not vehicle or vehicle["user_id"] != user.id:
-        logger.warning("Vehicle %s could not be found", vehicle_id)
-        raise HTTPException(status_code=404, detail={"error": "Vehicle not found", "message": f"Vehicle with ID {vehicle_id} does not exist"})
-    sessions = session_model.get_vehicle_sessions(vehicle_id)
-    print(sessions)
-    return JSONResponse(content={"message": sessions}, status_code=201)
+async def get_sessions_vehicle(
+    vehicle_id: int, current_user: User = Depends(get_current_user)
+):
+    logger.info(
+        "User %s tried to retrieve the session of vehicle %s",
+        current_user.id,
+        vehicle_id,
+    )
+    sessions = session_model.get_sessions_by_vehicle(vehicle_id)
+    # Convert Session objects to dictionaries for JSON serialization
+    sessions_data = []
+    for session in sessions:
+        sessions_data.append(
+            {
+                "id": session.id,
+                "parking_lot_id": session.parking_lot_id,
+                "user_id": session.user_id,
+                "vehicle_id": session.vehicle_id,
+                "reservation_id": session.reservation_id,
+                "start_time": (
+                    session.start_time.isoformat() if session.start_time else None
+                ),
+                "end_time": session.end_time.isoformat() if session.end_time else None,
+                "cost": float(session.cost) if session.cost is not None else None,
+            }
+        )
+    return JSONResponse(content={"sessions": sessions_data}, status_code=200)
 
 
 @router.post("/sessions/reservations/{reservation_id}/start")
 async def start_session_from_reservation(
-    reservation_id: int,
-    current_user: User = Depends(get_current_user)
+    reservation_id: int, current_user: User = Depends(get_current_user)
 ):
     # Get reservation
     reservation = reservation_model.get_reservation_by_id(reservation_id)
     if not reservation:
         raise HTTPException(status_code=404, detail="Reservation not found")
     if reservation.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Reservation does not belong to current user")
+        raise HTTPException(
+            status_code=403, detail="Reservation does not belong to current user"
+        )
 
     # Check if session already exists for this vehicle and parking lot
     existing_session = session_model.get_vehicle_session(reservation.vehicle_id)
-    if existing_session and existing_session.parking_lot_id == reservation.parking_lot_id:
-        raise HTTPException(status_code=409, detail="Session already exists for this reservation")
+    if (
+        existing_session
+        and existing_session.parking_lot_id == reservation.parking_lot_id
+    ):
+        raise HTTPException(
+            status_code=409, detail="Session already exists for this reservation"
+        )
 
     # Start session
     session = session_model.create_session(
         reservation.parking_lot_id,
         reservation.user_id,
         reservation.vehicle_id,
-        reservation.id
+        reservation.id,
     )
     if not session:
         raise HTTPException(status_code=500, detail="Failed to start session")
@@ -202,13 +240,14 @@ async def start_session_from_reservation(
 
 @router.post("/sessions/reservations/{reservation_id}/stop")
 async def stop_session_from_reservation(
-    reservation_id: int,
-    current_user: User = Depends(get_current_user)
+    reservation_id: int, current_user: User = Depends(get_current_user)
 ):
     session = session_model.get_session_by_reservation_id(reservation_id)
     if not session:
-        raise HTTPException(status_code=404, detail="No active session found for this reservation")
-    if session.stopped is not None:
+        raise HTTPException(
+            status_code=404, detail="No active session found for this reservation"
+        )
+    if session.end_time is not None:
         raise HTTPException(status_code=409, detail="Session already stopped")
 
     reservation = reservation_model.get_reservation_by_id(reservation_id)
@@ -216,16 +255,18 @@ async def stop_session_from_reservation(
         raise HTTPException(status_code=404, detail="Reservation not found")
 
     parking_lot = parking_lot_model.get_parking_lot_by_lid(session.parking_lot_id)
-    session = session_model.stop_session(session, calculate_price(parking_lot, session))
+    session = session_model.stop_session(
+        session, calculate_price(parking_lot, session, None)
+    )
 
     # Only create/update payment if the driver overstayed
-    if session.stopped > reservation.end_time:
+    if session.end_time > reservation.end_time:
         overtime_start = reservation.end_time
-        overtime_end = session.stopped
+        overtime_end = session.end_time
         overtime_session = session
-        overtime_session.started = overtime_start
-        overtime_session.stopped = overtime_end
-        extra_cost = calculate_price(parking_lot, overtime_session)
+        overtime_session.start_time = overtime_start
+        overtime_session.end_time = overtime_end
+        extra_cost = calculate_price(parking_lot, overtime_session, None)
 
         # Find the original payment for this reservation
         original_payment = payment_model.get_payment_by_reservation_id(reservation_id)
@@ -235,18 +276,22 @@ async def stop_session_from_reservation(
         if not original_payment["completed"]:
             # Add extra cost to the original payment
             updated_payment = PaymentUpdate(
-                amount=original_payment["amount"] + extra_cost)
+                amount=original_payment["amount"] + extra_cost
+            )
             update_fields = updated_payment.dict(exclude_unset=True)
             payment_model.update_payment(original_payment["id"], update_fields)
             return {
-                "message": "Reservation session stopped. Extra cost added to original payment=.",
-                "session": session,
-                "updated_payment": updated_payment.amount
+                "message": "Reservation session stopped. Extra cost added to original payment.",
+                "session_id": session.id,
+                "updated_payment": float(updated_payment.amount),
             }
+
         else:
             # Create a new payment for the extra cost
             vehicle = vehicle_model.get_one_vehicle(session.vehicle_id)
-            transaction = generate_payment_hash(str(session.id), vehicle["license_plate"])
+            transaction = generate_payment_hash(
+                str(session.id), vehicle["license_plate"]
+            )
             payment_hash = generate_transaction_validation_hash()
             payment = PaymentCreate(
                 user_id=current_user.id,
@@ -254,16 +299,17 @@ async def stop_session_from_reservation(
                 transaction=transaction,
                 hash=payment_hash,
                 session_id=session.id,
-                reservation_id=reservation_id
+                reservation_id=reservation_id,
             )
+
             payment_model.create_payment(payment)
             return {
                 "message": "Reservation session stopped. Extra payment created for overtime.",
-                "session": session,
-                "extra_payment": payment.amount
+                "session_id": session.id,
+                "extra_payment": float(payment.amount),
             }
 
     return {
         "message": "Reservation session stopped successfully. No extra cost added.",
-        "session": session
+        "session_id": session.id,
     }
