@@ -136,7 +136,7 @@ CREATE TABLE IF NOT EXISTS payments (
     user_id INTEGER REFERENCES users(id),
     parking_lot_id INTEGER REFERENCES parking_lots(id) ON DELETE CASCADE ON UPDATE CASCADE,
     reservation_id INTEGER REFERENCES reservations(id),
-    session_id INTEGER REFERENCES sessions(id),
+    session_id INTEGER,
     transaction VARCHAR,
     amount FLOAT,
     completed BOOLEAN DEFAULT FALSE,
@@ -147,7 +147,12 @@ CREATE TABLE IF NOT EXISTS payments (
     date TIMESTAMP DEFAULT NOW(),
     refund_requested BOOLEAN DEFAULT FALSE,
     refund_accepted BOOLEAN DEFAULT FALSE,
-    admin_id INTEGER REFERENCES users(id)
+    admin_id INTEGER REFERENCES users(id),
+            
+    CONSTRAINT payments_session_id_fkey
+        FOREIGN KEY (session_id)
+        REFERENCES sessions(id)
+        ON DELETE SET NULL
 );
 """)
 

@@ -143,7 +143,7 @@ async def pay_payment(payment_id: int,
         logger.warning("Guest tried paying Payment ID %s, "
                        "but it does not belong to guest",
                        payment_id)
-        raise HTTPException(status_code=403,
+        raise HTTPException(status_code=401,
                             detail="This payment does not belong to this user")
     if payment["completed"]:
         logger.warning("User ID %s tried paying for Payment ID %i, "
