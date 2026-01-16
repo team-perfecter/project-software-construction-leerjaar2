@@ -11,6 +11,22 @@ Content-Type: application/json
   "birth_year": "2002"
 }
 ###
+### Login
+# @name login
+POST http://127.0.0.1:8000/login
+Content-Type: application/json
+
+{
+  "username": "superadmin",
+  "password": "admin123"
+}
+
+
+###
+@token = {{login.response.body.access_token}}
+
+
+###
 DELETE http://127.0.0.1:8000/parking-lots/9999999/force
 Authorization: Bearer {{token}}
 
@@ -152,6 +168,13 @@ Authorization: Bearer {{token}}
 ### Stop a session
 POST http://localhost:8000/sessions/parking-lots/1/stop/88-bod-2
 Authorization: Bearer {{token}}
+###
+POST http://127.0.0.1:8000/payments/1/pay
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+{}
 ###
 POST http://localhost:8000/discount-codes
 Content-Type: application/json

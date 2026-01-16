@@ -4,7 +4,8 @@ from api.datatypes.payment import PaymentCreate, PaymentUpdate
 from api.models.payment_model import PaymentModel
 from api.models.user_model import UserModel
 from api.models.parking_lot_model import ParkingLotModel
-from api.auth_utils import get_current_user, require_role, user_can_manage_lot
+from api.auth_utils import get_current_user, require_role
+from api.auth_utils import user_can_manage_lot, get_current_user_optional
 
 import logging
 logger = logging.getLogger(__name__)
@@ -120,34 +121,44 @@ async def get_open_payments_by_user(
 
 @router.post("/payments/{payment_id}/pay")
 async def pay_payment(payment_id: int,
-                      current_user: User = Depends(get_current_user)):
+                      current_user: User | None = Depends(get_current_user_optional)):
     payment = PaymentModel.get_payment_by_payment_id(payment_id)
+    if current_user is None:
+        user_id = "Guest"
+    else:
+        user_id = current_user.id
     if not payment:
-        logger.warning("User ID %i searched for Payment ID %i, "
+        logger.warning("User ID %s searched for Payment ID %i, "
                        "but nothing was found",
-                       current_user.id, payment_id)
+                       user_id, payment_id)
         raise HTTPException(status_code=404,
                             detail="Payment not found")
-    if payment["user_id"] != current_user.id:
-        logger.warning("User ID %i tried paying Payment ID %i, "
+    if current_user is not None and payment["user_id"] != current_user.id:
+        logger.warning("User ID %s tried paying Payment ID %i, "
                        "but it does not belong to user",
-                       current_user.id, payment_id)
+                       user_id, payment_id)
+        raise HTTPException(status_code=403,
+                            detail="This payment does not belong to this user")
+    if current_user is None and payment["user_id"] is not None:
+        logger.warning("Guest tried paying Payment ID %s, "
+                       "but it does not belong to guest",
+                       payment_id)
         raise HTTPException(status_code=403,
                             detail="This payment does not belong to this user")
     if payment["completed"]:
-        logger.warning("User ID %i tried paying for Payment ID %i, "
+        logger.warning("User ID %s tried paying for Payment ID %i, "
                        "but payment was already completed",
-                       current_user.id, payment_id)
+                       user_id, payment_id)
         raise HTTPException(status_code=400,
                             detail="Payment has already been paid")
     update = PaymentModel.mark_payment_completed(payment_id)
     if not update:
         logging.info("Payment ID %s payment failed by User ID %s",
-                     payment_id, current_user.id)
+                     payment_id, user_id)
         raise HTTPException(status_code=500,
                             detail="Payment has failed")
     logger.info("Payment ID %i has succesfully been paid by User ID %i",
-                payment_id, current_user.id)
+                payment_id, user_id)
     return {"message": "Payment completed successfully"}
 
 
