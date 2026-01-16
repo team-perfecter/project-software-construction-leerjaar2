@@ -187,10 +187,10 @@ def test_pay_payment_not_users_payment(client_with_token):
     assert response.status_code == 403
 
 
-def test_pay_payment_not_users_payment_guest(client_with_token):
+def test_pay_payment_not_users_payment_guest(client_with_token, client):
     payment_id = get_last_payment_id(client_with_token)
-    response = client.post(f"payments/{payment_id}/pay",
-                           json={})
+    headers = {"Authorization": "Bearer"}
+    response = client.post(f"/payments/{payment_id}/pay", json={}, headers=headers)
     assert response.status_code == 403
 
 

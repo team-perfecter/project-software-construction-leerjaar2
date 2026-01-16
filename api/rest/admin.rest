@@ -64,7 +64,7 @@ Authorization: Bearer {{token}}
 
 {
   "user_id": 1,
-  "parking_lot_id": 1,
+  "parking_lot_id": 155,
   "amount": 3.0
 }
 
@@ -154,7 +154,7 @@ Authorization: Bearer {{token}}
 DELETE http://127.0.0.1:8000/admin/users/2
 Authorization: Bearer {{token}}
 ### Get current user payments
-GET http://127.0.0.1:8000/payments/
+GET http://127.0.0.1:8000/payments/me
 Authorization: Bearer {{token}}
 ### Create Session
 POST http://localhost:8000/sessions/parking-lots/1/start/88-bod-2
@@ -169,7 +169,7 @@ Authorization: Bearer {{token}}
 POST http://localhost:8000/sessions/parking-lots/1/stop/88-bod-2
 Authorization: Bearer {{token}}
 ###
-POST http://127.0.0.1:8000/payments/1/pay
+POST http://127.0.0.1:8000/payments/228/pay
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
