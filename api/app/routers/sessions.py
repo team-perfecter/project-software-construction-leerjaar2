@@ -111,11 +111,13 @@ async def stop_parking_session(
         hash=payment_hash,
         session_id=session.id
     )
-    payment_model.create_payment(payment)
+    payment_id = payment_model.create_payment(payment)
+
+
 
     logger.info("Session of vehicle %i successfully stopped", license_plate)
     return JSONResponse(
-        content= {"message": f"Session stopped successfully"},
+        content= {"message": f"Session stopped successfully. Payment ID {payment_id}"},
         status_code=201
     )
 
@@ -185,7 +187,7 @@ async def stop_session_from_reservation(
         raise HTTPException(status_code=404, detail="Reservation not found")
 
     parking_lot = parking_lot_model.get_parking_lot_by_lid(session.parking_lot_id)
-    session = session_model.stop_session(session, calculate_price(parking_lot, session))
+    session = session_model.stop_session(session, calculate_price(parking_lot, session, None))
 
     # Only create/update payment if the driver overstayed
     if session.stopped > reservation.end_time:
@@ -194,7 +196,7 @@ async def stop_session_from_reservation(
         overtime_session = session
         overtime_session.started = overtime_start
         overtime_session.stopped = overtime_end
-        extra_cost = calculate_price(parking_lot, overtime_session)
+        extra_cost = calculate_price(parking_lot, overtime_session, None)
 
         # Find the original payment for this reservation
         original_payment = payment_model.get_payment_by_reservation_id(reservation_id)
