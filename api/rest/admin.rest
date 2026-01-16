@@ -20,8 +20,8 @@ POST http://127.0.0.1:8000/login
 Content-Type: application/json
 
 {
-  "username": "admin",
-  "password": "admin123"
+  "username": "jerrel",
+  "password": "1234"
 }
 
 ### Logout
@@ -141,7 +141,7 @@ Authorization: Bearer {{token}}
 GET http://127.0.0.1:8000/payments/
 Authorization: Bearer {{token}}
 ### Create Session
-POST http://localhost:8000/parking-lots/1/sessions/start/88-bod-2
+POST http://localhost:8000/sessions/parking-lots/1/start/88-bod-2
 Authorization: Bearer {{token}}
 ### Get current sessions
 GET http://localhost:8000/sessions/active
@@ -150,7 +150,7 @@ Authorization: Bearer {{token}}
 GET http://localhost:8000/sessions/vehicle/1
 Authorization: Bearer {{token}}
 ### Stop a session
-POST http://localhost:8000/parking-lots/1/sessions/stop/88-bod-2
+POST http://localhost:8000/sessions/parking-lots/1/stop/88-bod-2
 ###
 POST http://localhost:8000/discount-codes
 Content-Type: application/json

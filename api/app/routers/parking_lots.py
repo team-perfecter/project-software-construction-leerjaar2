@@ -44,7 +44,7 @@ def get_lot_if_exists(lid: int):
 @router.post("/parking-lots", status_code=status.HTTP_201_CREATED)
 async def create_parking_lot(
     parking_lot_data: Parking_lot_create,
-    _: User = Depends(require_role(UserRole.SUPERADMIN)),
+    _: User = Depends(get_current_user),
 ):
     """
     Creates a parking lot based on the provided data.

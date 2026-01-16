@@ -25,7 +25,7 @@ payment_model: PaymentModel = PaymentModel()
 reservation_model: Reservation_model = Reservation_model()
 
 
-@router.post("/parking-lots/{lid}/sessions/start/{license_plate}", status_code=status.HTTP_201_CREATED)
+@router.post("/sessions/parking-lots/{lid}/start/{license_plate}", status_code=status.HTTP_201_CREATED)
 async def start_parking_session(
     lid: int, license_plate: str, current_user: User | None = Depends(get_current_user_optional),
 ):
@@ -81,7 +81,7 @@ async def start_parking_session(
         "license_plate": license_plate,
     }, status_code=201)
 
-@router.post("/parking-lots/{lid}/sessions/stop/{license_plate}")
+@router.post("/sessions/parking-lots/{lid}/stop/{license_plate}")
 async def stop_parking_session(
     lid: int,
     license_plate: str,
