@@ -187,6 +187,13 @@ def test_pay_payment_not_users_payment(client_with_token):
     assert response.status_code == 403
 
 
+def test_pay_payment_not_users_payment_guest(client_with_token):
+    payment_id = get_last_payment_id(client_with_token)
+    response = client.post(f"payments/{payment_id}/pay",
+                           json={})
+    assert response.status_code == 403
+
+
 def test_pay_payment_no_header(client):
     fake_payment = {}
     response = client.post("payments/1/pay", json=fake_payment)
