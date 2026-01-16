@@ -113,8 +113,6 @@ async def stop_parking_session(
     )
     payment_id = payment_model.create_payment(payment)
 
-
-
     logger.info("Session of vehicle %i successfully stopped", license_plate)
     return JSONResponse(
         content= {"message": f"Session stopped successfully. Payment ID {payment_id}"},
