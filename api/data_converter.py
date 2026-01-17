@@ -63,7 +63,7 @@ class DataConverter:
             cursor.execute("SELECT COUNT(*) FROM users WHERE username = %s", (user["username"],))
             count = cursor.fetchone()[0]
 
-            is_active = count == 0  # First occurrence = active=True, duplicates=False
+            is_active = count == 0
 
             cursor.execute("""
                            INSERT INTO users (username, password, name, email, phone, birth_year, active, old_hash)
@@ -162,10 +162,6 @@ class DataConverter:
 
         self.connection.commit()
         cursor.close()
-
-    from psycopg2.extras import execute_values
-    from datetime import datetime
-    import logging
 
     def insert_payment(self, data, batch_size=10000):
         cursor = self.connection.cursor()
