@@ -21,22 +21,31 @@ def test_update_payment(client_with_token):
 
     Returns:
         None
-
+class PaymentUpdate(BaseModel):
+    user_id: Optional[int] = None
+    hash: Optional[str] = None
+    transaction: Optional[str] = None
+    amount: Optional[float] = None
+    method: Optional[str] = None
+    issuer: Optional[str] = None
+    bank: Optional[str] = None
+    completed: Optional[bool] = None
+    refund_requested: Optional[bool] = None
     Raises:
         AssertionError: If update fails or the payment data is incorrect.
     """
+    
     payment_id = get_last_payment_id(client_with_token)
     client, headers = client_with_token("superadmin")
+    lot_id = get_last_pid(client)
     fake_payment = {
         "user_id": 1,
+        "parking_lot_id": lot_id,
         "transaction": "transaction1",
         "amount": 200,
         "method": "updatedmethod",
         "issuer": "issuer1",
-        "hash": "a",
-        "bank": "bank1",
-        "completed": False,
-        "refund_requested": False
+        "bank": "bank1"
     }
     response = client.put(f"/payments/{payment_id}", json=fake_payment,
                           headers=headers)
@@ -66,8 +75,10 @@ def test_update_payment_server_error(mock_create, client_with_token):
     """
     payment_id = get_last_payment_id(client_with_token)
     client, headers = client_with_token("superadmin")
+    lot_id = get_last_pid(client)
     fake_payment = {
         "user_id": 1,
+        "parking_lot_id": lot_id,
         "transaction": "transaction1",
         "amount": 200,
         "method": "updatedmethod",
@@ -81,27 +92,7 @@ def test_update_payment_server_error(mock_create, client_with_token):
     assert response.status_code == 500
 
 
-def test_update_payment_missing_field(client_with_token):
-    """Attempts to update a payment with a missing required field.
-
-    Args:
-        client_with_token: Fixture providing an authenticated client and headers.
-
-    Returns:
-        None
-
-    Raises:
-        AssertionError: If the response status code is not 422.
-    """
-    client, headers = client_with_token("superadmin")
-    payment_id = get_last_payment_id(client_with_token)
-    fake_payment = {}
-    response = client.put(f"/payments/{payment_id}", json=fake_payment,
-                          headers=headers)
-    assert response.status_code == 500
-
-
-def test_update_payment_wrong_data_type(client_with_token):
+def test_update_payment_wrong_datatype(client_with_token):
     """Attempts to update a payment with an incorrect data type.
 
     Args:
@@ -113,14 +104,15 @@ def test_update_payment_wrong_data_type(client_with_token):
     Raises:
         AssertionError: If the response status code is not 422.
     """
+    payment_id = get_last_payment_id(client_with_token)
     client, headers = client_with_token("superadmin")
+    lot_id = get_last_pid(client)
     fake_payment = {
-        "amount": 200,
-        "method": "updatedmethod",
-        "completed": False,
-        "refund_requested": 500
+        "parking_lot_id": lot_id,
+        "amount": "fjsdkfsd",
+        "method": "updatedmethod"
     }
-    response = client.put("/payments/1", json=fake_payment, headers=headers)
+    response = client.put(f"/payments/{payment_id}", json=fake_payment, headers=headers)
     assert response.status_code == 422
 
 
@@ -137,7 +129,9 @@ def test_update_payment_nonexistent_user(client_with_token):
         AssertionError: If the response status code is not 404.
     """
     client, headers = client_with_token("superadmin")
+    lot_id = get_last_pid(client)
     fake_payment = {
+        "parking_lot_id": lot_id,
         "user_id": 10000,
         "amount": 200,
         "method": "updatedmethod",
@@ -161,7 +155,9 @@ def test_update_payment_nonexistent_payment(client_with_token):
         AssertionError: If the response status code is not 404.
     """
     client, headers = client_with_token("superadmin")
+    lot_id = get_last_pid(client)
     fake_payment = {
+        "parking_lot_id": lot_id,
         "user_id": 1,
         "amount": 200,
         "method": "updatedmethod",

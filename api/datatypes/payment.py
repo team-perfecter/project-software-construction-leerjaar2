@@ -31,6 +31,7 @@ class Payment(PaymentCreate):
 
 class PaymentUpdate(BaseModel):
     user_id: Optional[int] = None
+    parking_lot_id: Optional[int] = None
     hash: Optional[str] = None
     transaction: Optional[str] = None
     amount: Optional[float] = None
