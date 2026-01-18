@@ -22,7 +22,7 @@ class SessionModel:
     def create_session(self,
                         parking_lot_id: int,
                         user_id: int,
-                        vehicle_id: int,
+                        license_plate: str,
                         reservation_id: int) -> Session | None:
         """
         Start a new parking session for a vehicle if it does not already have an active session.
