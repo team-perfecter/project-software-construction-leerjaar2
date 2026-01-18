@@ -1,7 +1,7 @@
 services:
   parking-api:
     environment:
-      MIGRATE_JSON: "true"
+      MIGRATE_JSON: "false"
       LOG_FILE: /var/log/parking-api/app.log
     build:
       context: ./api
