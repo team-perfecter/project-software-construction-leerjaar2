@@ -23,6 +23,7 @@ class User(Register):
     created_at: datetime
     role: UserRole
     old_hash: bool
+    active: bool
 
 class UserCreate(BaseModel):
     username: str
@@ -32,6 +33,7 @@ class UserCreate(BaseModel):
     phone: Optional[str] = None
     birth_year: Optional[int] = None
     role: UserRole
+    old_hash: Optional[bool] = False
 
 class UserLogin(BaseModel):
     username: str

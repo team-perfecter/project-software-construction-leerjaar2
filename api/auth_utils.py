@@ -4,13 +4,13 @@ from passlib.context import CryptContext
 from api.datatypes.user import User, UserRole
 from fastapi import HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
-
 from api.models.user_model import UserModel
-from api.utilities.Hasher import hash_string
+from api.utilities.hasher import hash_string
+import os
 
 user_model: UserModel = UserModel()
 
-SECRET_KEY = "super_secret_key"  # ⚠️ Gebruik een env var in productie
+SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -23,7 +23,7 @@ def hash_password(password: str):
 
 def verify_password(plain_password: str,
                     hashed_password: str) -> bool:
-    return hash_string(plain_password) == hashed_password
+    return plain_password == hashed_password
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
@@ -68,6 +68,16 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
+def get_current_user_optional(
+    token: str | None = Depends(oauth2_scheme),
+):
+    if not token:
+        return None
+
+    try:
+        return get_current_user(token)
+    except HTTPException:
+        return None
 
 def require_role(*allowed_roles):
     def wrapper(current_user=Depends(get_current_user)):

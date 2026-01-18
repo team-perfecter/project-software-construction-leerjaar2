@@ -1,10 +1,10 @@
 from starlette.responses import JSONResponse
 from api.datatypes.user import User, UserCreate, UserLogin, UserUpdate, UserRole, Register
 from api.models.user_model import UserModel
-from api.utilities.Hasher import hash_string
+from api.utilities.hasher import hash_string
 from fastapi import Depends, APIRouter, HTTPException
 from api.auth_utils import verify_password, create_access_token, get_current_user, revoke_token, oauth2_scheme, require_role
-
+from argon2 import PasswordHasher, exceptions
 import logging
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ async def register(user: Register):
         logger.warning("Profile not created. username is already taken")
         raise HTTPException(status_code=409, detail="Name already taken")
     # New users should have their passwords hashed with argon2
-    hashed_password = hash_string(user.password)
+    hashed_password = hash_string(user.password, True)
     user.password = hashed_password
     user_model.create_user(user)
     logger.info("A user has created a new profile with the name: %s", user.name)
@@ -38,18 +38,20 @@ async def login(data: UserLogin):
     if user is None:
         logger.info("Login failed, username not found: %s", data.username)
         raise HTTPException(status_code=404, detail="Username not found")
-    if not verify_password(data.password, user.password):
-        logger.info("Login failed, incorrect password for user: %s", data.username)
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    # updates password to use argon 2 when md5 is still used
-    # if not user.old_hash:
-    #     hashed_password = hash_string(data.password, True)
-    #     user_model.update_password(user.id, hashed_password)
-
+    if user.old_hash:
+        hash = hash_string(data.password, False)
+        if not verify_password(hash, user.password):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        new_password = hash_string(data.password, True)
+        user_model.update_user(user.id, {"password": new_password, "old_hash": False})
+    else:
+        try:
+            argon2_hasher = PasswordHasher()
+            argon2_hasher.verify(user.password, data.password)
+        except exceptions.VerifyMismatchError:
+            logger.info("Login failed, incorrect password for user: %s", data.username)
+            raise HTTPException(status_code=401, detail="Invalid credentials")
     access_token = create_access_token({"sub": user.username})
-    logger.info("User '%s' logged in successfully", user.username)
-
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -87,6 +89,7 @@ async def logout(token: str = Depends(oauth2_scheme), user: User = Depends(get_c
     if user:
         revoke_token(token)
         logger.info("User %s has logged out", user.id)
+        return "Logged out"
     else:
         return JSONResponse(status_code=401, content={"message": "User not logged in"})
 
@@ -127,7 +130,7 @@ async def create_user(user: UserCreate, current_user: User = Depends(require_rol
         logger.info(
             "A superadmin tried to create a profile, but the username was already created: %s", user.username)
         raise HTTPException(status_code=409, detail="Username already taken")
-    hashed_password = hash_string(user.password)
+    hashed_password = hash_string(user.password, True)
     user.password = hashed_password
     user_model.create_user_with_role(user)
     logger.info(
