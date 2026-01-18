@@ -29,7 +29,7 @@ jobs:
       env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
       run: |
-        docker compose run --rm -v ${PWD}:/app parking-api \
+        docker compose run --rm -v ${PWD}:/app parking-api-test \
           pytest /app/api/tests/ \
           --cov=api \
           --cov-report=xml:/app/coverage.xml \
@@ -39,7 +39,7 @@ jobs:
 
     - name: Run performance tests
       run: |
-        docker compose run --rm -v ${PWD}:/app parking-api \
+        docker compose run --rm -v ${PWD}:/app parking-api-test \
           pytest /app/api/tests/performance/ \
           --benchmark-only \
           --benchmark-json=/app/benchmark-results.json \

@@ -4,6 +4,7 @@ This file contains all queries related to payments.
 
 import logging
 import psycopg2
+import os
 from api.datatypes.payment import PaymentCreate
 from api.models.connection import get_connection
 from api.session_calculator import generate_transaction_validation_hash
