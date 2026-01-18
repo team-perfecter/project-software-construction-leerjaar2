@@ -4,6 +4,7 @@ This file contains all queries related to reservations.
 
 from api.datatypes.reservation import ReservationCreate, Reservation
 from api.models.connection import get_connection
+import psycopg2.extras
 
 
 class ReservationModel:
@@ -30,7 +31,6 @@ class ReservationModel:
         cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM reservations")
         return cursor.fetchall()
-
 
     def get_reservation_by_id(self, reservation_id: int) -> Reservation | None:
         """
@@ -72,7 +72,7 @@ class ReservationModel:
         self.connection.commit()
         return cursor.fetchone()[0]
 
-    def get_reservations_by_vehicle(self, vehicle_id: int) -> list[Reservation]:
+    def get_reservations_by_vehicle(self, vehicle_id):
         """
         Retrieve all reservations associated with a specific vehicle.
 
@@ -82,10 +82,9 @@ class ReservationModel:
         Returns:
             list[Reservation]: A list of reservations for the given vehicle.
         """
-        cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM reservations WHERE vehicle_id = %s", (vehicle_id,))
-        return cursor.fetchall()
-
+        with self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
+            cursor.execute("SELECT * FROM reservations WHERE vehicle_id = %s", (vehicle_id,))
+            return cursor.fetchall()
 
     def delete_reservation(self, reservation_id: int) -> bool:
         """

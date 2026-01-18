@@ -11,10 +11,10 @@ class ReservationCreate(BaseModel):
   vehicle_id: int
   parking_lot_id: int
   start_time: datetime
-  end_time: datetime | None
-  user_id: int | None
-  cost: int
-  status: str
+  end_time: datetime
+  user_id: Optional[int] = None
+  cost: Optional[int] = None
+  status: Optional[str] = None
   discount_code: Optional[str] = None
 
 
