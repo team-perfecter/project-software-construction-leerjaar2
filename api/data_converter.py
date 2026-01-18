@@ -7,7 +7,7 @@ import logging
 
 from psycopg2.extras import execute_values
 
-from api.utilities.Hasher import hash_string
+from api.utilities.hasher import hash_string
 
 logging.basicConfig(
     level=logging.INFO,
