@@ -1,5 +1,7 @@
-import pytest
 from datetime import timedelta, datetime
+from unittest.mock import patch
+import pytest
+from fastapi import HTTPException
 from api.auth_utils import (
     hash_password,
     create_access_token,
@@ -11,9 +13,8 @@ from api.auth_utils import (
     get_current_user_optional,
     JWTError,
 )
+from api.utilities.hasher import hash_string
 from api.datatypes.user import User, UserRole
-from fastapi import HTTPException
-from unittest.mock import patch
 
 
 def test_hash_password_returns_hash():

@@ -10,34 +10,8 @@ from api.main import app
 from api.auth_utils import create_access_token
 from api.models.user_model import UserModel
 
-
 PYTEST_PLUGINS = "pytest_benchmark"
 user_model: UserModel = UserModel()
-
-@pytest.fixture(scope="session", name="client")
-def test_client():
-    """
-    Provides a FastAPI TestClient instance for making HTTP requests without authentication.
-    
-    Returns:
-        TestClient: FastAPI test client instance.
-    """
-    return TestClient(app)
-
-
-@pytest.fixture(scope="session", name="client_with_token")
-def test_client_with_token(client):
-    def _client_with_role(username: str):
-        """
-        Returns:
-            Tuple[TestClient, dict]: Test client and headers with Authorization token.
-        """
-        token = create_access_token({"sub": username})
-        headers = {"Authorization": f"Bearer {token}"}
-        return client, headers
-
-    return _client_with_role
-
 
 def pytest_configure(config):
     """
@@ -60,6 +34,49 @@ def run_fixture_on_test(filters, request) -> bool:
             break
     return can_continue
 
+@pytest.fixture(scope="session", name="client")
+def test_client():
+    """
+    Provides a FastAPI TestClient instance for making HTTP requests without authentication.
+    
+    Returns:
+        TestClient: FastAPI test client instance.
+    """
+    return TestClient(app)
+
+
+@pytest.fixture(scope="session", name="client_with_token")
+def test_client_with_token(client):
+    """
+    Provides a TestClient instance along 
+    with headers containing a JWT token for a specified user role.
+    
+    Usage:
+        client, headers = client_with_token("superadmin")
+        client, headers = client_with_token("paymentadmin")
+    
+    Args:
+        client (TestClient): The un-authenticated FastAPI test client.
+    
+    Returns:
+        function: A helper function that accepts a username and returns (client, headers).
+    """
+    def _client_with_role(username: str):
+        """
+        Generate headers with JWT token for the given username.
+        
+        Args:
+            username (str): The username for which the token is generated.
+        
+        Returns:
+            Tuple[TestClient, dict]: Test client and headers with Authorization token.
+        """
+        token = create_access_token({"sub": username})
+        headers = {"Authorization": f"Bearer {token}"}
+        return client, headers
+
+    return _client_with_role
+
 
 @pytest.fixture(scope="session", autouse=True)
 def seed_all_data(client_with_token):
@@ -67,6 +84,7 @@ def seed_all_data(client_with_token):
     Seed all required data once per test session before any tests run.
     Calls other seeding functions for vehicles, users, parking lots, payments, etc.
     """
+
 
     client, headers = client_with_token("superadmin")
 
@@ -81,10 +99,9 @@ def seed_all_data(client_with_token):
 
 def seed_vehicles(client, headers, create_default):
     """
-    Seeds data for payments.
+    Seeds data for vehicles.
     """
     # Get all vehicles
-    
     response = client.get("/vehicles", headers=headers)
     try:
         data = response.json()
@@ -119,7 +136,7 @@ def seed_vehicles(client, headers, create_default):
 
 def seed_users(client, headers, create_default):
     """
-    Seeds data for payments.
+    Seeds data for users.
     """
     response = client.get("/users/", headers=headers)
 
@@ -166,7 +183,7 @@ def seed_users(client, headers, create_default):
 
 def seed_parking_lots(client, headers, create_default):
     """
-    Seeds data for payments.
+    Seeds data for parking lots.
     """
     response = client.get("/parking-lots/", headers=headers)
     if response.status_code == 200:
@@ -217,14 +234,14 @@ def seed_payments(client, headers, create_default):
         for i in range(5):
             payment = {
                 "user_id": user.id,
+                "reservation_id": None,
+                "session_id": None,
                 "parking_lot_id": get_last_pid(client),
                 "transaction": f"transaction{i+1}",
                 "amount": 100 + i,
                 "method": f"method{i+1}",
                 "issuer": f"issuer{i+1}",
-                "bank": f"bank{i+1}",
-                "reservation_id": None,
-                "session_id": None,
+                "bank": f"bank{i+1}"
             }
             client.post("/payments", json=payment, headers=headers)
 

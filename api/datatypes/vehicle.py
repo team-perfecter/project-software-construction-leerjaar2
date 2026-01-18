@@ -1,3 +1,7 @@
+"""
+This file contains all dataclasses related to vehicles.
+"""
+
 from pydantic import BaseModel
 from datetime import date
 

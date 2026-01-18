@@ -58,14 +58,18 @@ Authorization: Bearer {{token}}
 {}
 
 ###
-POST http://127.0.0.1:8000/payments
+PUT http://127.0.0.1:8000/payments/1
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
   "user_id": 1,
-  "parking_lot_id": 155,
-  "amount": 3.0
+  "parking_lot_id": 1,
+  "transaction": "transaction1",
+  "amount": 200,
+  "method": "updatedmethod",
+  "issuer": "issuer1",
+  "bank": "bank1"
 }
 
 ### Register an admin
