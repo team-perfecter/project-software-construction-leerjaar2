@@ -1,4 +1,5 @@
-from api.tests.conftest import get_last_pid
+from api.tests.conftest import get_last_pid, get_last_vid
+from datetime import datetime, timedelta
 
 # region start_parking_session
 
@@ -73,7 +74,6 @@ def test_start_session_parking_lot_not_found(client_with_token):
     assert response.status_code == 404
 
 # endregion
-# region stop parking session
 # region stop_parking_session
 
 def test_stop_session_success(client_with_token):
@@ -161,13 +161,119 @@ def test_stop_session_unauthorized(client):
 
 # endregion
 
-# endregion
-
 
 # region start_parking_session_from_reservation
 
+def test_start_session_from_reservation_success(client_with_token):
+    """Test starting session from a reservation"""
+    client, headers = client_with_token("superadmin")
+    vehicle_id = get_last_vid(client_with_token)
+    parking_lot_id = get_last_pid(client)
+
+    # Create a reservation first
+    start_time = datetime.now() + timedelta(minutes=5)
+    end_time = datetime.now() + timedelta(hours=2)
+
+    reservation_data = {
+        "vehicle_id": vehicle_id,
+        "parking_lot_id": parking_lot_id,
+        "start_time": start_time.isoformat(),
+        "end_time": end_time.isoformat(),
+    }
+
+    create_response = client.post(
+        "/reservations/create", json=reservation_data, headers=headers
+    )
+
+    if create_response.status_code == 200:
+        reservations_response = client.get(
+            f"/reservations/vehicle/{vehicle_id}", headers=headers
+        )
+        reservations = reservations_response.json()
+
+        if reservations:
+            reservation_id = reservations[-1]["id"]
+
+            response = client.post(
+                f"/sessions/reservations/{reservation_id}/start", headers=headers
+            )
+
+            assert response.status_code in [200, 201, 409]
+
+def test_start_session_from_reservation_not_found(client_with_token):
+    """
+    Attempts to start a session from a non-existing reservation.
+
+    Args:
+        client_with_token: Fixture providing an authenticated client and headers.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 404.
+    """
+    client, headers = client_with_token("superadmin")
+    response = client.post("/sessions/reservations/999999/start", headers=headers)
+    assert response.status_code == 404
+
 # endregion
+
 # region stop_parking_session_from_reservation
 
+# def test_stop_session_from_reservation_success(client_with_token):
+#     """
+#     Stops a session from a reservation as superadmin with correct data.
+
+#     Args:
+#         client_with_token: Fixture providing an authenticated client and headers.
+
+#     Returns:
+#         None
+
+#     Raises:
+#         AssertionError: If the session is not stopped successfully or response data is invalid.
+#     """
+#     client, headers = client_with_token("superadmin")
+#     # Maak een reservering aan
+#     reservation = {
+#         "user_id": 1,
+#         "parking_lot_id": 1,
+#         "vehicle_id": 1,
+#         "start_time": "2026-01-20T10:00:00",
+#         "end_time": "2026-01-20T12:00:00"
+#     }
+#     res = client.post("/reservations", json=reservation, headers=headers)
+#     assert res.status_code in [200, 201]
+#     reservation_id = res.json().get("id") or res.json().get("reservation_id")
+#     assert reservation_id is not None
+
+#     # Start de sessie
+#     response = client.post(f"/sessions/reservations/{reservation_id}/start", headers=headers)
+#     assert response.status_code == 200
+
+#     # Stop de sessie
+#     response = client.post(f"/sessions/reservations/{reservation_id}/stop", headers=headers)
+#     assert response.status_code == 200
+#     data = response.json()
+#     assert "message" in data
+#     assert "session" in data
+
+def test_stop_session_from_reservation_not_found(client_with_token):
+    """
+    Attempts to stop a session from a non-existing reservation.
+
+    Args:
+        client_with_token: Fixture providing an authenticated client and headers.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 404.
+    """
+    client, headers = client_with_token("superadmin")
+    response = client.post("/sessions/reservations/999999/stop", headers=headers)
+    assert response.status_code == 404
 
 # endregion

@@ -187,7 +187,7 @@ async def get_sessions_vehicle(vehicle_id: int,
     # Haal het kenteken op
     license_plate = vehicle["license_plate"]
     sessions = session_model.get_vehicle_sessions(license_plate)
-    return JSONResponse(content={"message": sessions}, status_code=201)
+    return JSONResponse(content={"message": sessions}, status_code=200)
 
 
 @router.post("/sessions/reservations/{reservation_id}/start")
