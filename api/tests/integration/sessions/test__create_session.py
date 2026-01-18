@@ -52,6 +52,33 @@ def test_start_session_already_active(client_with_token):
     assert response.status_code == 409
 
 
+# def test_start_session_no_account(client):
+#     """
+#     Starts a session without authentication.
+
+#     Args:
+#         client: Unauthenticated test client.
+
+#     Returns:
+#         None
+
+#     Raises:
+#         AssertionError: If the session is not created successfully or response data is invalid.
+#     """
+#     lid = 1  # fallback
+#     try:
+#         lid = get_last_pid(client)
+#     except Exception:
+#         pass
+#     license_plate = "ABC123"
+#     response = client.post(f"/sessions/parking-lots/{lid}/start/{license_plate}")
+#     assert response.status_code == 201
+#     data = response.json()
+#     assert data["message"] == "Session started successfully"
+#     assert data["parking_lot_id"] == lid
+#     assert data["license_plate"] == license_plate
+
+
 def test_start_session_parking_lot_not_found(client_with_token):
     """
     Attempts to start a session for a non-existing parking lot.
@@ -165,7 +192,18 @@ def test_stop_session_unauthorized(client):
 # region start_parking_session_from_reservation
 
 def test_start_session_from_reservation_success(client_with_token):
-    """Test starting session from a reservation"""
+    """
+    Starts a session from a reservation as superadmin with correct data.
+
+    Args:
+        client_with_token: Fixture providing an authenticated client and headers.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the session is not created successfully or response data is invalid.
+    """
     client, headers = client_with_token("superadmin")
     vehicle_id = get_last_vid(client_with_token)
     parking_lot_id = get_last_pid(client)

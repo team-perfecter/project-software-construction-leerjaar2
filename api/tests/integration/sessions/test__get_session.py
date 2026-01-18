@@ -23,7 +23,18 @@ def test_get_active_sessions(client_with_token):
     assert isinstance(data["active_sessions"], list)
 
 def test_get_sessions_vehicle_success(client_with_token):
-    """Test getting sessions for a specific vehicle"""
+    """
+    Retrieves sessions for a specific vehicle as the owner.
+
+    Args:
+        client_with_token: Fixture providing an authenticated client and headers.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 200.
+    """
     client, headers = client_with_token("superadmin")
     vehicle_id = get_last_vid(client_with_token)
 
