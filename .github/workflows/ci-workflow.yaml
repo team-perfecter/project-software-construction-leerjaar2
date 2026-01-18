@@ -1,0 +1,64 @@
+name: Run Tests, Create Reports, Send Webhook
+
+on:
+  push:
+    branches-ignore: [ main, dev, workflow/tests ]
+  pull_request:
+    branches: [ main, dev, workflow/tests ]
+
+jobs:
+  all-tests:
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Start services with Docker Compose
+      run: docker compose up -d db db_migration
+
+    - name: Wait for database
+      run: |
+        until docker compose exec -T db pg_isready -U user -d database; do
+          echo "Waiting for database..."
+          sleep 2
+        done
+
+    - name: Run all tests with combined coverage
+      env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      run: |
+        docker compose run --rm -v ${PWD}:/app parking-api-test \
+          pytest /app/api/tests/ \
+          --cov=api \
+          --cov-report=xml:/app/coverage.xml \
+          --cov-report=term \
+          --benchmark-skip \
+          -v
+
+    - name: Run performance tests
+      run: |
+        docker compose run --rm -v ${PWD}:/app parking-api-test \
+          pytest /app/api/tests/performance/ \
+          --benchmark-only \
+          --benchmark-json=/app/benchmark-results.json \
+          -v
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: coverage-combined
+        path: coverage.xml
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: benchmark-results
+        path: benchmark-results.json
+
+    - name: Stop services
+      if: always()
+      run: docker compose down -v

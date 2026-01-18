@@ -1,3 +1,7 @@
+"""
+This file contains all dataclasses related to users.
+"""
+
 from click import DateTime
 from pydantic import BaseModel
 from typing import Optional
@@ -6,9 +10,24 @@ from enum import Enum
 
 class UserRole(str, Enum):
     USER = "user"
-    ADMIN = "admin"
+    LOTADMIN = "lotadmin"
     PAYMENTADMIN = "paymentadmin"
     SUPERADMIN = "superadmin"
+
+class Register(BaseModel):
+    username: str
+    password: str
+    email: str
+    name: str
+    phone: Optional[str] = None
+    birth_year: Optional[int] = None
+
+class User(Register):
+    id: int
+    created_at: datetime
+    role: UserRole
+    active: Optional[bool] = True
+    old_hash: Optional[bool] = False
 
 class UserCreate(BaseModel):
     username: str
@@ -17,21 +36,8 @@ class UserCreate(BaseModel):
     name: str
     phone: Optional[str] = None
     birth_year: Optional[int] = None
-
-class AdminCreate(BaseModel):
-    username: str
-    password: str
-    email: str
-    name: str
-    phone: Optional[str] = None
-    birth_year: Optional[int] = None
     role: UserRole
-
-class User(UserCreate):
-    id: int
-    created_at: datetime
-    role: UserRole
-    is_new_password: bool
+    old_hash: Optional[bool] = False
 
 class UserLogin(BaseModel):
     username: str

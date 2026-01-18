@@ -2,13 +2,15 @@ import time
 import psycopg2
 import sys
 from argon2 import PasswordHasher
-import hashlib
-# A function that hashes a string. use this instead of hashing inside a function somewhere else, so the hashing method can be changed when needed.
-def hash_string(string: str) -> str:
+# A function that hashes a string.
+# use this instead of hashing inside a function somewhere else,
+# so the hashing method can be changed when needed.
 
-    # argon2_hasher = PasswordHasher()
-    # return argon2_hasher.hash(string)
-    return hashlib.md5(string.encode()).hexdigest()
+
+def hash_string(string: str) -> str:
+    argon2_hasher = PasswordHasher()
+    return argon2_hasher.hash(string)
+
 
 
 # Get database name from command line argument or default to "database"
@@ -47,7 +49,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT NOW(),
     birth_year INTEGER,
     active BOOLEAN DEFAULT TRUE,
-    is_new_password BOOLEAN DEFAULT FALSE
+    old_hash BOOLEAN DEFAULT FALSE
 );
 """)
 
@@ -60,7 +62,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
     model VARCHAR,
     color VARCHAR,
     year INTEGER,
-    created_at TIMESTAMP DEFAULT NOW() 
+    created_at TIMESTAMP DEFAULT NOW()
 );
 """)
 
@@ -84,18 +86,19 @@ CREATE TABLE IF NOT EXISTS parking_lots (
 """)
 
 cur.execute("""
-CREATE TABLE IF NOT EXISTS payments (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS discount_codes (
+    code VARCHAR PRIMARY KEY,
     user_id INTEGER REFERENCES users(id),
-    transaction VARCHAR,
-    amount FLOAT,
-    completed BOOLEAN DEFAULT FALSE,
-    hash VARCHAR,
-    method VARCHAR,
-    issuer VARCHAR,
-    bank VARCHAR,
-    date TIMESTAMP DEFAULT NOW(),
-    refund_requested BOOLEAN DEFAULT FALSE
+    discount_type VARCHAR,
+    discount_value FLOAT,
+    use_amount INTEGER,
+    used_count INTEGER DEFAULT 0,
+    minimum_price FLOAT,
+    start_applicable_time TIME,
+    end_applicable_time TIME,
+    start_date TIMESTAMP,
+    end_date TIMESTAMP,
+    active BOOLEAN DEFAULT TRUE
 );
 """)
 
@@ -107,8 +110,9 @@ CREATE TABLE IF NOT EXISTS reservations (
     parking_lot_id INTEGER REFERENCES parking_lots(id),
     start_time TIMESTAMP,
     end_time TIMESTAMP,
-    status VARCHAR,
-    created_at TIMESTAMP,
+    status VARCHAR DEFAULT 'Payment Pending',
+    created_at TIMESTAMP DEFAULT NOW(),
+    discount_code VARCHAR REFERENCES discount_codes(code) ON DELETE SET NULL,
     cost INTEGER
 );
 """)
@@ -117,21 +121,54 @@ cur.execute("""
 CREATE TABLE IF NOT EXISTS sessions (
     id SERIAL PRIMARY KEY,
     parking_lot_id INTEGER REFERENCES parking_lots(id),
-    payment_id INTEGER REFERENCES payments(id),
     user_id INTEGER REFERENCES users(id),
-    vehicle_id INTEGER REFERENCES vehicles(id),
-    started TIMESTAMP,
-    stopped TIMESTAMP,
-    duration_minutes INTEGER,
+    license_plate VARCHAR,
+    reservation_id INTEGER REFERENCES reservations(id),
+    start_time TIMESTAMP DEFAULT NOW(),
+    end_time TIMESTAMP,
     cost FLOAT
 );
 """)
 
 cur.execute("""
+CREATE TABLE IF NOT EXISTS payments (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    parking_lot_id INTEGER REFERENCES parking_lots(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    reservation_id INTEGER REFERENCES reservations(id),
+    session_id INTEGER,
+    transaction VARCHAR,
+    amount FLOAT,
+    completed BOOLEAN DEFAULT FALSE,
+    hash VARCHAR,
+    method VARCHAR,
+    issuer VARCHAR,
+    bank VARCHAR,
+    date TIMESTAMP DEFAULT NOW(),
+    refund_requested BOOLEAN DEFAULT FALSE,
+    refund_accepted BOOLEAN DEFAULT FALSE,
+    admin_id INTEGER REFERENCES users(id),
+            
+    CONSTRAINT payments_session_id_fkey
+        FOREIGN KEY (session_id)
+        REFERENCES sessions(id)
+        ON DELETE SET NULL
+);
+""")
+
+cur.execute("""
 CREATE TABLE IF NOT EXISTS parking_lot_admins (
-    admin_user_id INTEGER REFERENCES users(id),
+    admin_user_id INTEGER REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     parking_lot_id INTEGER REFERENCES parking_lots(id),
     PRIMARY KEY (admin_user_id, parking_lot_id)
+);
+""")
+
+cur.execute("""
+CREATE TABLE IF NOT EXISTS discount_code_locations (
+    discount_code VARCHAR REFERENCES discount_codes(code) ON DELETE CASCADE ON UPDATE CASCADE,
+    location VARCHAR,
+    PRIMARY KEY (discount_code, location)
 );
 """)
 
@@ -147,13 +184,33 @@ if not exists:
         hashed_pw = hash_string("admin123")
 
         cur.execute("""
-            INSERT INTO users (username, password, name, email, role)
-            VALUES ('superadmin', %s, 'Super Admin', 'super@admin.com', 'superadmin');
+            INSERT INTO users (username, password, name, email, role, old_hash)
+            VALUES ('superadmin', %s, 'Super Admin',
+                    'super@admin.com', 'superadmin', False);
         """, (hashed_pw,))
 
         print("Default superadmin created.")
         conn.commit()
 
+        cur.execute("""
+            INSERT INTO users (username, password, name, email, role, old_hash)
+            VALUES ('lotadmin', %s, 'LotAdmin', 'admin@admin.com', 'lotadmin', False);
+        """, (hashed_pw,))
+
+        conn.commit()
+        cur.execute("""
+            INSERT INTO users (username, password, name, email, role, old_hash)
+            VALUES ('paymentadmin', %s, 'paymentadmin',
+                    'payment@admin.com', 'paymentadmin', False);
+        """, (hashed_pw,))
+
+        conn.commit()
+        cur.execute("""
+            INSERT INTO users (username, password, name, email, role, old_hash)
+            VALUES ('user', %s, 'testuser', 'test@user.com', 'user', False);
+        """, (hashed_pw,))
+
+        conn.commit()
     except Exception as e:
         conn.rollback()
         print("Failed to create superadmin:", e)

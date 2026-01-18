@@ -169,15 +169,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "user_id": 1,
-  "transaction": "TXN-ABC-123",
-  "amount": 12.50,
-  "hash": "somehashvalue123",
-  "method": "CHECK2",
-  "issuer": "Rabobank",
-  "bank": "RABO",
-  "completed": false,
-  "refund_requested": false
+  "refund_requested": true
 }
 
 
