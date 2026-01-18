@@ -2,6 +2,7 @@
 this file contains all tests related to update payments endpoints.
 """
 
+from fastapi.testclient import TestClient
 from unittest.mock import patch
 from api.main import app
 import pytest

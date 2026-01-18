@@ -11,6 +11,7 @@ from api.app.routers import (parking_lots,
                              reservations,
                              vehicles,
                              discount_codes)
+from api.data_converter import DataConverter
 if os.getenv("MIGRATE_JSON", "false").lower() == "true":
     data_converter: DataConverter = DataConverter()
     data_converter.convert()
