@@ -1,6 +1,6 @@
 from api.models.discount_code_model import DiscountCodeModel
 from api.datatypes.reservation import ReservationCreate
-from api.datatypes.parking_lot import Parking_lot
+from api.datatypes.parking_lot import ParkingLot
 from api.datatypes.user import User
 from api.datatypes.discount_code import DiscountCodeCreate, DiscountCodeUpdate
 from fastapi import HTTPException
@@ -11,7 +11,7 @@ import logging
 logger = logging.getLogger(__name__)
 discount_code_model: DiscountCodeModel=DiscountCodeModel()
 
-def use_discount_code_validation(discount_code: Dict[str, Any], reservation: ReservationCreate, current_user: User, parking_lot: Parking_lot):
+def use_discount_code_validation(discount_code: Dict[str, Any], reservation: ReservationCreate, current_user: User, parking_lot: ParkingLot):
     if discount_code["user_id"] is not None and current_user.id != discount_code["user_id"]:
         logger.error("User ID %s tried to use discount code %s, "
                     "but doesn't have permission",

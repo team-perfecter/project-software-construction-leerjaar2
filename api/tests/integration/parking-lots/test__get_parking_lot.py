@@ -1,20 +1,58 @@
+"""
+this file contains all tests related to get parking lots endpoints.
+"""
+
 from api.tests.conftest import get_last_pid
+
 
 # Tests voor GET /parking-lots
 def test_get_all_parking_lots_success(client_with_token):
-    """Test: GET /parking-lots - Succesvol ophalen alle parking lots"""
+    """Retrieves all parking lots successfully with authentication.
+
+    Args:
+        client_with_token: Fixture providing an authenticated client and headers.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 200 or the returned data is incorrect.
+    """
     user_client, headers = client_with_token("user")
     response = user_client.get("/parking-lots/", headers=headers)
     assert response.status_code == 200
 
+
+
 def test_get_all_parking_lots_unauthorized(client):
-    """Test: GET /parking-lots - Zonder authenticatie"""
+    """Retrieves all parking lots without authentication.
+
+    Args:
+        client: Unauthenticated test client.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 200 or the returned data is incorrect.
+    """
     response = client.get("/parking-lots/")
     assert response.status_code == 200
 
+
+
 def test_get_all_parking_lots_empty(client_with_token):
-    """Test: GET /parking-lots - Lege parking lots lijst"""
-    # Superadmin gets all the parking lots, and deletes tem all.
+    """Retrieves an empty parking lot list after all parking lots are deleted.
+
+    Args:
+        client_with_token: Fixture providing an authenticated client and headers.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code or returned data is incorrect.
+    """
     superadmin_client, headers = client_with_token("superadmin")
     response = superadmin_client.get("/parking-lots/", headers=headers)
     data = response.json()
@@ -25,14 +63,22 @@ def test_get_all_parking_lots_empty(client_with_token):
     assert response.status_code == 200
     assert response.json() == []
 
+
+
 # Tests voor GET /parking-lots/{id}
-
 def test_get_parking_lot_by_lid_success(client):
-    """Test: GET /parking-lots/{id} - Succesvol ophalen parking lot"""
+    """Retrieves a specific parking lot by its ID.
 
+    Args:
+        client: Test client.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 200 or the returned data is incorrect.
+    """
     parking_lot_id = get_last_pid(client)
-
-    # TEst if we can get a specific parking lot
     response = client.get(f"/parking-lots/{parking_lot_id}")
     assert response.status_code == 200
     data = response.json()
@@ -41,31 +87,74 @@ def test_get_parking_lot_by_lid_success(client):
     assert data["location"] == "Event Center"
     assert data["capacity"] == 50
 
+
 def test_get_parking_lot_by_lid_not_found(client):
-    """Test: GET /parking-lots/{id} - Niet bestaande parking lot"""
-    response = client.get(f"/parking-lots/9999")
+    """Attempts to retrieve a non-existing parking lot by ID.
+
+    Args:
+        client: Test client.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 404.
+    """
+    response = client.get("/parking-lots/9999")
     assert response.status_code == 404
 
+
 def test_get_parking_lot_by_lid_unauthorized(client):
-    """Test: GET /parking-lots/{id} - Zonder authenticatie"""
+    """Retrieves a parking lot by ID without authentication.
+
+    Args:
+        client: Unauthenticated test client.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 200 or returned data is incorrect.
+    """
     parking_lot_id = get_last_pid(client)
     response = client.get(f"/parking-lots/{parking_lot_id}")
     assert response.status_code == 200
-
     data = response.json()
     assert data["id"] == parking_lot_id
 
+
 # Tests voor GET /parking-lots/location/{location}
 def test_get_parking_lots_by_location_success(client):
-    """Test: GET /parking-lots/location/{location} - Parking lots op specifieke locatie"""
+    """Retrieves parking lots for a specific location.
+
+    Args:
+        client: Test client.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 200 or returned data is incorrect.
+    """
     location = "Industrial Zone"
     response = client.get(f"/parking-lots/location/{location}")
     assert response.status_code == 200
     data = response.json()
     assert data[0]["location"] == "Industrial Zone"
 
+
 def test_get_parking_lots_by_location_not_found(client):
-    """Test: GET /parking-lots/location/{location} - Geen parking lots op locatie"""
+    """Attempts to retrieve parking lots for a non-existing location.
+
+    Args:
+        client: Test client.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 404 or error details are missing.
+    """
     location = "NonExistentLocation"
     response = client.get(f"/parking-lots/location/{location}")
     assert response.status_code == 404
@@ -74,29 +163,72 @@ def test_get_parking_lots_by_location_not_found(client):
     assert len(data) == 1
     assert "detail" in data
 
+
 def test_get_parking_lots_by_location_unauthorized(client):
-    """Test: GET /parking-lots/location/{location} - Zonder authenticatie"""
+    """Retrieves parking lots by location without authentication.
+
+    Args:
+        client: Unauthenticated test client.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 200 or returned data is incorrect.
+    """
     location = "Industrial Zone"
     response = client.get(f"/parking-lots/location/{location}")
     assert response.status_code == 200
 
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["location"] == "Industrial Zone"
+
+
 def test_get_parking_lots_sessions(client_with_token):
-    """Test: GET /parking-lots/{id}/sessions - Alle sessies van een parking lot"""
+    """Retrieves all sessions for a specific parking lot.
+
+    Args:
+        client_with_token: Fixture providing an authenticated client and headers.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 200 or returned data is incorrect.
+    """
     superadmin_client, headers = client_with_token("superadmin")
     parking_lot_id = get_last_pid(superadmin_client)
-    response = superadmin_client.get(f"/parking-lots/{parking_lot_id}/sessions", headers=headers, params={"lid": parking_lot_id})
+    response = superadmin_client.get(
+        f"/parking-lots/{parking_lot_id}/sessions",
+        headers=headers,
+        params={"lid": parking_lot_id}
+    )
     assert response.status_code == 200
-
     data = response.json()
     assert len(data) == 0
 
+
 def test_get_parking_lots_sessions_by_id_no_session(client_with_token):
-    """Test: GET /parking-lots/{id}/sessions - Alle sessies van een parking lot"""
+    """Attempts to retrieve a non-existing session for a parking lot.
+
+    Args:
+        client_with_token: Fixture providing an authenticated client and headers.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 404 or error details are incorrect.
+    """
     superadmin_client, headers = client_with_token("superadmin")
     parking_lot_id = get_last_pid(superadmin_client)
-    response = superadmin_client.get(f"/parking-lots/{parking_lot_id}/sessions/99999", headers=headers, params={"lid": parking_lot_id, "sid": 999999})
+    response = superadmin_client.get(
+        f"/parking-lots/{parking_lot_id}/sessions/99999",
+        headers=headers,
+        params={"lid": parking_lot_id, "sid": 999999}
+    )
     assert response.status_code == 404
-
     data = response.json()
     assert data["detail"]["error"] == "Session not found"
 

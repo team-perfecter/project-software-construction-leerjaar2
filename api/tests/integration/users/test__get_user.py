@@ -1,9 +1,9 @@
-from unittest.mock import patch
-from fastapi.testclient import TestClient
-from api.main import app
+"""
+this file contains all tests related to get user endpoints.
+"""
+
 from api.tests.conftest import get_last_uid
 
-client = TestClient(app)
 
 def test_get_all_users_as_admin(client_with_token):
     client, headers = client_with_token("lotadmin")
@@ -15,13 +15,11 @@ def test_get_all_users_as_superadmin(client_with_token):
     response = client.get("/users", headers=headers)
     assert response.status_code == 200
 
-
 def test_get_user_as_superadmin(client_with_token):
     user_id = get_last_uid(client_with_token)
     client, headers = client_with_token("superadmin")
     response = client.get(f"/get_user/{user_id}", headers=headers)
     assert response.status_code == 200
-
 
 def test_get_user_as_user(client_with_token):
     user_id = get_last_uid(client_with_token)
@@ -46,8 +44,6 @@ def test_profile_when_loggedin(client_with_token):
     response = client.get("/profile", headers=headers)
     assert response.status_code == 200
 
-
 def test_get_profile_when_not_loggedin(client):
     response = client.get("/profile")
     assert response.status_code == 401
-
