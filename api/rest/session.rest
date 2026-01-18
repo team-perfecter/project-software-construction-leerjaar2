@@ -1,0 +1,44 @@
+### Login
+# @name login
+POST http://127.0.0.1:8000/login
+Content-Type: application/json
+
+{
+  "username": "superadmin",
+  "password": "admin123"
+}
+
+###
+@token = {{login.response.body.access_token}}
+
+### Logout
+POST http://127.0.0.1:8000/logout
+Authorization: Bearer {{token}}
+
+### Create a new parking lot (admin only)
+POST http://127.0.0.1:8000/parking-lots
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Central Parking",
+  "location": "Amsterdam",
+  "address": "Damrak 1, 1012 LG Amsterdam",
+  "capacity": 150,
+  "tariff": 3.5,
+  "daytariff": 25.0,
+  "lat": 52.3676,
+  "lng": 4.9041
+}
+
+
+### Start a session
+POST http://127.0.0.1:8000/sessions/parking-lots/80/start/abc-123
+Authorization: Bearer {{token}}
+### stop a session
+POST http://127.0.0.1:8000/sessions/parking-lots/80/stop/abc-123
+Authorization: Bearer {{token}}
+
+### Get all parking lots        oud
+GET http://127.0.0.1:8000/parking-lots/
+Authorization: Bearer {{token}}

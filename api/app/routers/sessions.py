@@ -51,7 +51,7 @@ async def start_parking_session(
     user_id = current_user.id if current_user else None
     
     logger.info(
-        "User %i attempting to start session at parking lot %i",
+        "User %s attempting to start session at parking lot %s",
         user_id,
         lid,
     )
@@ -59,15 +59,15 @@ async def start_parking_session(
     # parking lot check
     parking_lot = parking_lot_model.get_parking_lot_by_lid(lid)
     if not parking_lot:
-        logger.warning("Parking lot %i does not exist", lid)
+        logger.warning("Parking lot %s does not exist", lid)
         raise HTTPException(status_code=404, detail={"error": "Parking lot not found", "message": f"Parking lot {lid} does not exist",})
 
     # active session check voor vehicle
-    existing_session = session_model.get_vehicle_session(license_plate)
+    existing_session = session_model.get_vehicle_sessions(license_plate)
 
     if existing_session:
         logger.warning(
-            "Active session already exists for vehicle %i at parking lot %i",
+            "Active session already exists for vehicle %s at parking lot %s",
             license_plate,
             lid,
         )
@@ -80,18 +80,18 @@ async def start_parking_session(
         )
 
     # create new session
-    logger.warning("user: %i freiofjewpogoewpogkewpo;gewgoejioeriiubher work", user_id)
+    logger.warning("user: %s freiofjewpogoewpogkewpo;gewgoejioeriiubher work", user_id)
 
     # Save session
     session = session_model.create_session(lid, user_id, license_plate, None)
     if session is None:
-        logger.warning("Vehcile %i already has a session", license_plate)
+        logger.warning("Vehcile %s already has a session", license_plate)
         return JSONResponse(content={
                             "message": "This vehicle already has a session"}, 
                             status_code=209)
 
     logger.info(
-        "Successfully started session for user %i at parking lot %i with vehicle %i",
+        "Successfully started session for user %s at parking lot %s with vehicle %s",
         user_id,
         lid,
         license_plate,
@@ -118,7 +118,7 @@ async def stop_parking_session(
     Returns:
         str: Confirmation whether the session was stopped successfully.
     """
-    session = session_model.get_vehicle_session(license_plate)
+    session = session_model.get_vehicle_sessions(license_plate)
     if not session:
         return "This vehicle has no active session"
     
@@ -145,7 +145,7 @@ async def stop_parking_session(
     )
     payment_id = payment_model.create_payment(payment)
 
-    logger.info("Session of vehicle %i successfully stopped", license_plate)
+    logger.info("Session of vehicle %s successfully stopped", license_plate)
     return JSONResponse(
         content= {"message": f"Session stopped successfully. Payment ID {payment_id}"},
         status_code=201
@@ -184,7 +184,9 @@ async def get_sessions_vehicle(vehicle_id: int,
                             detail={"error": "Vehicle not found", 
                                     "message": f"Vehicle with ID {vehicle_id} does not exist"
                                     })
-    sessions = session_model.get_vehicle_sessions(vehicle_id)
+    # Haal het kenteken op
+    license_plate = vehicle["license_plate"]
+    sessions = session_model.get_vehicle_sessions(license_plate)
     return JSONResponse(content={"message": sessions}, status_code=201)
 
 
@@ -201,7 +203,7 @@ async def start_session_from_reservation(
         raise HTTPException(status_code=403, detail="Reservation does not belong to current user")
 
     # Check if session already exists for this vehicle and parking lot
-    existing_session = session_model.get_vehicle_session(reservation.vehicle_id)
+    existing_session = session_model.get_vehicle_sessions(reservation.vehicle_id)
     if existing_session and existing_session.parking_lot_id == reservation.parking_lot_id:
         raise HTTPException(status_code=409, detail="Session already exists for this reservation")
 
