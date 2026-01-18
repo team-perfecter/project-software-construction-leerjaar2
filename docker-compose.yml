@@ -11,9 +11,6 @@ services:
       db_migration:
         condition: service_completed_successfully
     restart: always
-    environment:
-      LOG_FILE: /var/log/parking-api/app.log
-      SECRET_KEY: super_secret_key 
     volumes:
       - ./logs:/var/log/parking-api
 
