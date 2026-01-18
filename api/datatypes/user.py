@@ -22,7 +22,7 @@ class User(Register):
     id: int
     created_at: datetime
     role: UserRole
-    old_hash: bool
+    old_hash: Optional[bool] = False
 
 class UserCreate(BaseModel):
     username: str
