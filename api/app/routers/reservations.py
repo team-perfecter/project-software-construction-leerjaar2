@@ -10,12 +10,15 @@ from api.datatypes.payment import PaymentCreate
 from api.datatypes.reservation import Reservation, ReservationCreate
 from api.models.parking_lot_model import ParkingLotModel
 from api.models.reservation_model import ReservationModel
+from api.models.discount_code_model import DiscountCodeModel
 from api.models.vehicle_model import VehicleModel
 from api.models.session_model import SessionModel
 from api.models.payment_model import PaymentModel
+from api.utilities.discount_code_validation import use_discount_code_validation
 from api.session_calculator import (generate_payment_hash,
                                     generate_transaction_validation_hash,
                                     calculate_price)
+
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +32,8 @@ parking_lot_model: ParkingLotModel = ParkingLotModel()
 vehicle_model: VehicleModel = VehicleModel()
 session_model: SessionModel = SessionModel()
 payment_model: PaymentModel = PaymentModel()
+discount_code_model: DiscountCodeModel = DiscountCodeModel()
+
 
 @router.get("/reservations/vehicle/{vehicle_id}")
 async def vehicle_reservations(vehicle_id: int, user: User = Depends(get_current_user)):
@@ -49,6 +54,7 @@ async def vehicle_reservations(vehicle_id: int, user: User = Depends(get_current
 
     vehicle = vehicle_model.get_one_vehicle(vehicle_id)
     if vehicle is None:
+        logger.warning("Vehicle %s not found", vehicle_id)
         raise HTTPException(
             status_code=404,
             detail="Vehicle not found"
@@ -84,12 +90,12 @@ async def create_reservation(reservation: ReservationCreate,
     """
     parking_lot = parking_lot_model.get_parking_lot_by_lid(reservation.parking_lot_id)
     if parking_lot is None:
-        logger.warning("Parking lot %i does not exist", reservation.parking_lot_id)
+        logger.warning("Parking lot %s does not exist", reservation.parking_lot_id)
         raise HTTPException(status_code = 404, detail = {"message": "Parking lot does not exist"})
     
     vehicle = vehicle_model.get_one_vehicle(reservation.vehicle_id)
     if vehicle is None:
-        logger.warning("Vehicle %i does not exist", reservation.vehicle_id)
+        logger.warning("Vehicle %s does not exist", reservation.vehicle_id)
         raise HTTPException(status_code = 404, detail = {"message": "Vehicle does not exist"})
     ### deze error handling werkt niet eens!!!
     # conflicting_time: bool = False
@@ -113,7 +119,16 @@ async def create_reservation(reservation: ReservationCreate,
     parking_lot = parking_lot_model.get_parking_lot_by_lid(reservation.parking_lot_id)
     #errorhandling etc.
 
-    cost = calculate_price(parking_lot, reservation)
+    discount_code = discount_code_model.get_discount_code_by_code(reservation.discount_code)
+    if not discount_code:
+        logger.error("User ID %s tried to use discount code %s, "
+                     "but it was not found",
+                     current_user.id, reservation.discount_code)
+        raise HTTPException(status_code=404,
+                            detail="No discount code was found.")
+    use_discount_code_validation(discount_code, reservation, current_user, parking_lot)
+    cost = calculate_price(parking_lot, reservation, discount_code)
+    
     reservation.user_id = current_user.id
     reservation.cost = cost
     reservation_id = reservation_model.create_reservation(reservation)
@@ -123,6 +138,7 @@ async def create_reservation(reservation: ReservationCreate,
     payment_hash = generate_transaction_validation_hash()
     payment = PaymentCreate(
         user_id=current_user.id,
+        parking_lot_id=reservation.parking_lot_id,
         amount=cost,
         transaction=transaction,
         hash=payment_hash,
@@ -153,14 +169,14 @@ async def delete_reservation(reservation_id: int, current_user: User = Depends(g
     # Controleer of de reservatie bestaat
     reservation: Reservation | None = reservation_model.get_reservation_by_id(reservation_id)
     if reservation is None:
-        logger.warning("User with id %i tried to delete a reservation that does not exist: %i",
+        logger.warning("User with id %s tried to delete a reservation that does not exist: %s",
                        current_user.id, reservation_id)
         raise HTTPException(status_code=404, detail={"message": "Reservation not found"})
 
     # Controleer of de reservatie toebehoort aan de ingelogde gebruiker
     if reservation.user_id != current_user.id:
         logger.warning(
-            "User with id %i tried to delete a reservation that does not belong to them: %i",
+            "User with id %s tried to delete a reservation that does not belong to them: %s",
                         current_user.id, reservation_id)
         raise HTTPException(
             status_code=403,
@@ -171,13 +187,13 @@ async def delete_reservation(reservation_id: int, current_user: User = Depends(g
     success = reservation_model.delete_reservation(reservation_id)
     if not success:
         logger.error(
-            "Failed to delete reservation with id %i for user %i",
+            "Failed to delete reservation with id %s for user %s",
             reservation_id, current_user.id
             )
         raise HTTPException(status_code=500, detail={"message": "Failed to delete reservation"})
 
     logger.info(
-        "User with id %i successfully deleted reservation with id %i",
+        "User with id %s successfully deleted reservation with id %s",
         current_user.id, reservation_id
         )
     raise HTTPException(detail={"message": "Reservation deleted successfully"}, status_code=200)

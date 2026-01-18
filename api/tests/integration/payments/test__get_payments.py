@@ -1,8 +1,11 @@
 """
 this file contains all tests related to get payments endpoints.
 """
+from fastapi.testclient import TestClient
+from api.main import app
+from api.tests.conftest import get_last_payment_id, get_last_pid
 
-from api.tests.conftest import get_last_payment_id
+client = TestClient(app)
 
 
 # /payments/{payment_id}
@@ -36,8 +39,18 @@ def test_get_payment_by_id_no_auth(client_with_token):
     Raises:
         AssertionError: If the response status code is not 403.
     """
+    client, headers = client_with_token("superadmin")
+    pid = get_last_pid(client)
+    fake_payment = {
+        "user_id": 1,
+        "parking_lot_id": pid,
+        "amount": 200,
+        "method": "method1"
+    }
+    client.post("/payments", json=fake_payment, headers=headers)
+    payment_id = get_last_payment_id(client_with_token)
     client, headers = client_with_token("user")
-    response = client.get("/payments/1", headers=headers)
+    response = client.get(f"/payments/{payment_id}", headers=headers)
     assert response.status_code == 403
 
 
@@ -121,7 +134,7 @@ def test_get_my_payments_empty(client_with_token):
     Raises:
         AssertionError: If the response status code is not 404.
     """
-    client, headers = client_with_token("admin")
+    client, headers = client_with_token("lotadmin")
     response = client.get("/payments/me", headers=headers)
     assert response.status_code == 404
 
@@ -172,7 +185,7 @@ def test_get_my_open_payments_empty(client_with_token):
     Raises:
         AssertionError: If the response status code is not 404.
     """
-    client, headers = client_with_token("admin")
+    client, headers = client_with_token("lotadmin")
     response = client.get("/payments/me/open", headers=headers)
     assert response.status_code == 404
 

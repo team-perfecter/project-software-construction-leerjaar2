@@ -46,7 +46,7 @@ def test_create_parking_lot_with_admin(client_with_token):
     Raises:
         AssertionError: If the response status code is not 403.
     """
-    admin_client, headers = client_with_token("admin")
+    admin_client, headers = client_with_token("lotadmin")
     fake_parking_lot = {
         "name": "test",
         "location": "here",

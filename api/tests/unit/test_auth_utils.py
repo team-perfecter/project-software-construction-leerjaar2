@@ -4,13 +4,13 @@ import pytest
 from fastapi import HTTPException
 from api.auth_utils import (
     hash_password,
-    verify_password,
     create_access_token,
     revoke_token,
     is_token_revoked,
     require_role,
     require_lot_access,
     get_current_user,
+    get_current_user_optional,
     JWTError,
 )
 from api.utilities.hasher import hash_string
@@ -20,17 +20,6 @@ from api.datatypes.user import User, UserRole
 def test_hash_password_returns_hash():
     hashed = hash_password("secret123")
     assert hashed != "secret123"
-
-
-def test_verify_password_correct():
-    password = "password"
-    hashed_password = hash_string(password)
-    assert verify_password(password, hashed_password) is True
-
-
-def test_verify_password_wrong():
-    assert verify_password("password", "wrong_hashed_password") is False
-
 
 def test_create_access_token_contains_jwt():
     token = create_access_token({"sub": "superadmin"})
@@ -84,7 +73,7 @@ def test_require_role_blocks_wrong_role():
         birth_year=None
     )
 
-    rolecheck = require_role(UserRole.ADMIN)
+    rolecheck = require_role(UserRole.LOTADMIN)
     with pytest.raises(HTTPException) as exc_info:
         rolecheck(user)
     assert exc_info.value.status_code == 403
@@ -117,7 +106,7 @@ def test_admin_can_manage_assigned_lot(mock_get_lots):
         password="admin",
         email="admin@admin.com",
         name="admin",
-        role=UserRole.ADMIN,
+        role=UserRole.LOTADMIN,
         created_at=datetime.now(),
         old_hash=False,
         phone=None,
@@ -205,3 +194,15 @@ def test_get_current_user_user_not_found(mock_get_user, mock_jwt_decode,
     with pytest.raises(HTTPException) as exc:
         get_current_user("unknown-user-token")
     assert exc.value.status_code == 401
+
+
+def test_get_current_user_optional_handles_http_exception(monkeypatch):
+    def mock_get_current_user(token):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    import api.auth_utils as auth_utils
+    monkeypatch.setattr(auth_utils, "get_current_user", mock_get_current_user)
+
+    # Call get_current_user_optional with an invalid token
+    result = get_current_user_optional(token="invalidtoken")
+    assert result is None

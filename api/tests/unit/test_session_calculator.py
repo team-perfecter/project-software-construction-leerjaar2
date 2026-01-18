@@ -14,24 +14,24 @@ class MockParkingLot:
 
 class MockSession:
     def __init__(self, started, stopped=None):
-        self.started = started
-        self.stopped = stopped
+        self.start_time = started
+        self.end_time = stopped
 
 
 def test_calculate_price_short_session_free():
     parking_lot = MockParkingLot(tariff=2.0, daytariff=10.0)
     now = datetime.now()
     session = MockSession(started=now - timedelta(minutes=2), stopped=now)
-    price = calculate_price(parking_lot, session)
+    price = calculate_price(parking_lot, session, None)
     assert price == 0
 
 
 def test_calculate_price_hourly_tariff():
     parking_lot = MockParkingLot(tariff=2.0, daytariff=10.0)
-    now = datetime.now()
-    session = MockSession(started=now - timedelta(hours=1, minutes=10),
-                          stopped=now)
-    price = calculate_price(parking_lot, session)
+    base_time = datetime(2023, 1, 1, 12, 0, 0)
+    session = MockSession(started=base_time - timedelta(hours=1, minutes=10),
+                          stopped=base_time)
+    price = calculate_price(parking_lot, session, None)
     assert price == 4.0  # 2 hours * 2.0
 
 
@@ -39,7 +39,7 @@ def test_calculate_price_day_tariff():
     parking_lot = MockParkingLot(tariff=2.0, daytariff=10.0)
     now = datetime.now()
     session = MockSession(started=now - timedelta(hours=25), stopped=now)
-    price = calculate_price(parking_lot, session)
+    price = calculate_price(parking_lot, session, None)
     assert price == 20.0  # 2 days * 10.0
 
 
@@ -47,7 +47,7 @@ def test_calculate_price_caps_at_daytariff():
     parking_lot = MockParkingLot(tariff=5.0, daytariff=10.0)
     now = datetime.now()
     session = MockSession(started=now - timedelta(hours=3), stopped=now)
-    price = calculate_price(parking_lot, session)
+    price = calculate_price(parking_lot, session, None)
     assert price == 10.0  # 3*5=15 > daytariff, so cap at 10
 
 

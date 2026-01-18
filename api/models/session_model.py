@@ -6,7 +6,7 @@ from datetime import datetime
 from pydantic import ValidationError
 from api.datatypes.session import Session
 from api.models.connection import get_connection
-
+import psycopg2.extras
 
 class SessionModel:
     """
@@ -37,20 +37,19 @@ class SessionModel:
         """
 
         cursor = self.connection.cursor()
-
-        # Check if the vehicle already has an active session
+        # Controleer of dit voertuig al actief is
         cursor.execute("""
-            SELECT * FROM sessions WHERE vehicle_id = %s AND stopped IS NULL;
-        """, (vehicle_id,))
+            SELECT * FROM sessions WHERE license_plate = %s AND end_time IS NULL;
+        """, (license_plate,))
         if cursor.fetchone():
             print("Vehicle already has an active session.")
             return None
 
         cursor.execute("""
-            INSERT INTO sessions (parking_lot_id, user_id, vehicle_id, reservation_id)
+            INSERT INTO sessions (parking_lot_id, user_id, license_plate, reservation_id)
             VALUES (%s, %s, %s, %s)
             RETURNING *;
-        """, (parking_lot_id, user_id, vehicle_id, reservation_id))
+        """, (parking_lot_id, user_id, license_plate, reservation_id))
 
         self.connection.commit()
         return self.map_to_session(cursor)[0]
@@ -65,15 +64,15 @@ class SessionModel:
         Returns:
             dict: The updated session with stopped time, duration, and cost.
         """
-        stopped = datetime.now()
+        end_time = datetime.now()
         cursor = self.connection.cursor()
         cursor.execute("""
             UPDATE sessions
-            SET stopped = %s,
+            SET end_time = %s,
                 cost = %s
             WHERE id = %s
             RETURNING *;
-        """, (stopped, cost, session.id,))
+        """, (end_time, cost, session.id,))
 
         self.connection.commit()
         session_list = self.map_to_session(cursor)
@@ -98,7 +97,7 @@ class SessionModel:
             list[Session]: A list of active Session objects.
         """
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM sessions WHERE stopped IS NULL;")
+        cursor.execute("SELECT * FROM sessions WHERE end_time IS NULL;")
         rows = cursor.fetchall()
         columns = [desc[0] for desc in cursor.description]
         result = [dict(zip(columns, row)) for row in rows]
@@ -137,7 +136,7 @@ class SessionModel:
         return session_list[0] if session_list else None
 
 
-    def get_vehicle_sessions(self, vehicle_id: int) -> Session | None:
+    def get_vehicle_sessions(self, license_plate: str) -> Session | None:
         """
         Retrieve all active sessions for a specific vehicle.
 
@@ -149,8 +148,8 @@ class SessionModel:
         """
         cursor = self.connection.cursor()
         cursor.execute("""
-            SELECT * FROM sessions WHERE vehicle_id = %s AND stopped IS NULL;
-        """, (vehicle_id,))
+            SELECT * FROM sessions WHERE license_plate = %s AND end_time IS NULL;
+        """, (license_plate,))
         session_list = self.map_to_session(cursor)
         return session_list[0] if session_list else None
 
@@ -165,7 +164,7 @@ class SessionModel:
             list[dict]: A list of dictionaries representing each active session.
         """
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM sessions WHERE reservation_id = %s AND stopped IS NULL;",
+        cursor.execute("SELECT * FROM sessions WHERE reservation_id = %s AND end_time IS NULL;",
                        (reservation_id,))
         rows = cursor.fetchall()
 
@@ -199,3 +198,8 @@ class SessionModel:
             except ValidationError as e:
                 print("Failed to map row to Session:", row_dict, e)
         return sessions
+
+    def get_session_by_license_plate(self, license_plate):
+        cursor = self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("SELECT * FROM sessions WHERE license_plate = %s AND stopped IS NULL;", (license_plate,))
+        return cursor.fetchone()

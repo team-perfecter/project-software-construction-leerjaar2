@@ -11,7 +11,7 @@ from api.auth_utils import create_access_token
 from api.models.user_model import UserModel
 
 PYTEST_PLUGINS = "pytest_benchmark"
-
+user_model: UserModel = UserModel()
 
 def pytest_configure(config):
     """
@@ -84,6 +84,7 @@ def seed_all_data(client_with_token):
     Seed all required data once per test session before any tests run.
     Calls other seeding functions for vehicles, users, parking lots, payments, etc.
     """
+
 
     client, headers = client_with_token("superadmin")
 
@@ -217,7 +218,6 @@ def seed_payments(client, headers, create_default):
     """
     Seeds data for payments.
     """
-    user_model = UserModel()
 
     # Ensure superadmin exists
     user = user_model.get_user_by_username("superadmin")
@@ -236,11 +236,12 @@ def seed_payments(client, headers, create_default):
                 "user_id": user.id,
                 "reservation_id": None,
                 "session_id": None,
+                "parking_lot_id": get_last_pid(client),
                 "transaction": f"transaction{i+1}",
                 "amount": 100 + i,
                 "method": f"method{i+1}",
                 "issuer": f"issuer{i+1}",
-                "bank": f"bank{i+1}",
+                "bank": f"bank{i+1}"
             }
             client.post("/payments", json=payment, headers=headers)
 
@@ -291,7 +292,7 @@ def setup_parking_lots(request, client_with_token):
         request: pytest request object.
         client_with_token: Fixture that returns a client with JWT headers.
     """
-    if not run_fixture_on_test(["parking_lot"], request):
+    if not run_fixture_on_test(["parking_lot", "payments"], request):
         return
     client, headers = client_with_token("superadmin")
     create_default = "create" not in request.node.fspath.basename
@@ -377,3 +378,49 @@ def get_last_vid(client_with_token):
     response = client.get("/vehicles", headers=headers)
     data = response.json()
     return data[-1]["id"]
+
+@pytest.fixture(autouse=True)
+def setup_discount_codes(request, client_with_token):
+
+    client, headers = client_with_token("superadmin")
+
+    user = user_model.get_user_by_username("superadmin")
+    if not user:
+        raise Exception("Superadmin must exist in the DB for benchmarks")
+    
+    response = client.get("/discount-codes", headers=headers)
+    if response.status_code == 200:
+        codes = response.json().get("discount_code", [])
+        for discount_code in codes:
+            client.delete(f"/discount-codes/{discount_code['code']}", headers=headers)
+
+    code1 = {
+        "code": "test1",
+        "discount_type": "percentage",
+        "discount_value": 5,
+    }
+    code2 = {
+        "code": "test2",
+        "user_id": 1,
+        "discount_type": "fixed",
+        "discount_value": 5,
+        "use_amount": 5,
+        "minimum_price": 5,
+        "start_applicable_time": "00:01:00",
+        "end_applicable_time": "23:59:00",
+        "start_date": "2025-01-01",
+        "end_date": "2027-01-01",
+        "locations": ["Rotterdam", "Schiedam"]
+    }
+    client.post("/discount-codes", json=code1, headers=headers)
+    client.post("/discount-codes", json=code2, headers=headers)
+
+
+def get_last_discount_code(client_with_token):
+    client, headers = client_with_token("superadmin")
+    response = client.get("/discount-codes", headers=headers)
+    data = response.json()
+    codes = data.get("discount_code", [])
+    if codes:
+        return codes[-1]["code"]
+    return None 

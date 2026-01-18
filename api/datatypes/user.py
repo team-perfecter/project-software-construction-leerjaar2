@@ -10,7 +10,7 @@ from enum import Enum
 
 class UserRole(str, Enum):
     USER = "user"
-    ADMIN = "admin"
+    LOTADMIN = "lotadmin"
     PAYMENTADMIN = "paymentadmin"
     SUPERADMIN = "superadmin"
 
@@ -27,7 +27,7 @@ class User(Register):
     created_at: datetime
     role: UserRole
     active: Optional[bool] = True
-    old_hash: bool
+    old_hash: Optional[bool] = False
 
 class UserCreate(BaseModel):
     username: str

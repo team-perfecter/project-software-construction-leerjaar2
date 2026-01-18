@@ -2,7 +2,7 @@ name: Run Tests, Create Reports, Send Webhook
 
 on:
   push:
-    branches: [ main, dev ]
+    branches-ignore: [ main, dev, workflow/tests ]
   pull_request:
     branches: [ main, dev, workflow/tests ]
 
@@ -26,6 +26,8 @@ jobs:
         done
 
     - name: Run all tests with combined coverage
+      env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
       run: |
         docker compose run --rm -v ${PWD}:/app parking-api \
           pytest /app/api/tests/ \

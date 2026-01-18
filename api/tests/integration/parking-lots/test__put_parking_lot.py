@@ -110,7 +110,7 @@ def test_update_parking_lot_forbidden(client_with_token, valid_parking_lot_data)
     Raises:
         AssertionError: If the response status code is not 403.
     """
-    admin_client, headers = client_with_token("admin")
+    admin_client, headers = client_with_token("lotadmin")
     parking_lot_id = get_last_pid(admin_client)
     response = admin_client.put(
         f"/parking-lots/{parking_lot_id}",
