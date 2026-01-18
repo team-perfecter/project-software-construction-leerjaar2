@@ -1,7 +1,7 @@
 """
 this file contains all queries related to parking lots.
 """
-
+import os
 import psycopg2
 from api.datatypes.parking_lot import Parking_lot, Parking_lot_create
 from api.datatypes.session import Session
@@ -13,10 +13,16 @@ class ParkingLotModel:
     This class contains all queries related to parking lots.
     """
     def __init__(self):
+        if os.environ.get("TESTING") == "1":
+            host = "test_db"
+            database = "test_database"
+        else:
+            host = "db"
+            database = "database"
         self.connection = psycopg2.connect(
-            host="db",
+            host=host,
             port=5432,
-            database="database",
+            database=database,
             user="user",
             password="password",
         )

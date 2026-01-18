@@ -1,5 +1,5 @@
 import psycopg2
-
+import os
 from api.datatypes.reservation import ReservationCreate, Reservation
 
 
@@ -7,10 +7,16 @@ from api.datatypes.reservation import ReservationCreate, Reservation
 
 class Reservation_model:
     def __init__(self):
+        if os.environ.get("TESTING") == "1":
+            host = "test_db"
+            database = "test_database"
+        else:
+            host = "db"
+            database = "database"
         self.connection = psycopg2.connect(
-            host="db",
+            host=host,
             port=5432,
-            database="database",
+            database=database,
             user="user",
             password="password",
         )

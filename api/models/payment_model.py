@@ -1,13 +1,20 @@
 import psycopg2
+import os
 from api.datatypes.payment import PaymentCreate
 from api.session_calculator import generate_transaction_validation_hash
 
 
 class PaymentModel:
+    if os.environ.get("TESTING") == "1":
+        host = "test_db"
+        database = "test_database"
+    else:
+        host = "db"
+        database = "database"
     connection = psycopg2.connect(
-        host="db",
+        host=host,
         port=5432,
-        database="database",
+        database=database,
         user="user",
         password="password",
     )
