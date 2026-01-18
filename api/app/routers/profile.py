@@ -51,7 +51,6 @@ async def login(data: UserLogin):
         except exceptions.VerifyMismatchError:
             logger.info("Login failed, incorrect password for user: %s", data.username)
             raise HTTPException(status_code=401, detail="Invalid credentials")
-
     access_token = create_access_token({"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
 

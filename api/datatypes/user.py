@@ -22,7 +22,6 @@ class User(Register):
     id: int
     created_at: datetime
     role: UserRole
-    active: Optional[bool] = True
     old_hash: Optional[bool] = False
 
 class UserCreate(BaseModel):
