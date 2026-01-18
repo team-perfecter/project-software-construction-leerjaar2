@@ -89,7 +89,7 @@ class DataConverter:
 
         if not exists:
             try:
-                hashed_pw = hash_string("admin123")
+                hashed_pw = hash_string("admin123", False)
 
                 cur.execute("""
                             INSERT INTO users (username, password, name, email, role)
@@ -306,30 +306,22 @@ class DataConverter:
                     elif len(user_ids) == 0:
                         logging.warning(f"No user found for username '{username}'")
 
-                # Resolve vehicle_id
-                license_plate = session.get("licenseplate")
-                vehicle_id = vehicle_map.get(license_plate.strip().upper()) if license_plate else None
-                if vehicle_id is None:
-                    logging.warning(f"No vehicle found for license plate '{license_plate}'")
-
                 cursor.execute("""
                                INSERT INTO sessions (parking_lot_id,
-                                                     payment_id,
                                                      user_id,
-                                                     vehicle_id,
-                                                     started,
-                                                     stopped,
-                                                     duration_minutes,
+                                                     license_plate,
+                                                     reservation_id,
+                                                     start_time,
+                                                     end_time,
                                                      cost)
-                               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                               VALUES (%s, %s, %s, %s, %s, %s, %s)
                                """, (
                                    session.get("parking_lot_id"),
-                                   None,  # No payment info in sessions JSON
                                    user_id,
-                                   vehicle_id,
+                                   session.get("licenseplate"),
+                                   None,
                                    started,
                                    stopped,
-                                   session.get("duration_minutes"),
                                    session.get("cost")
                                ))
 
