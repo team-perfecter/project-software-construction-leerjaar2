@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT NOW(),
     birth_year INTEGER,
     active BOOLEAN DEFAULT TRUE,
-    old_hash BOOLEAN DEFAULT TRUE
+    old_hash BOOLEAN DEFAULT FALSE
 );
 """)
 
