@@ -10,4 +10,4 @@ def test_update_profile(client_with_token):
         "username": "waddapjes",
     }
     response = client.put("/update_profile", json=fake_user, headers=headers)
-    assert response.status_code == 201
+    assert response.status_code == 200
