@@ -1,0 +1,358 @@
+### Login as the superadmin
+# @name admin_login
+POST http://127.0.0.1:8000/login
+Content-Type: application/json
+
+{
+  "username": "superadmin",
+  "password": "admin123"
+}
+
+###
+@admin_token = {{admin_login.response.body.access_token}}
+
+
+### create new parking lot
+POST http://127.0.0.1:8000/parking-lots
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+    "name": "Bedrijventerrein Almere Parkeergarage",
+    "location": "Almere",
+    "address": "Schanssingel 337, 2421 BS Almere",
+    "capacity": 1,
+    "tariff": 5,
+    "daytariff": 30,
+    "lat": 0,
+    "lng": 0
+}
+
+### create new parking lot
+POST http://127.0.0.1:8000/parking-lots
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+    "name": "Vlaardingen Evenementenhal Parkeerterrein",
+    "location": "Event Center",
+    "address": "Westlindepark 756, 8920 AB Vlaardingen",
+    "capacity": 50,
+    "tariff": 0.5,
+    "daytariff": 0.5,
+    "lat": 0,
+    "lng": 0
+}
+
+### Create a vehicle for an user
+POST http://127.0.0.1:8000/vehicles/create
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+    "user_id": 1,
+    "license_plate": "45-ASP-1",
+    "make": "Opal",
+    "model": "308",
+    "color": "Blue",
+    "year": 2022
+}
+
+### create descount code
+POST http://127.0.0.1:8000/discount-codes
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+    "code": "discount",
+    "discount_type": "fixed",
+    "discount_value": 1,
+    "locations": []
+}
+
+### Logout
+POST http://127.0.0.1:8000/logout
+Authorization: Bearer {{token}}
+
+### Register a user
+POST http://127.0.0.1:8000/register
+Content-Type: application/json
+
+{
+  "username": "jerrel",
+  "password": "1234",
+  "name": "bob",
+  "email": "test@example.com",
+  "phone": "1234567890",
+  "birth_year": "2002"
+}
+
+### Login
+# @name login
+POST http://127.0.0.1:8000/login
+Content-Type: application/json
+
+{
+  "username": "jerrel",
+  "password": "1234"
+}
+
+###
+@token = {{login.response.body.access_token}}
+
+### View my profile
+GET http://127.0.0.1:8000/profile
+Authorization: Bearer {{token}}
+
+### Edit my profile
+PUT http://127.0.0.1:8000/update_profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Bob Updated",
+  "email": "newemail@example.com",
+  "phone": "0987654321"
+}
+
+### View my profile
+GET http://127.0.0.1:8000/profile
+Authorization: Bearer {{token}}
+
+### Try to get the profile of another user
+GET http://127.0.0.1:8000/get_user/2
+Authorization: Bearer {{token}}
+
+### Create new vehicle
+POST http://127.0.0.1:8000/vehicles/create
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "user_id": "5",
+  "license_plate": "ABC-123",
+  "make": "Toyota",
+  "model": "Corolla",
+  "color": "Blue",
+  "year": 2020
+}
+
+### Create second vehicle
+POST http://127.0.0.1:8000/vehicles/create
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "user_id": "5",
+  "license_plate": "Roach",
+  "make": "Horse",
+  "model": "Shire Horse",
+  "color": "Brown",
+  "year": 1272
+}
+
+### Get all vehicle
+GET http://127.0.0.1:8000/vehicles
+Authorization: Bearer {{token}}
+
+
+### Get a vehicle
+GET http://127.0.0.1:8000/vehicles/1
+Authorization: Bearer {{token}}
+
+### Edit vehicle
+PUT http://127.0.0.1:8000/vehicles/update/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "license_plate": "UPDATED123",
+    "make": "Tesla",
+    "model": "Model 3",
+    "color": "Red",
+    "year": 2024
+}
+
+### Get a vehicle
+GET http://127.0.0.1:8000/vehicles/1
+Authorization: Bearer {{token}}
+
+### Delete vehicle
+DELETE http://127.0.0.1:8000/vehicles/delete/2
+Authorization: Bearer {{token}}
+
+### Get all vehicle
+GET http://127.0.0.1:8000/vehicles
+Authorization: Bearer {{token}}
+
+### Get all parking lots
+GET http://127.0.0.1:8000/parking-lots/
+Authorization: Bearer {{token}}
+
+### Get one parking lot
+GET http://127.0.0.1:8000/parking-lots/1
+Authorization: Bearer {{token}}
+
+### Start a new session
+# @name session
+POST http://127.0.0.1:8000/sessions/parking-lots/1/start/UPDATED123
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+###
+@session_id = {{session.response.body.session_id}}
+
+### Get all sessions of a vehicle
+GET http://127.0.0.1:8000/sessions/active
+Authorization: Bearer {{token}}
+
+### Try to start a session with a vehicle that already has a session
+POST http://127.0.0.1:8000/sessions/parking-lots/1/start/UPDATED123
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### End the session
+POST http://127.0.0.1:8000/sessions/parking-lots/1/stop/UPDATED123
+Authorization: Bearer {{token}}
+
+### Start a new reservation invalid time
+# @name reservation
+POST http://127.0.0.1:8000/reservations/create
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "user_id": 1,
+  "vehicle_id": 1,
+  "parking_lot_id": 1,
+  "start_time": "2026-10-20T10:00:00",
+  "end_time": "2026-10-20T20:00:00",
+  "cost": 50,
+  "status": "",
+  "discount_code": "discount"
+}
+
+
+
+### Start a new reservation
+# @name reservation
+POST http://127.0.0.1:8000/reservations/create
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "user_id": 1,
+  "vehicle_id": 1,
+  "parking_lot_id": 1,
+  "start_time": "2026-11-20T10:00:00",
+  "end_time": "2026-11-20T20:00:00",
+  "cost": 100,
+  "status": "",
+  "discount_code": "discount"
+}
+
+### Get the reservation
+GET http://127.0.0.1:8000/reservations/vehicle/1
+Authorization: Bearer {{admin_token}}
+
+### Start a session with a reservation
+# @name session_with_reservation
+POST http://127.0.0.1:8000/sessions/reservations/1/start
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+
+### End the session
+PUT http://127.0.0.1:8000/sessions/{{session_id_2}}/end
+Authorization: Bearer {{token}}
+
+### View all my payments
+GET http://127.0.0.1:8000/payments/me
+Authorization: Bearer {{admin_token}}
+
+### Try to view the payment of another user
+GET http://127.0.0.1:8000/payments/1
+Authorization: Bearer {{token}}
+
+
+### pay a payment
+POST http://127.0.0.1:8000/payments/1/pay
+Authorization: Bearer {{token}}
+
+### View my open payments
+GET http://127.0.0.1:8000/payments/me/open
+Authorization: Bearer {{token}}
+
+### Pay my second payment
+POST http://127.0.0.1:8000/payments/2/pay
+Authorization: Bearer {{token}}
+
+### View my open payments (now empty)
+GET http://127.0.0.1:8000/payments/me/open
+Authorization: Bearer {{token}}
+
+### Ask for a refund
+POST http://127.0.0.1:8000/payments/1/request_refund
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "reason": "the parking lot blew up"
+}
+
+
+### View all my payments (both completed, one requested refund)
+GET http://127.0.0.1:8000/payments/me
+Authorization: Bearer {{token}}
+
+### Log out
+POST http://127.0.0.1:8000/logout
+Authorization: Bearer {{token}}
+
+### Login as payment admin
+# @name payment_admin_login
+POST http://127.0.0.1:8000/login
+Content-Type: application/json
+
+{
+  "username": "paymentadmin",
+  "password": "admin123"
+}
+
+###
+@payment_admin_token = {{payment_admin_login.response.body.access_token}}
+
+### View all payments of a user
+GET http://127.0.0.1:8000/payments/user/5
+Authorization: Bearer {{payment_admin_token}}
+
+### View a specific payment
+GET http://127.0.0.1:8000/payments/
+Authorization: Bearer {{payment_admin_token}}
+
+### Give a refund
+POST http://127.0.0.1:8000/payments/1/give_refund
+Authorization: Bearer {{payment_admin_token}}
+Content-Type: application/json
+
+### Logout
+POST http://127.0.0.1:8000/logout
+Authorization: Bearer {{payment_admin_token}}
+
+
+### login as user
+# @name login_2
+POST http://127.0.0.1:8000/login
+Content-Type: application/json
+
+{
+  "username": "jerrel",
+  "password": "1234"
+}
+
+###
+@token_2 = {{login_2.response.body.access_token}}
+
+### View all my payments
+GET http://127.0.0.1:8000/payments/me
+Authorization: Bearer {{token_2}}
