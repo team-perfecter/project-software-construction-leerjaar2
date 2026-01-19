@@ -1,38 +1,28 @@
-"""
-This file contains all queries related to reservations.
-"""
+import psycopg2
 
 from api.datatypes.reservation import ReservationCreate, Reservation
 from api.models.connection import get_connection
+import psycopg2.extras
 
+
+# eventually the database queries / JSON write/read will be here.
 
 class ReservationModel:
-    """
-    Handles all database operations for reservations.
-
-    Attributes:
-        connection (psycopg2.connection): PostgreSQL database connection.
-    """
-
     def __init__(self):
-        """
-        Initialize a new ReservationModel instance and connect to the database.
-        """
-        self.connection = get_connection()
+        self.connection = psycopg2.connect(
+            host="db",
+            port=5432,
+            database="database",
+            user="user",
+            password="password",
+        )
 
     def get_all_reservations(self) -> list[Reservation]:
-        """
-        Retrieve all reservations from the database.
-
-        Returns:
-            list[Reservation]: A list of all reservations.
-        """
         cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM reservations")
         return cursor.fetchall()
 
-
-    def get_reservation_by_id(self, reservation_id: int) -> Reservation | None:
+    def get_reservation_by_id(self, reservation_id: int) -> dict | None:
         """
         Retrieve a reservation by its ID.
 
@@ -42,7 +32,7 @@ class ReservationModel:
         Returns:
             Reservation | None: The reservation if found, else None.
         """
-        cursor = self.connection.cursor()
+        cursor = self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute("SELECT * FROM reservations WHERE id = %s", (reservation_id,))
         return cursor.fetchone()
 
@@ -58,21 +48,13 @@ class ReservationModel:
         """
         cursor = self.connection.cursor()
         cursor.execute("""
-            INSERT INTO reservations (vehicle_id, user_id, parking_lot_id, start_time, end_time, status, cost)
-            VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id;
-        """, (
-            reservation.vehicle_id,
-            reservation.user_id,
-            reservation.parking_lot_id,
-            reservation.start_time,
-            reservation.end_time,
-            reservation.status,
-            reservation.cost
-        ))
+            INSERT INTO reservations (vehicle_id, user_id, parking_lot_id, start_time, end_time, cost)
+            VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;
+        """, (reservation.vehicle_id, user_id, reservation.parking_lot_id, reservation.start_time, reservation.end_time, cost))
         self.connection.commit()
         return cursor.fetchone()[0]
 
-    def get_reservations_by_vehicle(self, vehicle_id: int) -> list[Reservation]:
+    def get_reservations_by_vehicle(self, vehicle_id):
         """
         Retrieve all reservations associated with a specific vehicle.
 
@@ -82,23 +64,14 @@ class ReservationModel:
         Returns:
             list[Reservation]: A list of reservations for the given vehicle.
         """
-        cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM reservations WHERE vehicle_id = %s", (vehicle_id,))
-        return cursor.fetchall()
-
+        with self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
+            cursor.execute("SELECT * FROM reservations WHERE vehicle_id = %s", (vehicle_id,))
+            return cursor.fetchall()
 
     def delete_reservation(self, reservation_id: int) -> bool:
-        """
-        Delete a reservation by its ID.
-
-        Args:
-            reservation_id (int): The ID of the reservation to delete.
-
-        Returns:
-            bool: True if the reservation was deleted, False if it did not exist.
-        """
         cursor = self.connection.cursor()
-        cursor.execute("DELETE FROM reservations WHERE id = %s RETURNING id;", (reservation_id,))
+        cursor.execute(
+            "DELETE FROM reservations WHERE id = %s RETURNING id;", (reservation_id,))
         deleted = cursor.fetchone()
         self.connection.commit()
         return deleted is not None

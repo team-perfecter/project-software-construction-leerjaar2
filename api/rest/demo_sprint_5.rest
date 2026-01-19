@@ -13,6 +13,9 @@ Content-Type: application/json
 @token = {{login.response.body.access_token}}
 
 
+###
+GET http://127.0.0.1:8000/payments/2
+Authorization: Bearer {{token}}
 ### Logout
 POST http://127.0.0.1:8000/logout
 Authorization: Bearer {{token}}
