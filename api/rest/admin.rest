@@ -11,6 +11,22 @@ Content-Type: application/json
   "birth_year": "2002"
 }
 ###
+### Login
+# @name login
+POST http://127.0.0.1:8000/login
+Content-Type: application/json
+
+{
+  "username": "superadmin",
+  "password": "admin123"
+}
+
+
+###
+@token = {{login.response.body.access_token}}
+
+
+###
 DELETE http://127.0.0.1:8000/parking-lots/9999999/force
 Authorization: Bearer {{token}}
 
@@ -20,9 +36,13 @@ POST http://127.0.0.1:8000/login
 Content-Type: application/json
 
 {
-  "username": "admin",
-  "password": "admin123"
+  "username": "jerrel",
+  "password": "1234"
 }
+
+### Logout
+POST http://127.0.0.1:8000/logout
+Authorization: Bearer {{token}}
 
 ###
 @token = {{login.response.body.access_token}}
@@ -38,14 +58,18 @@ Authorization: Bearer {{token}}
 {}
 
 ###
-POST http://127.0.0.1:8000/payments
+PUT http://127.0.0.1:8000/payments/1
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
   "user_id": 1,
   "parking_lot_id": 1,
-  "amount": 3.0
+  "transaction": "transaction1",
+  "amount": 200,
+  "method": "updatedmethod",
+  "issuer": "issuer1",
+  "bank": "bank1"
 }
 
 ### Register an admin
@@ -134,10 +158,10 @@ Authorization: Bearer {{token}}
 DELETE http://127.0.0.1:8000/admin/users/2
 Authorization: Bearer {{token}}
 ### Get current user payments
-GET http://127.0.0.1:8000/payments/
+GET http://127.0.0.1:8000/payments/me
 Authorization: Bearer {{token}}
-###
-POST http://localhost:8000/parking-lots/1/sessions/start?vehicle_id=1
+### Create Session
+POST http://localhost:8000/sessions/parking-lots/1/start/88-bod-2
 Authorization: Bearer {{token}}
 ### Get current sessions
 GET http://localhost:8000/sessions/active
@@ -146,8 +170,15 @@ Authorization: Bearer {{token}}
 GET http://localhost:8000/sessions/vehicle/1
 Authorization: Bearer {{token}}
 ### Stop a session
-POST http://localhost:8000/parking-lots/1/sessions/stop?vehicle_id=1
+POST http://localhost:8000/sessions/parking-lots/1/stop/88-bod-2
 Authorization: Bearer {{token}}
+###
+POST http://127.0.0.1:8000/payments/228/pay
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+{}
 ###
 POST http://localhost:8000/discount-codes
 Content-Type: application/json

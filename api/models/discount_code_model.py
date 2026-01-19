@@ -1,13 +1,20 @@
 import psycopg2
+import os
 from api.datatypes.discount_code import DiscountCodeCreate
 
 
 class DiscountCodeModel:
     def __init__(self):
+        if os.environ.get("TESTING") == "1":
+            host = "test_db"
+            database = "test_database"
+        else:
+            host = "db"
+            database = "database"
         self.connection = psycopg2.connect(
-            host="db",
+            host=host,
             port=5432,
-            database="database",
+            database=database,
             user="user",
             password="password",
         )
@@ -152,14 +159,14 @@ class DiscountCodeModel:
             self.connection.rollback()
             raise
 
-    def increment_used_count(self, id):
+    def increment_used_count(self, code):
         cursor = self.connection.cursor()
         cursor.execute("""
             UPDATE discount_codes
             SET used_count = used_count + 1
-            WHERE id = %s
+            WHERE code = %s
             RETURNING *;
-        """, (id,))
+        """, (code,))
         row = cursor.fetchone()
         self.connection.commit()
         if row:

@@ -1,10 +1,19 @@
-from unittest.mock import patch
-from fastapi.testclient import TestClient
-from api.main import app
-
-client = TestClient(app)
+"""
+this file contains all tests related to post user endpoints.
+"""
 
 def test_register_not_all_field_filled(client):
+    """Attempts to register a user with missing required fields.
+
+    Args:
+        client: TestClient instance for making requests.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 422.
+    """
     fake_user = {
         "password": "Waddap",
         "name": "waddap",
@@ -17,6 +26,17 @@ def test_register_not_all_field_filled(client):
 
 
 def test_register(client):
+    """Registers a new user successfully with all required fields.
+
+    Args:
+        client: TestClient instance for making requests.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 201.
+    """
     fake_user = {
         "username": "Waddap_User",
         "password": "Waddap",
@@ -30,6 +50,17 @@ def test_register(client):
 
 
 def test_register_same_name(client):
+    """Attempts to register a user with an already existing username.
+
+    Args:
+        client: TestClient instance for making requests.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 409.
+    """
     fake_user = {
         "username": "superadmin",
         "password": "Waddap",
@@ -43,6 +74,17 @@ def test_register_same_name(client):
 
 
 def test_create_user(client_with_token):
+    """Creates a new user as a superadmin successfully.
+
+    Args:
+        client_with_token: Fixture providing an authenticated client and headers.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 201.
+    """
     client, headers = client_with_token("superadmin")
     fake_user = {
         "username": "Waddap_user",
@@ -58,6 +100,17 @@ def test_create_user(client_with_token):
 
 
 def test_create_admin_already_exists(client_with_token):
+    """Attempts to create a user that already exists.
+
+    Args:
+        client_with_token: Fixture providing an authenticated client and headers.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 409.
+    """
     client, headers = client_with_token("superadmin")
     fake_user = {
         "username": "Waddap_user",
@@ -72,7 +125,18 @@ def test_create_admin_already_exists(client_with_token):
     assert response.status_code == 409
 
 
-def test_login(client): 
+def test_login(client):
+    """Logs in an existing user successfully.
+
+    Args:
+        client: TestClient instance for making requests.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 200.
+    """
     fake_user = {
         "username": "superadmin",
         "password": "admin123",
@@ -82,6 +146,17 @@ def test_login(client):
 
 
 def test_login_wrong_password(client):
+    """Attempts to log in with an incorrect password.
+
+    Args:
+        client: TestClient instance for making requests.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 401.
+    """
     fake_user = {
         "username": "superadmin",
         "password": "wrong",
@@ -91,6 +166,17 @@ def test_login_wrong_password(client):
 
 
 def test_login_not_existing_username(client):
+    """Attempts to log in with a username that does not exist.
+
+    Args:
+        client: TestClient instance for making requests.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 404.
+    """
     fake_user = {
         "username": "wrong",
         "password": "wrong",
@@ -100,11 +186,33 @@ def test_login_not_existing_username(client):
 
 
 def test_logout(client_with_token):
+    """Logs out a currently authenticated user successfully.
+
+    Args:
+        client_with_token: Fixture providing an authenticated client and headers.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 200.
+    """
     client, headers = client_with_token("user")
     response = client.post("/logout", headers=headers)
     assert response.status_code == 200
 
 
 def test_logout_without_a_login(client):
+    """Attempts to log out without being logged in.
+
+    Args:
+        client: TestClient instance for making requests.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 401.
+    """
     response = client.post("/logout")
     assert response.status_code == 401

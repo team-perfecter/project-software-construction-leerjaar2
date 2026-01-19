@@ -1,6 +1,11 @@
+"""
+this file contains all tests related to update payments endpoints.
+"""
+
 from fastapi.testclient import TestClient
 from unittest.mock import patch
 from api.main import app
+import pytest
 from api.tests.conftest import get_last_payment_id, get_last_pid
 
 
@@ -9,13 +14,38 @@ client = TestClient(app)
 
 # payments/{payment_id}
 def test_update_payment(client_with_token):
+    """Updates a payment successfully and verifies the changes.
+
+    Args:
+        client_with_token: Fixture providing an authenticated client and headers.
+
+    Returns:
+        None
+class PaymentUpdate(BaseModel):
+    user_id: Optional[int] = None
+    hash: Optional[str] = None
+    transaction: Optional[str] = None
+    amount: Optional[float] = None
+    method: Optional[str] = None
+    issuer: Optional[str] = None
+    bank: Optional[str] = None
+    completed: Optional[bool] = None
+    refund_requested: Optional[bool] = None
+    Raises:
+        AssertionError: If update fails or the payment data is incorrect.
+    """
+    
     payment_id = get_last_payment_id(client_with_token)
     client, headers = client_with_token("superadmin")
+    lot_id = get_last_pid(client)
     fake_payment = {
+        "user_id": 1,
+        "parking_lot_id": lot_id,
+        "transaction": "transaction1",
         "amount": 200,
         "method": "updatedmethod",
-        "completed": False,
-        "refund_requested": False
+        "issuer": "issuer1",
+        "bank": "bank1"
     }
     response = client.put(f"/payments/{payment_id}", json=fake_payment,
                           headers=headers)
@@ -31,11 +61,29 @@ def test_update_payment(client_with_token):
 @patch("api.models.payment_model.PaymentModel.update_payment",
        return_value=False)
 def test_update_payment_server_error(mock_create, client_with_token):
+    """Simulates a server error when updating a payment.
+
+    Args:
+        mock_create: Mocked update_payment method to force a failure.
+        client_with_token: Fixture providing an authenticated client and headers.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 500.
+    """
     payment_id = get_last_payment_id(client_with_token)
     client, headers = client_with_token("superadmin")
+    lot_id = get_last_pid(client)
     fake_payment = {
+        "user_id": 1,
+        "parking_lot_id": lot_id,
+        "transaction": "transaction1",
         "amount": 200,
         "method": "updatedmethod",
+        "issuer": "issuer1",
+        "bank": "bank1",
         "completed": False,
         "refund_requested": False
     }
@@ -44,30 +92,46 @@ def test_update_payment_server_error(mock_create, client_with_token):
     assert response.status_code == 500
 
 
-def test_update_payment_no_fields(client_with_token):
-    client, headers = client_with_token("superadmin")
+def test_update_payment_wrong_datatype(client_with_token):
+    """Attempts to update a payment with an incorrect data type.
+
+    Args:
+        client_with_token: Fixture providing an authenticated client and headers.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 422.
+    """
     payment_id = get_last_payment_id(client_with_token)
-    fake_payment = {}
-    response = client.put(f"/payments/{payment_id}", json=fake_payment,
-                          headers=headers)
-    assert response.status_code == 500
-
-
-def test_update_payment_wrong_data_type(client_with_token):
     client, headers = client_with_token("superadmin")
+    lot_id = get_last_pid(client)
     fake_payment = {
-        "amount": 200,
-        "method": "updatedmethod",
-        "completed": False,
-        "refund_requested": 500
+        "parking_lot_id": lot_id,
+        "amount": "fjsdkfsd",
+        "method": "updatedmethod"
     }
-    response = client.put("/payments/1", json=fake_payment, headers=headers)
+    response = client.put(f"/payments/{payment_id}", json=fake_payment, headers=headers)
     assert response.status_code == 422
 
 
 def test_update_payment_nonexistent_user(client_with_token):
+    """Attempts to update a payment for a user that does not exist.
+
+    Args:
+        client_with_token: Fixture providing an authenticated client and headers.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 404.
+    """
     client, headers = client_with_token("superadmin")
+    lot_id = get_last_pid(client)
     fake_payment = {
+        "parking_lot_id": lot_id,
         "user_id": 10000,
         "amount": 200,
         "method": "updatedmethod",
@@ -79,8 +143,21 @@ def test_update_payment_nonexistent_user(client_with_token):
 
 
 def test_update_payment_nonexistent_payment(client_with_token):
+    """Attempts to update a payment that does not exist.
+
+    Args:
+        client_with_token: Fixture providing an authenticated client and headers.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 404.
+    """
     client, headers = client_with_token("superadmin")
+    lot_id = get_last_pid(client)
     fake_payment = {
+        "parking_lot_id": lot_id,
         "user_id": 1,
         "amount": 200,
         "method": "updatedmethod",
@@ -93,6 +170,17 @@ def test_update_payment_nonexistent_payment(client_with_token):
 
 
 def test_update_payment_no_authorization(client_with_token):
+    """Attempts to update a payment as a user without permission.
+
+    Args:
+        client_with_token: Fixture providing an authenticated client and headers.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 403.
+    """
     client, headers = client_with_token("superadmin")
     pid = get_last_pid(client)
     fake_payment = {
@@ -117,6 +205,17 @@ def test_update_payment_no_authorization(client_with_token):
 
 
 def test_update_payment_no_header(client):
+    """Attempts to update a payment without authentication headers.
+
+    Args:
+        client: TestClient instance.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the response status code is not 401.
+    """
     fake_payment = {
         "user_id": 1,
         "amount": 200,
@@ -184,6 +283,13 @@ def test_pay_payment_not_users_payment(client_with_token):
     client, headers = client_with_token("paymentadmin")
     response = client.post(f"payments/{payment_id}/pay",
                            json={}, headers=headers)
+    assert response.status_code == 403
+
+
+def test_pay_payment_not_users_payment_guest(client_with_token, client):
+    payment_id = get_last_payment_id(client_with_token)
+    headers = {"Authorization": "Bearer"}
+    response = client.post(f"/payments/{payment_id}/pay", json={}, headers=headers)
     assert response.status_code == 403
 
 

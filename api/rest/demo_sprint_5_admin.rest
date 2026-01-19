@@ -28,8 +28,12 @@ Authorization: Bearer {{token}}
   "email": "test@example.com",
   "phone": "1234567890",
   "birth_year": "2002",
-  "role": "admin"
+  "role": "lotadmin"
 }
+
+### Get all parking lots        oud
+GET http://127.0.0.1:8000/get_user/2
+Authorization: Bearer {{token}}
 
 
 ### Logout

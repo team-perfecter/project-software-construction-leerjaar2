@@ -19,6 +19,18 @@ def test_update_discount_code_with_superadmin(client_with_token):
     assert response.status_code == 200
 
 
+def test_update_discount_code_nonexistent(client_with_token):
+    client, headers = client_with_token("superadmin")
+    fake_code = {
+        "code": "code1",
+        "discount_type": "percentage",
+        "discount_value": 5
+    }
+    response = client.put(f"/discount-codes/fakecode",
+                          json=fake_code, headers=headers)
+    assert response.status_code == 404
+
+
 @patch("api.models.discount_code_model.DiscountCodeModel.update_discount_code",
        return_value=False)
 def test_update_discount_code_server_error(mock_create, client_with_token):

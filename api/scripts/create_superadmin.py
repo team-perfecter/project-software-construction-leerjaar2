@@ -1,4 +1,4 @@
-from api.utilities.Hasher import hash_string
+from api.utilities.hasher import hash_string
 import psycopg2
 
 conn = psycopg2.connect(
@@ -14,7 +14,7 @@ cur.execute("SELECT id FROM users WHERE role='superadmin' LIMIT 1;")
 exists = cur.fetchone()
 
 if not exists:
-    hashed_pw = hash_string("admin123")
+    hashed_pw = hash_string("admin123", True)
     cur.execute("""
         INSERT INTO users (username, password, name, email, role)
         VALUES ('superadmin', %s, 'Super Admin', 'super@admin.com', 'superadmin');
