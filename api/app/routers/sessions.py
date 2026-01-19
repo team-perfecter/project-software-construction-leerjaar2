@@ -207,7 +207,7 @@ async def stop_session_from_reservation(
     session = session_model.get_session_by_reservation_id(reservation_id)
     if not session:
         raise HTTPException(status_code=404, detail="No active session found for this reservation")
-    if session.stopped is not None:
+    if session.end_time is not None:
         raise HTTPException(status_code=409, detail="Session already stopped")
 
     reservation = reservation_model.get_reservation_by_id(reservation_id)
@@ -215,16 +215,16 @@ async def stop_session_from_reservation(
         raise HTTPException(status_code=404, detail="Reservation not found")
 
     parking_lot = parking_lot_model.get_parking_lot_by_lid(session.parking_lot_id)
-    session = session_model.stop_session(session, calculate_price(parking_lot, session))
+    session = session_model.stop_session(session, calculate_price(parking_lot, session, reservation.discount_code))
 
     # Only create/update payment if the driver overstayed
-    if session.stopped > reservation.end_time:
+    if session.end_time > reservation.end_time:
         overtime_start = reservation.end_time
-        overtime_end = session.stopped
+        overtime_end = session.end_time
         overtime_session = session
-        overtime_session.started = overtime_start
-        overtime_session.stopped = overtime_end
-        extra_cost = calculate_price(parking_lot, overtime_session)
+        overtime_session.start_time = overtime_start
+        overtime_session.end_time = overtime_end
+        extra_cost = calculate_price(parking_lot, overtime_session, None)
 
         # Find the original payment for this reservation
         original_payment = payment_model.get_payment_by_reservation_id(reservation_id)
@@ -234,7 +234,7 @@ async def stop_session_from_reservation(
         if not original_payment["completed"]:
             # Add extra cost to the original payment
             updated_payment = PaymentUpdate(
-                amount=original_payment["amount"] + extra_cost)
+                amount=original_payment["amount"] + float(extra_cost))
             update_fields = updated_payment.dict(exclude_unset=True)
             payment_model.update_payment(original_payment["id"], update_fields)
             return {

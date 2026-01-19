@@ -72,7 +72,7 @@ Authorization: Bearer {{token}}
   "parking_lot_id": 1,
   "start_time": "2026-01-01T10:00:00",
   "end_time": "2026-01-01T12:00:00",
-  "discount_code": "test5"
+  "discount_code": "discount"
 }
 
 ###
@@ -119,13 +119,13 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "code": "test5544",
+  "code": "discount",
   "user_id": 1,
   "discount_type": "percentage",
   "discount_value": 1.555,
-  "use_amount": 5,
+  "use_amount": 100,
   "minimum_price": 10,
-  "locations": ["Rotterdam", "Schiedam"]
+  "locations": []
 }
 
 ###

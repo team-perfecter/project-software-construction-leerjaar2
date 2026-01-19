@@ -40,25 +40,29 @@ def use_discount_code_validation(discount_code: Dict[str, Any], reservation: Res
             raise HTTPException(
                 status_code=400,
                 detail="This discount code is not valid at this time")
-    if discount_code["use_amount"] >= discount_code["used_count"]:
+    if discount_code["use_amount"] is not None and discount_code["use_amount"] <= discount_code["used_count"]:
         logger.error("User ID %s tried to use discount code %s, "
                     "but it has reached it max use count %s",
                     current_user.id, reservation.discount_code, discount_code["use_amount"])
         raise HTTPException(status_code=400,
                             detail="This discount code has reached it's max uses")
-    if datetime.now() >= datetime.fromisoformat(discount_code["end_date"]):
-        logger.error("User ID %s tried to use discount code %s, "
-                    "but it has reached past it's end date %s",
-                    current_user.id, reservation.discount_code, discount_code["end_date"])
-        raise HTTPException(status_code=400,
-                            detail="This discount code has expired")
+    end_date = discount_code["end_date"]
+    if end_date is not None:
+        if isinstance(end_date, str):
+            end_date = datetime.fromisoformat(end_date)
+        if datetime.now() >= end_date:
+            logger.error("User ID %s tried to use discount code %s, "
+                        "but it has reached past it's end date %s",
+                        current_user.id, reservation.discount_code, discount_code["end_date"])
+            raise HTTPException(status_code=400,
+                                detail="This discount code has expired")
     if discount_code["active"] is False:
         logger.error("User ID %s tried to use discount code %s, "
                     "but it it inactive",
                     current_user.id, reservation.discount_code)
         raise HTTPException(status_code=400,
                             detail="This discount code has expired")
-    incremented = discount_code_model.increment_used_count(discount_code["id"])
+    incremented = discount_code_model.increment_used_count(discount_code["code"])
     if not incremented:
         logger.error("Incrementing discount code's used count %s has failed",
                     reservation.discount_code)
