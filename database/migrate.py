@@ -12,7 +12,6 @@ def hash_string(string: str) -> str:
     return argon2_hasher.hash(string)
 
 
-
 # Get database name from command line argument or default to "database"
 db_name = sys.argv[1] if len(sys.argv) > 1 else "database"
 
@@ -122,7 +121,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     id SERIAL PRIMARY KEY,
     parking_lot_id INTEGER REFERENCES parking_lots(id),
     user_id INTEGER REFERENCES users(id),
-    license_plate VARCHAR,
+    vehicle_id INTEGER REFERENCES vehicles(id),
     reservation_id INTEGER REFERENCES reservations(id),
     start_time TIMESTAMP DEFAULT NOW(),
     end_time TIMESTAMP,
