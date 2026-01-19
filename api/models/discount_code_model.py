@@ -159,14 +159,14 @@ class DiscountCodeModel:
             self.connection.rollback()
             raise
 
-    def increment_used_count(self, id):
+    def increment_used_count(self, code):
         cursor = self.connection.cursor()
         cursor.execute("""
             UPDATE discount_codes
             SET used_count = used_count + 1
-            WHERE id = %s
+            WHERE code = %s
             RETURNING *;
-        """, (id,))
+        """, (code,))
         row = cursor.fetchone()
         self.connection.commit()
         if row:

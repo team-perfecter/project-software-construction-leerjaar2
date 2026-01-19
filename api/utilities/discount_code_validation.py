@@ -9,21 +9,23 @@ from typing import Dict, Any
 import logging
 
 logger = logging.getLogger(__name__)
-discount_code_model: DiscountCodeModel=DiscountCodeModel()
+discount_code_model: DiscountCodeModel = DiscountCodeModel()
+
 
 def use_discount_code_validation(discount_code: Dict[str, Any], reservation: ReservationCreate, current_user: User, parking_lot: ParkingLot):
     if discount_code["user_id"] is not None and current_user.id != discount_code["user_id"]:
         logger.error("User ID %s tried to use discount code %s, "
-                    "but doesn't have permission",
-                    current_user.id, reservation.discount_code)
+                     "but doesn't have permission",
+                     current_user.id, reservation.discount_code)
         raise HTTPException(status_code=400,
                             detail="This account can not use this discount code")
-    
-    locations = discount_code_model.get_all_locations_by_code(discount_code["code"])
+
+    locations = discount_code_model.get_all_locations_by_code(
+        discount_code["code"])
     if locations and parking_lot.location not in locations:
         logger.error(
-        "User ID %s tried to use discount code %s, but it is not applicable in location %s",
-        current_user.id, discount_code["code"], parking_lot.location)
+            "User ID %s tried to use discount code %s, but it is not applicable in location %s",
+            current_user.id, discount_code["code"], parking_lot.location)
         raise HTTPException(
             status_code=400,
             detail="This discount code is not valid for this parking lot location")
@@ -40,28 +42,33 @@ def use_discount_code_validation(discount_code: Dict[str, Any], reservation: Res
             raise HTTPException(
                 status_code=400,
                 detail="This discount code is not valid at this time")
-    if discount_code["use_amount"] >= discount_code["used_count"]:
+    if discount_code["use_amount"] is not None and discount_code["use_amount"] <= discount_code["used_count"]:
         logger.error("User ID %s tried to use discount code %s, "
-                    "but it has reached it max use count %s",
-                    current_user.id, reservation.discount_code, discount_code["use_amount"])
+                     "but it has reached it max use count %s",
+                     current_user.id, reservation.discount_code, discount_code["use_amount"])
         raise HTTPException(status_code=400,
                             detail="This discount code has reached it's max uses")
-    if datetime.now() >= datetime.fromisoformat(discount_code["end_date"]):
-        logger.error("User ID %s tried to use discount code %s, "
-                    "but it has reached past it's end date %s",
-                    current_user.id, reservation.discount_code, discount_code["end_date"])
-        raise HTTPException(status_code=400,
-                            detail="This discount code has expired")
+    end_date = discount_code["end_date"]
+    if end_date is not None:
+        if isinstance(end_date, str):
+            end_date = datetime.fromisoformat(end_date)
+        if datetime.now() >= end_date:
+            logger.error("User ID %s tried to use discount code %s, "
+                         "but it has reached past it's end date %s",
+                         current_user.id, reservation.discount_code, discount_code["end_date"])
+            raise HTTPException(status_code=400,
+                                detail="This discount code has expired")
     if discount_code["active"] is False:
         logger.error("User ID %s tried to use discount code %s, "
-                    "but it it inactive",
-                    current_user.id, reservation.discount_code)
+                     "but it it inactive",
+                     current_user.id, reservation.discount_code)
         raise HTTPException(status_code=400,
                             detail="This discount code has expired")
-    incremented = discount_code_model.increment_used_count(discount_code["id"])
+    incremented = discount_code_model.increment_used_count(
+        discount_code["code"])
     if not incremented:
         logger.error("Incrementing discount code's used count %s has failed",
-                    reservation.discount_code)
+                     reservation.discount_code)
         raise HTTPException(status_code=500,
                             detail="Failed to increment discount code's use count")
 
@@ -78,32 +85,36 @@ def create_or_update_discount_code_validation(d: DiscountCodeCreate | DiscountCo
         raise HTTPException(status_code=400,
                             detail="Discount value must be a postive number")
     if d.minimum_price is not None and d.minimum_price <= 0:
-            logger.error("Admin ID %s tried to create discount code with minimum price %s",
-                         current_user.id, d.use_amount)
-            raise HTTPException(status_code=400,
+        logger.error("Admin ID %s tried to create discount code with minimum price %s",
+                     current_user.id, d.use_amount)
+        raise HTTPException(status_code=400,
                             detail="Minimum price must be a postive number")
     if d.use_amount is not None and d.use_amount <= 0:
-            logger.error("Admin ID %s tried to create discount code with use amount %s",
-                         current_user.id, d.use_amount)
-            raise HTTPException(status_code=400,
+        logger.error("Admin ID %s tried to create discount code with use amount %s",
+                     current_user.id, d.use_amount)
+        raise HTTPException(status_code=400,
                             detail="Use amount must be a postive number")
     if (d.start_applicable_time is None) != (d.end_applicable_time is None):
-        logger.error("Admin ID %s tried to create discount code with only one applicable time set", current_user.id)
+        logger.error(
+            "Admin ID %s tried to create discount code with only one applicable time set", current_user.id)
         raise HTTPException(
             status_code=400,
             detail="Both start_applicable_time and end_applicable_time must be set together")
     if d.start_applicable_time is not None and d.end_applicable_time is not None:
         if d.start_applicable_time >= d.end_applicable_time:
-            logger.error("Admin ID %s tried to create discount code with start_applicable_time >= end_applicable_time", current_user.id)
+            logger.error(
+                "Admin ID %s tried to create discount code with start_applicable_time >= end_applicable_time", current_user.id)
             raise HTTPException(
                 status_code=400,
                 detail="start_applicable_time must be before end_applicable_time")
     if d.end_date is not None and d.end_date <= date.today():
-        logger.error("Admin ID %s tried to create discount code with end_date in the past", current_user.id)
+        logger.error(
+            "Admin ID %s tried to create discount code with end_date in the past", current_user.id)
         raise HTTPException(status_code=400,
                             detail="End date must be in the future")
     if d.start_date is not None and d.end_date is not None and d.start_date >= d.end_date:
-        logger.error("Admin ID %s tried to create discount code with start_date >= end_date", current_user.id)
+        logger.error(
+            "Admin ID %s tried to create discount code with start_date >= end_date", current_user.id)
         raise HTTPException(
             status_code=400,
             detail="start_date must be before end_date")

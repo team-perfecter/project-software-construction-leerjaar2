@@ -4,6 +4,7 @@ This file contains all endpoints related to vehicles.
 
 import logging
 import psycopg2
+from psycopg2 import errors
 from fastapi import HTTPException, Body, Depends, APIRouter
 from starlette.responses import JSONResponse
 from api.auth_utils import get_current_user, require_role

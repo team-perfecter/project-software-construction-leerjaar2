@@ -1,7 +1,3 @@
-"""
-This file contains all dataclasses related to sessions.
-"""
-
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
@@ -9,9 +5,8 @@ from typing import Optional
 
 class SessionCreate(BaseModel):
     parking_lot_id: int
-    user_id: Optional[int] = None
-    vehicle_id: Optional[int] = None
-    license_plate: str = None
+    user_id: int
+    vehicle_id: int
     reservation_id: Optional[int] = None
 
 
