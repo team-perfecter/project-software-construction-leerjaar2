@@ -199,20 +199,20 @@ async def start_session_from_reservation(
     reservation = reservation_model.get_reservation_by_id(reservation_id)
     if not reservation:
         raise HTTPException(status_code=404, detail="Reservation not found")
-    if reservation.user_id != current_user.id:
+    if reservation["user_id"] != current_user.id:
         raise HTTPException(status_code=403, detail="Reservation does not belong to current user")
 
     # Check if session already exists for this vehicle and parking lot
-    existing_session = session_model.get_vehicle_sessions(reservation.vehicle_id)
-    if existing_session and existing_session.parking_lot_id == reservation.parking_lot_id:
+    existing_session = session_model.get_vehicle_sessions(reservation["vehicle_id"])
+    if existing_session and existing_session.parking_lot_id == reservation["parking_lot_id"]:
         raise HTTPException(status_code=409, detail="Session already exists for this reservation")
 
     # Start session
     session = session_model.create_session(
-        reservation.parking_lot_id,
-        reservation.user_id,
-        reservation.vehicle_id,
-        reservation.id
+        reservation["parking_lot_id"],
+        reservation["user_id"],
+        reservation["vehicle_id"],
+        reservation["id"]
     )
     if not session:
         raise HTTPException(status_code=500, detail="Failed to start session")
@@ -228,7 +228,7 @@ async def stop_session_from_reservation(
     session = session_model.get_session_by_reservation_id(reservation_id)
     if not session:
         raise HTTPException(status_code=404, detail="No active session found for this reservation")
-    if session.stopped is not None:
+    if session.end_time is not None:
         raise HTTPException(status_code=409, detail="Session already stopped")
 
     reservation = reservation_model.get_reservation_by_id(reservation_id)
@@ -239,12 +239,12 @@ async def stop_session_from_reservation(
     session = session_model.stop_session(session, calculate_price(parking_lot, session, None))
 
     # Only create/update payment if the driver overstayed
-    if session.stopped > reservation.end_time:
-        overtime_start = reservation.end_time
-        overtime_end = session.stopped
+    if session.end_time > reservation["end_time"]:
+        overtime_start = reservation["end_time"]
+        overtime_end = session.end_time
         overtime_session = session
-        overtime_session.started = overtime_start
-        overtime_session.stopped = overtime_end
+        overtime_session.start_time = overtime_start
+        overtime_session.end_time = overtime_end
         extra_cost = calculate_price(parking_lot, overtime_session, None)
 
         # Find the original payment for this reservation

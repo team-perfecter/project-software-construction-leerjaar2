@@ -32,7 +32,7 @@ class ReservationModel:
         cursor.execute("SELECT * FROM reservations")
         return cursor.fetchall()
 
-    def get_reservation_by_id(self, reservation_id: int) -> Reservation | None:
+    def get_reservation_by_id(self, reservation_id: int) -> dict | None:
         """
         Retrieve a reservation by its ID.
 
@@ -42,7 +42,7 @@ class ReservationModel:
         Returns:
             Reservation | None: The reservation if found, else None.
         """
-        cursor = self.connection.cursor()
+        cursor = self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute("SELECT * FROM reservations WHERE id = %s", (reservation_id,))
         return cursor.fetchone()
 

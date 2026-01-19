@@ -9,7 +9,7 @@ Content-Type: application/json
 }
 
 ###
-@admin_login = {{admin_login.response.body.access_token}}
+@admin_token = {{admin_login.response.body.access_token}}
 
 
 ### create new parking lot
@@ -19,11 +19,11 @@ Content-Type: application/json
 
 {
     "name": "Bedrijventerrein Almere Parkeergarage",
-    "location": "Industrial Zone",
+    "location": "Almere",
     "address": "Schanssingel 337, 2421 BS Almere",
     "capacity": 1,
-    "tariff": 0.5,
-    "daytariff": 0.5,
+    "tariff": 5,
+    "daytariff": 30,
     "lat": 0,
     "lng": 0
 }
@@ -44,6 +44,19 @@ Content-Type: application/json
     "lng": 0
 }
 
+### Create a vehicle for an user
+POST http://127.0.0.1:8000/vehicles/create
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+    "user_id": 1,
+    "license_plate": "45-ASP-1",
+    "make": "Opal",
+    "model": "308",
+    "color": "Blue",
+    "year": 2022
+}
 
 ### create descount code
 POST http://127.0.0.1:8000/discount-codes
@@ -205,16 +218,16 @@ Authorization: Bearer {{token}}
 ### Start a new reservation invalid time
 # @name reservation
 POST http://127.0.0.1:8000/reservations/create
-Authorization: Bearer {{token}}
+Authorization: Bearer {{admin_token}}
 Content-Type: application/json
 
 {
-  "user_id": 0,
+  "user_id": 1,
   "vehicle_id": 1,
   "parking_lot_id": 1,
-  "start_time": "2024-12-20T10:00:00",
-  "end_time": "2024-12-20T12:00:00",
-  "cost": 0,
+  "start_time": "2026-10-20T10:00:00",
+  "end_time": "2026-10-20T20:00:00",
+  "cost": 50,
   "status": "",
   "discount_code": "discount"
 }
@@ -224,28 +237,28 @@ Content-Type: application/json
 ### Start a new reservation
 # @name reservation
 POST http://127.0.0.1:8000/reservations/create
-Authorization: Bearer {{token}}
+Authorization: Bearer {{admin_token}}
 Content-Type: application/json
 
 {
-  "user_id": 5,
+  "user_id": 1,
   "vehicle_id": 1,
   "parking_lot_id": 1,
-  "start_time": "2027-12-20T10:00:00",
-  "end_time": "2028-12-20T12:00:00",
-  "cost": 1,
+  "start_time": "2026-11-20T10:00:00",
+  "end_time": "2026-11-20T20:00:00",
+  "cost": 100,
   "status": "",
   "discount_code": "discount"
 }
 
 ### Get the reservation
 GET http://127.0.0.1:8000/reservations/vehicle/1
-Authorization: Bearer {{token}}
+Authorization: Bearer {{admin_token}}
 
 ### Start a session with a reservation
 # @name session_with_reservation
 POST http://127.0.0.1:8000/sessions/reservations/1/start
-Authorization: Bearer {{token}}
+Authorization: Bearer {{admin_token}}
 Content-Type: application/json
 
 
@@ -255,7 +268,7 @@ Authorization: Bearer {{token}}
 
 ### View all my payments
 GET http://127.0.0.1:8000/payments/me
-Authorization: Bearer {{token}}
+Authorization: Bearer {{admin_token}}
 
 ### Try to view the payment of another user
 GET http://127.0.0.1:8000/payments/1
