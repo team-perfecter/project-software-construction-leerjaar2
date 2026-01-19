@@ -1,69 +1,41 @@
-"""
-This file contains all queries related to sessions.
-"""
-
+import psycopg2
 from datetime import datetime
-from pydantic import ValidationError
 from api.datatypes.session import Session
-from api.models.connection import get_connection
-import psycopg2.extras
+
 
 class SessionModel:
-    """
-    Handles all database operations related to parking sessions.
-    """
-
     def __init__(self):
-        """
-        Initialize a new SessionModel instance and connect to the database.
-        """
-        self.connection = get_connection()
+        self.connection = psycopg2.connect(
+            host="db",
+            port=5432,
+            database="database",
+            user="user",
+            password="password",
+        )
 
-    def create_session(self,
-                        parking_lot_id: int,
-                        user_id: int,
-                        license_plate: str,
-                        reservation_id: int) -> Session | None:
-        """
-        Start a new parking session for a vehicle if it does not already have an active session.
-
-        Args:
-            parking_lot_id (int): The ID of the parking lot.
-            user_id (int): The ID of the user.
-            vehicle_id (int): The ID of the vehicle.
-
-        Returns:
-            Session | None: The created Session object if successful, otherwise None.
-        """
-
+    # Nieuwe sessie starten
+    def create_session(self, parking_lot_id: int, user_id: int, vehicle_id: int, reservation_id: int) -> Session | None:
         cursor = self.connection.cursor()
+
         # Controleer of dit voertuig al actief is
         cursor.execute("""
-            SELECT * FROM sessions WHERE license_plate = %s AND end_time IS NULL;
-        """, (license_plate,))
+            SELECT * FROM sessions WHERE vehicle_id = %s AND end_time IS NULL;
+        """, (vehicle_id,))
         if cursor.fetchone():
             print("Vehicle already has an active session.")
             return None
 
         cursor.execute("""
-            INSERT INTO sessions (parking_lot_id, user_id, license_plate, reservation_id)
+            INSERT INTO sessions (parking_lot_id, user_id, vehicle_id, reservation_id)
             VALUES (%s, %s, %s, %s)
             RETURNING *;
-        """, (parking_lot_id, user_id, license_plate, reservation_id))
+        """, (parking_lot_id, user_id, vehicle_id, reservation_id))
 
         self.connection.commit()
         return self.map_to_session(cursor)[0]
 
+    # Sessie stoppen (wanneer voertuig vertrekt)
     def stop_session(self, session: Session, cost: float) -> Session:
-        """
-        Stop an active session and calculate its duration and cost.
-
-        Args:
-            session (Session): The Session object representing the active session.
-
-        Returns:
-            dict: The updated session with stopped time, duration, and cost.
-        """
         end_time = datetime.now()
         cursor = self.connection.cursor()
         cursor.execute("""
@@ -78,24 +50,14 @@ class SessionModel:
         session_list = self.map_to_session(cursor)
         return session_list[0] if session_list else None
 
+    # Alle sessies ophalen
     def get_all_sessions(self) -> list[Session]:
-        """
-        Retrieve all sessions from the database.
-
-        Returns:
-            list[Session]: A list of all Session objects.
-        """
         cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM sessions;")
         return self.map_to_session(cursor)
 
+    # Alleen actieve sessies ophalen
     def get_active_sessions(self) -> list[Session]:
-        """
-        Retrieve all currently active sessions (not stopped).
-
-        Returns:
-            list[Session]: A list of active Session objects.
-        """
         cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM sessions WHERE end_time IS NULL;")
         rows = cursor.fetchall()
@@ -103,103 +65,49 @@ class SessionModel:
         result = [dict(zip(columns, row)) for row in rows]
         return result
 
+    # Sessie zoeken op ID
     def get_session_by_id(self, session_id: int) -> Session | None:
-        """
-        Retrieve a session by its ID.
-
-        Args:
-            session_id (int): The ID of the session.
-
-        Returns:
-            Session | None: The Session object if found, otherwise None.
-        """
         cursor = self.connection.cursor()
         cursor.execute("SELECT * FROM sessions WHERE id = %s;", (session_id,))
         session_list = self.map_to_session(cursor)
-        return session_list[0] if session_list else None
+        return session_list[0] if len(session_list) > 0 else None
 
-    def get_all_sessions_by_id(self, parking_lot_id: int, vehicle_id: int):
-        """
-        Retrieve all sessions for a specific parking lot and vehicle.
-
-        Args:
-            parking_lot_id (int): The ID of the parking lot.
-            vehicle_id (int): The ID of the vehicle.
-
-        Returns:
-            Session | None: The most recent session if found, otherwise None.
-        """
+    def get_all_sessions_by_id(self, lid, vehicle_id):
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM sessions WHERE parking_lot_id = %s AND vehicle_id = %s;",
-                       (parking_lot_id, vehicle_id,))
+        cursor.execute(
+            "SELECT * FROM sessions WHERE parking_lot_id = %s AND vehicle_id = %s;", (lid, vehicle_id,))
         session_list = self.map_to_session(cursor)
-        return session_list[0] if session_list else None
+        return session_list[0] if len(session_list) > 0 else None
 
-
-    def get_vehicle_sessions(self, license_plate: str) -> Session | None:
-        """
-        Retrieve all active sessions for a specific vehicle.
-
-        Args:
-            vehicle_id (int): The ID of the vehicle.
-
-        Returns:
-            list[dict]: A list of dictionaries representing each active session.
-        """
+    def get_vehicle_session(self, vehicle_id: int) -> Session | None:
         cursor = self.connection.cursor()
         cursor.execute("""
-            SELECT * FROM sessions WHERE license_plate = %s AND end_time IS NULL;
-        """, (license_plate,))
+            SELECT * FROM sessions WHERE vehicle_id = %s AND end_time IS NULL;
+        """, (vehicle_id,))
         session_list = self.map_to_session(cursor)
         return session_list[0] if session_list else None
 
     def get_session_by_reservation_id(self, reservation_id: int) -> Session | None:
-        """
-        Retrieve all active sessions for a specific reservation.
-
-        Args:
-            reservation_id (int): The ID of the vehicle.
-
-        Returns:
-            list[dict]: A list of dictionaries representing each active session.
-        """
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM sessions WHERE reservation_id = %s AND end_time IS NULL;",
-                       (reservation_id,))
+        cursor.execute(
+            "SELECT * FROM sessions WHERE reservation_id = %s AND end_time IS NULL;", (reservation_id,))
         rows = cursor.fetchall()
+        if not rows:
+            return None
+        columns = [desc[0] for desc in cursor.description]
+        data = dict(zip(columns, rows[0]))
+        return Session(**data)
 
-        columns = [d[0] for d in cursor.description]
-
-        result = [
-            {col: (val.isoformat() if isinstance(val, datetime) else val)
-             for col, val in zip(columns, row)}
-            for row in rows
-        ]
-        return result
-
-
+    # Helperfunctie om DB-rijen om te zetten naar Session objecten
     def map_to_session(self, cursor) -> list[Session]:
-        """
-        Helper function to map database rows to Session objects.
-
-        Args:
-            cursor: The database cursor after executing a query.
-
-        Returns:
-            list[Session]: List of Session objects.
-        """
         columns = [desc[0] for desc in cursor.description]
         sessions = []
         for row in cursor.fetchall():
             print(row)
             row_dict = dict(zip(columns, row))
             try:
-                sessions.append(Session.parse_obj(row_dict))  # aliases are respected
-            except ValidationError as e:
+                # aliases are respected
+                sessions.append(Session.parse_obj(row_dict))
+            except Exception as e:
                 print("Failed to map row to Session:", row_dict, e)
         return sessions
-
-    def get_session_by_license_plate(self, license_plate):
-        cursor = self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute("SELECT * FROM sessions WHERE license_plate = %s AND stopped IS NULL;", (license_plate,))
-        return cursor.fetchone()
