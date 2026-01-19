@@ -1,6 +1,8 @@
 import psycopg2
 
 from api.datatypes.reservation import ReservationCreate, Reservation
+from api.models.connection import get_connection
+import psycopg2.extras
 
 
 # eventually the database queries / JSON write/read will be here.
@@ -20,18 +22,30 @@ class ReservationModel:
         cursor.execute("SELECT * FROM reservations")
         return cursor.fetchall()
 
-    def get_reservation_by_id(self, reservation_id) -> Reservation | None:
-        cursor = self.connection.cursor()
-        cursor.execute(
-            "SELECT * FROM reservations WHERE id = %s", (reservation_id,))
-        row = cursor.fetchone()
-        if row:
-            columns = [desc[0] for desc in cursor.description]
-            data = dict(zip(columns, row))
-            return Reservation(**data)
-        return None
+    def get_reservation_by_id(self, reservation_id: int) -> dict | None:
+        """
+        Retrieve a reservation by its ID.
 
-    def create_reservation(self, reservation: ReservationCreate, user_id, cost) -> None:
+        Args:
+            reservation_id (int): The ID of the reservation to retrieve.
+
+        Returns:
+            Reservation | None: The reservation if found, else None.
+        """
+        cursor = self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("SELECT * FROM reservations WHERE id = %s", (reservation_id,))
+        return cursor.fetchone()
+
+    def create_reservation(self, reservation: ReservationCreate):
+        """
+        Create a new reservation in the database.
+
+        Args:
+            reservation (ReservationCreate): The reservation data to insert.
+
+        Returns:
+            int: The newly created reservation.
+        """
         cursor = self.connection.cursor()
         cursor.execute("""
             INSERT INTO reservations (vehicle_id, user_id, parking_lot_id, start_time, end_time, cost)
@@ -40,14 +54,19 @@ class ReservationModel:
         self.connection.commit()
         return cursor.fetchone()[0]
 
-    def get_reservations_by_vehicle(self, vehicle_id: int) -> list[Reservation]:
-        cursor = self.connection.cursor()
-        cursor.execute(
-            "SELECT * FROM reservations WHERE vehicle_id = %s", (vehicle_id,))
-        rows = cursor.fetchall()
-        columns = [desc[0] for desc in cursor.description]
-        result = [dict(zip(columns, row)) for row in rows]
-        return result
+    def get_reservations_by_vehicle(self, vehicle_id):
+        """
+        Retrieve all reservations associated with a specific vehicle.
+
+        Args:
+            vehicle_id (int): The ID of the vehicle.
+
+        Returns:
+            list[Reservation]: A list of reservations for the given vehicle.
+        """
+        with self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
+            cursor.execute("SELECT * FROM reservations WHERE vehicle_id = %s", (vehicle_id,))
+            return cursor.fetchall()
 
     def delete_reservation(self, reservation_id: int) -> bool:
         cursor = self.connection.cursor()

@@ -4,6 +4,7 @@ from typing import Optional
 
 
 class ReservationCreate(BaseModel):
+    user_id: int
     vehicle_id: int
     parking_lot_id: int
     start_time: datetime
@@ -12,7 +13,6 @@ class ReservationCreate(BaseModel):
 
 
 class Reservation(ReservationCreate):
-    user_id: int
     id: int
     created_at: datetime
     cost: int

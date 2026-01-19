@@ -257,7 +257,7 @@ def setup_vehicles(request, client_with_token):
         request: pytest request object.
         client_with_token: Fixture that returns a client with JWT headers.
     """
-    if not run_fixture_on_test(["vehicles"], request):
+    if not run_fixture_on_test(["vehicles", "sessions"], request):
         return
     client, headers = client_with_token("superadmin")
     create_default = "create" not in request.node.fspath.basename
@@ -292,7 +292,7 @@ def setup_parking_lots(request, client_with_token):
         request: pytest request object.
         client_with_token: Fixture that returns a client with JWT headers.
     """
-    if not run_fixture_on_test(["parking_lot", "payments"], request):
+    if not run_fixture_on_test(["parking_lot", "payments", "sessions"], request):
         return
     client, headers = client_with_token("superadmin")
     create_default = "create" not in request.node.fspath.basename

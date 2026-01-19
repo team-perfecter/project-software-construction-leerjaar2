@@ -236,14 +236,6 @@ async def get_session_by_lid_and_sid(
     )
 
 
-# region extra
-# TODO? moet door Stelain een ok krijgen nadat server.py gerefactored is (versie 1.0 klaar is) hij zei oke
-# TODO? PO ok maar eerst de rest: get parking lots availability               /parking-lots/availability
-# TODO? PO ok maar eerst de rest: get parking lot availability by id          /parking-lots/{id}/availability
-# TODO? PO ok maar eerst de rest: search parking lots                         /parking-lots/search
-# TODO? PO ok maar eerst de rest: get parking lots by city                    /parking-lots/city/{city}
-
-
 @router.get("/parking-lots/location/{location}")
 async def get_parking_lots_by_location(
     location: str
@@ -285,9 +277,6 @@ async def get_parking_lots_by_location(
     return parking_lots
 
 
-# TODO? PO ok maar eerst de rest: get parking lot reservations       /parking-lots/{id}/reservations
-# TODO? PO ok maar eerst de rest: get parking lot stats (admin only) /parking-lots/{id}/stats
-# endregion
 # endregion
 
 
@@ -525,19 +514,19 @@ async def delete_parking_lot(
         HTTPException: Raises 401 if there is no user logged in.
     """
     # logging.info(
-    #     "User with id %i attempting to delete parking lot with id %i",
+    #     "User with id %s attempting to delete parking lot with id %s",
     #     current_user.id,
     #     lid,
     # )
 
     # Check if parking lot has active sessions
-    logger.debug("Checking for active sessions in parking lot %i", lid)
+    logger.debug("Checking for active sessions in parking lot %s", lid)
     sessions = parking_lot_model.get_all_sessions_by_lid(lid)
     active_sessions = [s for s in sessions if s.stopped is None]
 
     if active_sessions:
         logger.warning(
-            "Cannot delete parking lot with id %i - has %i active sessions",
+            "Cannot delete parking lot with id %s - has %s active sessions",
             lid,
             len(active_sessions),
         )
@@ -552,11 +541,11 @@ async def delete_parking_lot(
         )
 
     # Delete the parking lot
-    logger.debug("Attempting to delete parking lot %i from database", lid)
+    logger.debug("Attempting to delete parking lot %s from database", lid)
     success = parking_lot_model.delete_parking_lot(lid)
 
     if not success:
-        logger.error("Failed to delete parking lot with id %i from database", lid)
+        logger.error("Failed to delete parking lot with id %s from database", lid)
         raise HTTPException(
             status_code=500,
             detail={
@@ -566,7 +555,7 @@ async def delete_parking_lot(
             },
         )
 
-    logger.info("Successfully deleted parking lot with id %i", lid)
+    logger.info("Successfully deleted parking lot with id %s", lid)
     return {
         "message": "Parking lot deleted successfully",
         "parking_lot_id": lid,

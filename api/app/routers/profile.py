@@ -4,11 +4,11 @@ This file contains all endpoints related to profile.
 
 import logging
 from fastapi import Depends, APIRouter, HTTPException
+from argon2 import PasswordHasher, exceptions
 from starlette.responses import JSONResponse
 from api.datatypes.user import User, UserCreate, UserLogin, UserUpdate, UserRole, Register
 from api.models.user_model import UserModel
 from api.utilities.hasher import hash_string
-from argon2 import PasswordHasher, exceptions
 from api.auth_utils import (
     verify_password,
     create_access_token,
