@@ -1,13 +1,13 @@
+import logging
+from fastapi import Depends, APIRouter, HTTPException
 from api.datatypes.user import User, UserRole
 from api.datatypes.discount_code import DiscountCodeCreate, DiscountCodeUpdate
 from api.models.discount_code_model import DiscountCodeModel
-from fastapi import Depends, APIRouter, HTTPException
 from api.auth_utils import require_role
 from api.utilities.discount_code_validation import (
     create_or_update_discount_code_validation
 )
 from psycopg2.errors import UniqueViolation
-import logging
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
